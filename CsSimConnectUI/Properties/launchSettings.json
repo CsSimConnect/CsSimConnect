@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "CsSimConnectUI": {
+      "commandName": "Project",
+      "workingDirectory": "C:\\dev\\FS\\CsSimConnect"
+    }
+  }
+}
