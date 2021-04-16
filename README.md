@@ -5,9 +5,9 @@ This project will become a full SimConnect interface in modern C#, not using old
 ## Structure of this repository
 
 There are three sub-projects:
-* [CsSimConnectInterOp(CsSimConnectInterOp/) is a non-managed C++ DLL that provides an interface to the static SimConnect library.
-* [CsSimConnect(CsSimConnect/) is the actual C# Class Library, using the .Net 5.0 platform.
-* [CsSimConnectUI(CsSimConnectUI/) is a test/demo app, showing how to use the library.
+* [CsSimConnectInterOp](CsSimConnectInterOp/) is a non-managed C++ DLL that provides an interface to the static SimConnect library.
+* [CsSimConnect](CsSimConnect/) is the actual C# Class Library, using the .Net 5.0 platform.
+* [CsSimConnectUI](CsSimConnectUI/) is a test/demo app, showing how to use the library.
 
 ## How to build and run the demo app
 
