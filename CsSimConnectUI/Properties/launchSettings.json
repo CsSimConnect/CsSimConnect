@@ -2,7 +2,8 @@
   "profiles": {
     "CsSimConnectUI": {
       "commandName": "Project",
-      "workingDirectory": "C:\\dev\\FS\\CsSimConnect"
+      "workingDirectory": "C:\\dev\\FS\\CsSimConnect",
+      "nativeDebugging": true
     }
   }
 }

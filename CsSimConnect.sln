@@ -16,6 +16,12 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CsSimConnect", "CsSimConnec
 		{E330D408-092B-4328-9E01-0B4115A0F939} = {E330D408-092B-4328-9E01-0B4115A0F939}
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{1570D2CB-116D-49EC-9F84-A6B282903AD9}"
+	ProjectSection(SolutionItems) = preProject
+		rakisLog.properties = rakisLog.properties
+		README.md = README.md
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
