@@ -83,7 +83,7 @@ namespace rakis {
 		static std::ostream& getStream(const std::string& name);
 
 		template <class... Args>
-		void log(Level level, std::string_view fmt, const Args&... args) {
+		void log(Level level, const std::string& fmt, const Args&... args) {
 			std::vector<any> argVec{ args... };
 			unsigned arg{ 0 };
 
@@ -130,37 +130,37 @@ namespace rakis {
 		bool isFatalEnabled() { return getLevel() <= LOGLVL_FATAL; }
 
 		template <class... Args>
-		void trace(std::string_view fmt, const Args&... args) {
+		void trace(const std::string& fmt, const Args&... args) {
 			if (isInfoEnabled()) {
 				log(LOGLVL_TRACE, fmt, args...);
 			}
 		}
 		template <class... Args>
-		void debug(std::string_view fmt, const Args&... args) {
+		void debug(const std::string& fmt, const Args&... args) {
 			if (isInfoEnabled()) {
 				log(LOGLVL_DEBUG, fmt, args...);
 			}
 		}
 		template <class... Args>
-		void info(std::string_view fmt, const Args&... args) {
+		void info(const std::string& fmt, const Args&... args) {
 			if (isInfoEnabled()) {
 				log(LOGLVL_INFO, fmt, args...);
 			}
 		}
 		template <class... Args>
-		void warn(std::string_view fmt, const Args&... args) {
+		void warn(const std::string& fmt, const Args&... args) {
 			if (isInfoEnabled()) {
 				log(LOGLVL_WARN, fmt, args...);
 			}
 		}
 		template <class... Args>
-		void error(std::string_view fmt, const Args&... args) {
+		void error(const std::string& fmt, const Args&... args) {
 			if (isInfoEnabled()) {
 				log(LOGLVL_ERROR, fmt, args...);
 			}
 		}
 		template <class... Args>
-		void fatal(std::string_view fmt, const Args&... args) {
+		void fatal(const std::string& fmt, const Args&... args) {
 			if (isInfoEnabled()) {
 				log(LOGLVL_FATAL, fmt, args...);
 			}
