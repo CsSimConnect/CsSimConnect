@@ -21,30 +21,53 @@ namespace CsSimConnectUI
     /// </summary>
     public partial class MainWindow : Window
     {
-        private SimConnect simConnect = new SimConnect();
+        private readonly SimConnect simConnect = SimConnect.Instance;
 
         public MainWindow()
         {
             InitializeComponent();
-            simConnect.OnConnectionStateChange += (bool connected) => { lStatusValue.Content = connected ? "Connected" : "Not connected"; };
+            simConnect.OnConnectionStateChange += (bool useAutoConnect, bool connected) =>
+            {
+                if (!connected && !useAutoConnect)
+                {
+                    iconSim.Source = new BitmapImage(new Uri("Images/dark-slider-off-64.png", UriKind.Relative));
+                }
+                else if (!connected)
+                {
+                    iconSim.Source = new BitmapImage(new Uri("Images/dark-slider-on-notok-64.png", UriKind.Relative));
+                }
+                else
+                {
+                    iconSim.Source = new BitmapImage(new Uri("Images/dark-slider-on-ok-64.png", UriKind.Relative));
+                }
+                if (connected)
+                {
+                    if (simConnect.SimName.Length == 0)
+                    {
+                        lStatus.Content = "Connected.";
+                    }
+                    else
+                    {
+                        lStatus.Content = String.Format("Connected to {0}, SimConnect version {1}", simConnect.SimName, simConnect.GetSimConnectVersion());
+                    }
+                }
+                else
+                {
+                    lStatus.Content = "Disconnected.";
+                }
+            };
         }
 
-        private void DoConnect(object sender, RoutedEventArgs e)
+        private void ToggleConnection(object sender, RoutedEventArgs e)
         {
-            simConnect.Connect();
-            bConnect.IsEnabled = !simConnect.IsConnected();
-            bDisconnect.IsEnabled = simConnect.IsConnected();
             if (simConnect.IsConnected())
             {
-                //simConnect.Events.addSystemEventHandler(SystemEvent.SIM, (evt) => { });
+                simConnect.Disconnect();
             }
-        }
-
-        private void DoDisconnect(object sender, RoutedEventArgs e)
-        {
-            simConnect.Disconnect();
-            bConnect.IsEnabled = !simConnect.IsConnected();
-            bDisconnect.IsEnabled = simConnect.IsConnected();
+            else
+            {
+                simConnect.Connect();
+            }
         }
     }
 }

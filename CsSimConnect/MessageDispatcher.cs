@@ -85,61 +85,118 @@ namespace CsSimConnect
         SIMCONNECT_RECV_ID_SYSTEM_STATE_W,
         SIMCONNECT_RECV_ID_EVENT_FILENAME_W,
     };
+
+    [StructLayout(LayoutKind.Explicit)]
+    unsafe public struct ReceiveAppInfo
+    {
+        [FieldOffset(0)]
+        public fixed byte ApplicationName[256];
+        [FieldOffset(256)]
+        public readonly UInt32 ApplicationVersionMajor;
+        [FieldOffset(260)]
+        public readonly UInt32 ApplicationVersionMinor;
+        [FieldOffset(264)]
+        public readonly UInt32 ApplicationBuildMajor;
+        [FieldOffset(268)]
+        public readonly UInt32 ApplicationBuildMinor;
+        [FieldOffset(272)]
+        public readonly UInt32 SimConnectVersionMajor;
+        [FieldOffset(276)]
+        public readonly UInt32 SimConnectVersionMinor;
+        [FieldOffset(280)]
+        public readonly UInt32 SimConnectBuildMajor;
+        [FieldOffset(284)]
+        public readonly UInt32 SimConnectBuildMinor;
+        [FieldOffset(288)]
+        private readonly UInt32 reserved1;
+        [FieldOffset(292)]
+        private readonly UInt32 reserved2;
+    }
+
+    [StructLayout(LayoutKind.Explicit)]
+    unsafe public struct ReceiveSystemState
+    {
+        [FieldOffset(0)]
+        public readonly UInt32 RequestId;
+        [FieldOffset(4)]
+        public readonly Int32 IntValue;
+        [FieldOffset(8)]
+        public readonly float floatValue;
+        [FieldOffset(12)]
+        public fixed byte stringValue[260];        // This is where the string starts...
+    }
+
     [StructLayout(LayoutKind.Explicit)]
     public struct ReceiveStruct
     {
-        [FieldOffset(0)]
-        public UInt64 Size;
+        [FieldOffset(0)]        // Common prefix
+        public readonly UInt32 Size;
         [FieldOffset(4)]
-        public UInt64 Version;
+        public readonly UInt32 Version;
         [FieldOffset(8)]
-        public UInt64 Id;
+        public readonly UInt32 Id;
+
+        [FieldOffset(12)]
+        public readonly ReceiveAppInfo ConnectionInfo;             // SIMCONNECT_RECV_OPEN
+        [FieldOffset(12)]
+        public readonly ReceiveSystemState SystemState;         // SIMCONNECT_RECV_SYSTEM_STATE
+
     }
 
-    public class MessageDispatcher
+    public sealed class MessageDispatcher
     {
 
-        public delegate void DispatchProc(ref ReceiveStruct structData, Int64 wordData, IntPtr context);
+        private static readonly Lazy<MessageDispatcher> lazyInstance = new Lazy<MessageDispatcher>(() => new MessageDispatcher(SimConnect.Instance));
+
+        public static MessageDispatcher Instance { get { return lazyInstance.Value; } }
+
+        public delegate void DispatchProc(ref ReceiveStruct structData, Int32 wordData, IntPtr context);
 
         [DllImport("CsSimConnectInterOp.dll", EntryPoint = "#1")]
-        public static extern bool csCallDispatch(IntPtr handle, DispatchProc dispatchProc);
+        public static extern bool CsCallDispatch(IntPtr handle, DispatchProc dispatchProc);
 
-        private SimConnect simConnect;
-        private Task dispatchTask;
-
-        private bool isConnected = false;
-        public bool IsConnected { get;  set; }
+        private readonly SimConnect simConnect;
 
         public MessageDispatcher(SimConnect simConnect)
         {
             this.simConnect = simConnect;
-            dispatchTask = Task.Run(dispatchLoop);
         }
 
-        private void dispatchLoop()
+        public void Init()
         {
-            while (isConnected)
-            {
-                csCallDispatch(simConnect.Handle, (ref ReceiveStruct structData, Int64 wordData, IntPtr context) =>
-                {
-                    if (structData.Id > (int)RecvId.SIMCONNECT_RECV_ID_EVENT_FILENAME_W)
-                    {
-                        //Error
-                        return;
-                    }
-                    switch ((RecvId) structData.Id)
-                    {
-                        case RecvId.SIMCONNECT_RECV_ID_OPEN:
-                            isConnected = true;
-                            break;
-                        case RecvId.SIMCONNECT_RECV_ID_QUIT:
-                            isConnected = false;
-                            break;
-                        default:
-                            break;
-                    }
-                });
+            CsCallDispatch(simConnect.handle, HandleMessage);
+        }
 
+        private unsafe void HandleMessage(ref ReceiveStruct structData, Int32 wordData, IntPtr context)
+        {
+            if (structData.Id > (int)RecvId.SIMCONNECT_RECV_ID_EVENT_FILENAME_W)
+            {
+                //Error
+                return;
+            }
+            switch ((RecvId)structData.Id)
+            {
+                case RecvId.SIMCONNECT_RECV_ID_OPEN:
+                    fixed (ReceiveAppInfo* r = &structData.ConnectionInfo) {
+                        simConnect.SimName = Encoding.Latin1.GetString(r->ApplicationName, 256).Trim();
+                    }
+                    simConnect.ApplicationVersionMajor = structData.ConnectionInfo.ApplicationVersionMajor;
+                    simConnect.ApplicationVersionMinor = structData.ConnectionInfo.ApplicationVersionMinor;
+                    simConnect.ApplicationBuildMajor = structData.ConnectionInfo.ApplicationBuildMajor;
+                    simConnect.ApplicationBuildMinor = structData.ConnectionInfo.ApplicationBuildMinor;
+                    simConnect.SimConnectVersionMajor = structData.ConnectionInfo.SimConnectVersionMajor;
+                    simConnect.SimConnectVersionMinor = structData.ConnectionInfo.SimConnectVersionMinor;
+                    simConnect.SimConnectBuildMajor = structData.ConnectionInfo.SimConnectBuildMajor;
+                    simConnect.SimConnectBuildMinor = structData.ConnectionInfo.SimConnectBuildMinor;
+                    simConnect.InvokeConnectionStateChanged();
+                    break;
+
+                case RecvId.SIMCONNECT_RECV_ID_QUIT:
+                    simConnect.Disconnect();
+                    break;
+
+                default:
+                    break;
             }
         }
     }

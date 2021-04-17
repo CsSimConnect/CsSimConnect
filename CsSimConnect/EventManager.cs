@@ -78,8 +78,12 @@ namespace CsSimConnect
         MULTIPLAYER_SESSION_ENDED,
     }
 
-    public class EventManager
+    public sealed class EventManager
     {
+
+        private static readonly Lazy<EventManager> lazyInstance = new Lazy<EventManager>(() => new EventManager(SimConnect.Instance));
+
+        public static EventManager Instance { get { return lazyInstance.Value; } }
 
         public static readonly Dictionary<SystemEvent, string> SystemEventNames = new()
         {
@@ -153,20 +157,32 @@ namespace CsSimConnect
         };
 
         [DllImport("CsSimConnectInterOp.dll", EntryPoint = "#4")]
-        public static extern bool csSubscribeToSystemEvent(IntPtr handle, UInt64 id, [MarshalAs(UnmanagedType.LPStr)] string eventName);
+        private static extern bool CsSubscribeToSystemEvent(IntPtr handle, UInt32 requestId, [MarshalAs(UnmanagedType.LPStr)] string eventName);
+        [DllImport("CsSimConnectInterOp.dll", EntryPoint = "#5")]
+        private static extern bool CsRequestSystemState(IntPtr handle, UInt32 requestId, [MarshalAs(UnmanagedType.LPStr)] string state);
 
         private SimConnect simConnect;
-        public EventManager(SimConnect simConnect)
+        private EventManager(SimConnect simConnect)
         {
             this.simConnect = simConnect;
         }
 
+        private bool initDone = false;
+        public void Init()
+        {
+            if (!initDone)
+            {
+                simConnect.OnConnectionStateChange += OnConnectionStateChange;
+                initDone = true;
+            }
+        }
+
         public delegate void SystemEventHandler(SystemEvent systemEvent);
 
-        private static readonly UInt64 USREVT_FIRST = 64;
-        private UInt64 lastEvent = USREVT_FIRST;
+        private static readonly UInt32 USREVT_FIRST = 64;
+        private UInt32 lastEvent = USREVT_FIRST;
 
-        public UInt64 NextEvent()
+        public UInt32 NextEvent()
         {
             return Interlocked.Increment(ref lastEvent);
         }
@@ -175,21 +191,33 @@ namespace CsSimConnect
 
         private void SystemEventDispatcher(SystemEvent id)
         {
-            if (((UInt64)id) >= USREVT_FIRST)
+            if (((UInt32)id) >= USREVT_FIRST)
             {
                 // Complain
             } else
             {
                 lock (systemEventHandlers)
                 {
-                    systemEventHandlers[(UInt64)id](id);
+                    systemEventHandlers[(UInt32)id](id);
                 }
             }
         }
 
-        public void addSystemEventHandler(SystemEvent systemEvent, SystemEventHandler handler)
+        private void OnConnectionStateChange(bool useAutoConnect, bool isConnected)
         {
-            if (!csSubscribeToSystemEvent(simConnect.Handle, (UInt64)systemEvent, SystemEventNames[systemEvent]))
+            if (isConnected)
+            {
+                foreach(SystemEvent systemEvent in Enum.GetValues(typeof(SystemEvent)))
+                {
+                    AddSystemEventHandler(systemEvent, SystemEventDispatcher);
+                }
+
+            }
+        }
+
+        public void AddSystemEventHandler(SystemEvent systemEvent, SystemEventHandler handler)
+        {
+            if (!CsSubscribeToSystemEvent(simConnect.handle, RequestManager.Instance.NextRequest(), SystemEventNames[systemEvent]))
             {
                 // Complain
             }

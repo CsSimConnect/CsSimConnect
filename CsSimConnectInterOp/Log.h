@@ -13,19 +13,22 @@ namespace nl {
 namespace rakis {
 
 	struct any {
-		enum class Type { Int, Float, String };
+		enum class Type { Int, Long, Float, String };
 		any(const int   e) { m_data.INT = e; m_type = Type::Int; }
+		any(const long   e) { m_data.LONG = e; m_type = Type::Long; }
 		any(const float e) { m_data.FLOAT = e; m_type = Type::Float; }
 		any(const char* e) { m_data.STRING = e; m_type = Type::String; }
 		any(std::string const& s) { m_data.STRING = s.c_str(); m_type = Type::String; }
 		Type get_type() const { return m_type; }
 		int get_int() const { return m_data.INT; }
+		unsigned long get_long() const { return m_data.LONG; }
 		float get_float() const { return m_data.FLOAT; }
 		const char* get_string() const { return m_data.STRING; }
 	private:
 		Type m_type;
 		union {
 			int   INT;
+			long LONG;
 			float FLOAT;
 			const char* STRING;
 		} m_data;
@@ -98,6 +101,7 @@ namespace rakis {
 					if (arg < argVec.size()) {
 						switch (argVec[arg].get_type()) {
 						case any::Type::Int: s << argVec[arg].get_int(); break;
+						case any::Type::Long: s << argVec[arg].get_long(); break;
 						case any::Type::Float: s << argVec[arg].get_float(); break;
 						case any::Type::String: s << argVec[arg].get_string(); break;
 						}

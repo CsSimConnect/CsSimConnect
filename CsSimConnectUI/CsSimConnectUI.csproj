@@ -12,7 +12,53 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Images\asfalt.png" />
+    <None Remove="Images\dark-slider-off-64.png" />
+    <None Remove="Images\dark-slider-off.png" />
+    <None Remove="Images\dark-slider-on-notok-64.png" />
+    <None Remove="Images\dark-slider-on-notok.png" />
+    <None Remove="Images\dark-slider-on-ok-64.png" />
+    <None Remove="Images\dark-slider-on-ok.png" />
+    <None Remove="Images\slider-off.png" />
+    <None Remove="Images\slider-on-notok.png" />
+    <None Remove="Images\slider-on-ok.png" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\CsSimConnect\CsSimConnect.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Images\asfalt.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Images\dark-slider-off-64.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Images\dark-slider-off.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Images\dark-slider-on-notok-64.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Images\dark-slider-on-notok.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Images\dark-slider-on-ok-64.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Images\dark-slider-on-ok.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Images\slider-off.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Images\slider-on-notok.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Images\slider-on-ok.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
   </ItemGroup>
 
   <ItemGroup>

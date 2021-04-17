@@ -5,12 +5,54 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:CsSimConnectUI"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        Title="MainWindow" Height="450" Width="800"
+        FontFamily="Calibri" FontSize="16">
+    <Window.Resources>
+        <Style TargetType="{x:Type Label}">
+            <Setter Property="Foreground" Value="White" />
+        </Style>
+        <Style TargetType="{x:Type Button}">
+            <Setter Property="Foreground" Value="White" />
+        </Style>
+        <Style x:Key="StatusOn" TargetType="{x:Type Label}">
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="BorderBrush" Value="White" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Margin" Value="2" />
+            <Setter Property="Padding" Value="2" />
+        </Style>
+        <Style x:Key="StatusOff" TargetType="{x:Type Label}">
+            <Setter Property="Foreground" Value="Gray" />
+            <Setter Property="BorderBrush" Value="Gray" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Margin" Value="2" />
+            <Setter Property="Padding" Value="2" />
+        </Style>
+    </Window.Resources>
     <Grid>
-        <Button x:Name="bConnect" Content="Connect" HorizontalAlignment="Left" Margin="228,180,0,0" VerticalAlignment="Top" Click="DoConnect"/>
-        <Button x:Name="bDisconnect" Content="Disconnect" HorizontalAlignment="Left" Margin="221,229,0,0" VerticalAlignment="Top" IsEnabled="False" Click="DoDisconnect"/>
-        <Label x:Name="lStatus" Content="Status:" HorizontalAlignment="Left" Margin="221,303,0,0" VerticalAlignment="Top"/>
-        <Label x:Name="lStatusValue" Content="Not connected." HorizontalAlignment="Left" Margin="281,303,0,0" VerticalAlignment="Top"/>
-
+        <Grid.Background>
+            <ImageBrush ImageSource="/Images/asfalt.png" TileMode="Tile"/>
+        </Grid.Background>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="32" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="32" />
+        </Grid.RowDefinitions>
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <Label x:Name="lSim" Content="Sim:" Grid.Column="0" Margin="10,0,5,0" />
+            <Image x:Name="iconSim" Source="/Images/dark-slider-off-64.png" Grid.Column="1" MouseDown="ToggleConnection"/>
+            <Label x:Name="lStatus" Content="" Grid.Column="3"/>
+            <Label x:Name="lPaused" Content="Paused" Grid.Column="5" Style="{StaticResource StatusOff}" />
+            <Label x:Name="lStopped" Content="Stopped" Grid.Column="6" Style="{StaticResource StatusOff}" />
+        </Grid>
     </Grid>
 </Window>
