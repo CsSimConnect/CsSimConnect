@@ -1,4 +1,20 @@
 #include "pch.h"
+/*
+ * Copyright (c) 2021. Bert Laverman
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 
 static nl::rakis::Logger logger{ nl::rakis::Logger::getLogger("CsSimConnectInterOp") };
 
@@ -60,9 +76,9 @@ CS_SIMCONNECT_DLL_EXPORT CsCallDispatch(HANDLE handle, DispatchProc callback) {
 
 CS_SIMCONNECT_DLL_EXPORT CsSubscribeToSystemEvent(HANDLE handle, int requestId, const char* eventName) {
 	initLog();
-	logger.debug("subscribeToSystemEvent(..., {}, '{}'", requestId, eventName);
+	logger.debug("CsSubscribeToSystemEvent(..., {}, '{}'", requestId, eventName);
 	if (handle == nullptr) {
-		logger.error("Handle passed to subscribeToSystemEvent is null!");
+		logger.error("Handle passed to CsSubscribeToSystemEvent is null!");
 		return false;
 	}
 
@@ -73,6 +89,25 @@ CS_SIMCONNECT_DLL_EXPORT CsSubscribeToSystemEvent(HANDLE handle, int requestId, 
 	}
 	else {
 		logger.error("Failed to subscribe to system event '{}'. (HRESULT = {})", eventName, hr);
+	}
+	return SUCCEEDED(hr);
+}
+
+CS_SIMCONNECT_DLL_EXPORT CsRequestSystemState(HANDLE handle, int requestId, const char* eventName) {
+	initLog();
+	logger.debug("CsRequestSystemState(..., {}, '{}'", requestId, eventName);
+	if (handle == nullptr) {
+		logger.error("Handle passed to CsRequestSystemState is null!");
+		return false;
+	}
+
+	HRESULT hr = SimConnect_RequestSystemState(handle, requestId, eventName);
+
+	if (SUCCEEDED(hr)) {
+		logger.trace("Requested system state '{}'", eventName);
+	}
+	else {
+		logger.error("Failed to requedst system state '{}'. (HRESULT = {})", eventName, hr);
 	}
 	return SUCCEEDED(hr);
 }

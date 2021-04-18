@@ -1,8 +1,25 @@
-﻿using CsSimConnect;
+﻿/*
+ * Copyright (c) 2021. Bert Laverman
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+using CsSimConnect;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -22,6 +39,9 @@ namespace CsSimConnectUI
     public partial class MainWindow : Window
     {
         private readonly SimConnect simConnect = SimConnect.Instance;
+        private readonly RequestManager requests = RequestManager.Instance;
+
+        private int isConnected = 0; // Because we don't van `Interlocked.Exchange()` for `bool`s.
 
         public MainWindow()
         {
@@ -42,6 +62,16 @@ namespace CsSimConnectUI
                 }
                 if (connected)
                 {
+                    if (Interlocked.Exchange(ref isConnected, 1) == 0)
+                    {
+                        // Haven't registered these yet
+                        requests.SubscribeToSystemStateBool(CsSimConnect.EventManager.ToString(SystemEvent.Pause),
+                            (bool running) => lPaused.Style = (Style)FindResource(running ? "StatusOff" : "StatusOn"),
+                            true);
+                        requests.SubscribeToSystemStateBool(CsSimConnect.EventManager.ToString(SystemEvent.Sim),
+                            (bool running) => lStopped.Style = (Style)FindResource(running ? "StatusOff" : "StatusOn"),
+                            true);
+                    }
                     if (simConnect.SimName.Length == 0)
                     {
                         lStatus.Content = "Connected.";
@@ -53,7 +83,10 @@ namespace CsSimConnectUI
                 }
                 else
                 {
+                    isConnected = 0;
                     lStatus.Content = "Disconnected.";
+                    lPaused.Style = (Style)FindResource("StatusOff");
+                    lStopped.Style = (Style)FindResource("StatusOff");
                 }
             };
         }

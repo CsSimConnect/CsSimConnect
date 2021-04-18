@@ -1,4 +1,20 @@
-﻿using System;
+﻿/*
+ * Copyright (c) 2021. Bert Laverman
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -167,7 +183,7 @@ namespace CsSimConnect
             CsCallDispatch(simConnect.handle, HandleMessage);
         }
 
-        private unsafe void HandleMessage(ref ReceiveStruct structData, Int32 wordData, IntPtr context)
+        private void HandleMessage(ref ReceiveStruct structData, Int32 wordData, IntPtr context)
         {
             if (structData.Id > (int)RecvId.SIMCONNECT_RECV_ID_EVENT_FILENAME_W)
             {
@@ -177,8 +193,12 @@ namespace CsSimConnect
             switch ((RecvId)structData.Id)
             {
                 case RecvId.SIMCONNECT_RECV_ID_OPEN:
-                    fixed (ReceiveAppInfo* r = &structData.ConnectionInfo) {
-                        simConnect.SimName = Encoding.Latin1.GetString(r->ApplicationName, 256).Trim();
+                    unsafe
+                    {
+                        fixed (ReceiveAppInfo* r = &structData.ConnectionInfo)
+                        {
+                            simConnect.SimName = Encoding.Latin1.GetString(r->ApplicationName, 256).Trim();
+                        }
                     }
                     simConnect.ApplicationVersionMajor = structData.ConnectionInfo.ApplicationVersionMajor;
                     simConnect.ApplicationVersionMinor = structData.ConnectionInfo.ApplicationVersionMinor;
@@ -193,6 +213,10 @@ namespace CsSimConnect
 
                 case RecvId.SIMCONNECT_RECV_ID_QUIT:
                     simConnect.Disconnect();
+                    break;
+
+                case RecvId.SIMCONNECT_RECV_ID_SYSTEM_STATE:
+                    RequestManager.Instance.DispatchResult(structData.SystemState.RequestId, ref structData);
                     break;
 
                 default:
