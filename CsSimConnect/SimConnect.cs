@@ -13,9 +13,9 @@ namespace CsSimConnect
 
         public delegate void ConnectionStateHandler(bool willAutoConnect, bool isConnected);
 
-        [DllImport("CsSimConnectInterOp.dll", EntryPoint ="#2")]
+        [DllImport("CsSimConnectInterOp.dll")]
         private static extern bool CsConnect([MarshalAs(UnmanagedType.LPStr)] string appName, ref IntPtr handle);
-        [DllImport("CsSimConnectInterOp.dll", EntryPoint = "#3")]
+        [DllImport("CsSimConnectInterOp.dll")]
         private static extern bool CsDisconnect(IntPtr handle);
 
         internal IntPtr handle = IntPtr.Zero;

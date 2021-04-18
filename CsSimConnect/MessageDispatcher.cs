@@ -152,7 +152,7 @@ namespace CsSimConnect
 
         public delegate void DispatchProc(ref ReceiveStruct structData, Int32 wordData, IntPtr context);
 
-        [DllImport("CsSimConnectInterOp.dll", EntryPoint = "#1")]
+        [DllImport("CsSimConnectInterOp.dll")]
         public static extern bool CsCallDispatch(IntPtr handle, DispatchProc dispatchProc);
 
         private readonly SimConnect simConnect;

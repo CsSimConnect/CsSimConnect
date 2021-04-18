@@ -14,7 +14,7 @@ void initLog() {
 	}
 }
 
-CS_SIMCONNECT_DLL_EXPORT connect(const char* appName, HANDLE& handle) {
+CS_SIMCONNECT_DLL_EXPORT CsConnect(const char* appName, HANDLE& handle) {
 	initLog();
 	logger.info("Trying to connect through SimConnect using client name '{}'", appName);
 	HANDLE h;
@@ -30,7 +30,7 @@ CS_SIMCONNECT_DLL_EXPORT connect(const char* appName, HANDLE& handle) {
 	return SUCCEEDED(hr);
 }
 
-CS_SIMCONNECT_DLL_EXPORT disconnect(HANDLE handle) {
+CS_SIMCONNECT_DLL_EXPORT CsDisconnect(HANDLE handle) {
 	initLog();
 	HRESULT hr = SimConnect_Close(handle);
 
@@ -43,7 +43,7 @@ CS_SIMCONNECT_DLL_EXPORT disconnect(HANDLE handle) {
 	return SUCCEEDED(hr);
 }
 
-CS_SIMCONNECT_DLL_EXPORT callDispatch(HANDLE handle, DispatchProc callback) {
+CS_SIMCONNECT_DLL_EXPORT CsCallDispatch(HANDLE handle, DispatchProc callback) {
 	initLog();
 	logger.debug("Calling CallDispatch()");
 
@@ -58,7 +58,7 @@ CS_SIMCONNECT_DLL_EXPORT callDispatch(HANDLE handle, DispatchProc callback) {
 	return SUCCEEDED(hr);
 }
 
-CS_SIMCONNECT_DLL_EXPORT subscribeToSystemEvent(HANDLE handle, int requestId, const char* eventName) {
+CS_SIMCONNECT_DLL_EXPORT CsSubscribeToSystemEvent(HANDLE handle, int requestId, const char* eventName) {
 	initLog();
 	logger.debug("subscribeToSystemEvent(..., {}, '{}'", requestId, eventName);
 	if (handle == nullptr) {

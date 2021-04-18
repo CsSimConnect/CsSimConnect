@@ -156,9 +156,9 @@ namespace CsSimConnect
             [SystemEvent.MULTIPLAYER_SESSION_ENDED] = "MultiplayerSessionEnded",
         };
 
-        [DllImport("CsSimConnectInterOp.dll", EntryPoint = "#4")]
+        [DllImport("CsSimConnectInterOp.dll")]
         private static extern bool CsSubscribeToSystemEvent(IntPtr handle, UInt32 requestId, [MarshalAs(UnmanagedType.LPStr)] string eventName);
-        [DllImport("CsSimConnectInterOp.dll", EntryPoint = "#5")]
+        [DllImport("CsSimConnectInterOp.dll")]
         private static extern bool CsRequestSystemState(IntPtr handle, UInt32 requestId, [MarshalAs(UnmanagedType.LPStr)] string state);
 
         private SimConnect simConnect;
