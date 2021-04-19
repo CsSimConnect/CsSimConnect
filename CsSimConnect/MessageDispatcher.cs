@@ -19,6 +19,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace CsSimConnect
@@ -130,6 +131,35 @@ namespace CsSimConnect
     }
 
     [StructLayout(LayoutKind.Explicit)]
+    unsafe public struct ReceiveException
+    {
+        [FieldOffset(0)]
+        public readonly UInt32 ExceptionId;
+        [FieldOffset(4)]
+        public readonly UInt32 SendId;
+        [FieldOffset(8)]
+        public readonly UInt32 Index;
+    }
+
+    [StructLayout(LayoutKind.Explicit)]
+    unsafe public struct ReceiveEvent
+    {
+        [FieldOffset(0)]
+        public readonly UInt32 GroupId;
+        [FieldOffset(4)]
+        public readonly UInt32 Id;
+        [FieldOffset(8)]
+        public readonly UInt32 Data;
+
+        // EVENT_64
+        [FieldOffset(12)]
+        public readonly UInt64 Data64;
+        // EVENT_FILENAME
+        [FieldOffset(12)]
+        public fixed byte Filename[260];
+    }
+
+    [StructLayout(LayoutKind.Explicit)]
     unsafe public struct ReceiveSystemState
     {
         [FieldOffset(0)]
@@ -139,7 +169,7 @@ namespace CsSimConnect
         [FieldOffset(8)]
         public readonly float floatValue;
         [FieldOffset(12)]
-        public fixed byte stringValue[260];        // This is where the string starts...
+        public fixed byte stringValue[260];
     }
 
     [StructLayout(LayoutKind.Explicit)]
@@ -153,23 +183,31 @@ namespace CsSimConnect
         public readonly UInt32 Id;
 
         [FieldOffset(12)]
-        public readonly ReceiveAppInfo ConnectionInfo;             // SIMCONNECT_RECV_OPEN
+        public readonly ReceiveException Exception;                 // SIMCONNECT_RECV_EXCEPTION
         [FieldOffset(12)]
-        public readonly ReceiveSystemState SystemState;         // SIMCONNECT_RECV_SYSTEM_STATE
+        public readonly ReceiveAppInfo ConnectionInfo;              // SIMCONNECT_RECV_OPEN
+        [FieldOffset(12)]
+        public readonly ReceiveEvent Event;                         // SIMCONNECT_RECV_EVENT
+        [FieldOffset(12)]
+        public readonly ReceiveSystemState SystemState;             // SIMCONNECT_RECV_SYSTEM_STATE
 
     }
 
     public sealed class MessageDispatcher
     {
 
+        [DllImport("CsSimConnectInterOp.dll")]
+        public static extern bool CsCallDispatch(IntPtr handle, DispatchProc dispatchProc);
+        [DllImport("CsSimConnectInterOp.dll")]
+        public static extern bool CsGetNextDispatch(IntPtr handle, DispatchProc dispatchProc);
+
+        private static readonly Logger log = Logger.GetLogger(typeof(MessageDispatcher));
+
         private static readonly Lazy<MessageDispatcher> lazyInstance = new Lazy<MessageDispatcher>(() => new MessageDispatcher(SimConnect.Instance));
 
         public static MessageDispatcher Instance { get { return lazyInstance.Value; } }
 
         public delegate void DispatchProc(ref ReceiveStruct structData, Int32 wordData, IntPtr context);
-
-        [DllImport("CsSimConnectInterOp.dll")]
-        public static extern bool CsCallDispatch(IntPtr handle, DispatchProc dispatchProc);
 
         private readonly SimConnect simConnect;
 
@@ -178,49 +216,131 @@ namespace CsSimConnect
             this.simConnect = simConnect;
         }
 
+        private Task<bool> messagePoller;
+
         public void Init()
         {
             CsCallDispatch(simConnect.handle, HandleMessage);
+            messagePoller = new(() =>
+            {
+                while (simConnect.IsConnected())
+                {
+                    while (CsGetNextDispatch(simConnect.handle, HandleMessage))
+                    {
+                        log.Trace("Trying for another message");
+                    }
+                    Thread.Sleep(100);
+                }
+                return true;
+            });
+            messagePoller.Start();
         }
+
+        private static readonly string[] ExceptionMessage = {
+                "No error",
+                "Error",
+                "Size mismatch",
+                "Unrecognized Id",
+                "Unopened",
+                "Version mismatch",
+                "Too many groups",
+                "Name unrecognized",
+                "Too many event names",
+                "Event Id already in use",
+                "Too many maps",
+                "Too many objects",
+                "Too many requests",
+                "Weather: Invalid port",
+                "Weather: Invalid METAR",
+                "Weather: Unable to get observation",
+                "Weather: Unable to create station",
+                "Weather: Unable to remove station",
+                "Invalid data type",
+                "Invalid data size",
+                "Data error",
+                "Invalid array",
+                "Create object failed",
+                "Load flightplan failed",
+                "Operation invalid for object type",
+                "Illegal operation",
+                "Already subscribed",
+                "Invalid Enum",
+                "Definition error",
+                "Duplicate Id",
+                "Datum Id",
+                "Out of bounds",
+                "Already created",
+                "Object outside reality bubble",
+                "Object container",
+                "Object AI",
+                "Object ATC",
+                "Object schedule",
+                "Block timeout",
+        };
 
         private void HandleMessage(ref ReceiveStruct structData, Int32 wordData, IntPtr context)
         {
             if (structData.Id > (int)RecvId.SIMCONNECT_RECV_ID_EVENT_FILENAME_W)
             {
-                //Error
+                log.Error("Received message with Message ID {0}", structData.Id);
                 return;
             }
-            switch ((RecvId)structData.Id)
+            log.Debug("Received message with ID {0}", structData.Id);
+            try
             {
-                case RecvId.SIMCONNECT_RECV_ID_OPEN:
-                    unsafe
-                    {
-                        fixed (ReceiveAppInfo* r = &structData.ConnectionInfo)
+                switch ((RecvId)structData.Id)
+                {
+                    case RecvId.SIMCONNECT_RECV_ID_EXCEPTION:           // 1
+                        log.Error("Exception returned: {0} (sender {1}, index {2})", ExceptionMessage[structData.Exception.ExceptionId], structData.Exception.SendId, structData.Exception.Index);
+                        break;
+
+                    case RecvId.SIMCONNECT_RECV_ID_OPEN:                // 2
+                        unsafe
                         {
-                            simConnect.SimName = Encoding.Latin1.GetString(r->ApplicationName, 256).Trim();
+                            fixed (ReceiveAppInfo* r = &structData.ConnectionInfo)
+                            {
+                                simConnect.SimName = Encoding.Latin1.GetString(r->ApplicationName, 256).Trim();
+                            }
                         }
-                    }
-                    simConnect.ApplicationVersionMajor = structData.ConnectionInfo.ApplicationVersionMajor;
-                    simConnect.ApplicationVersionMinor = structData.ConnectionInfo.ApplicationVersionMinor;
-                    simConnect.ApplicationBuildMajor = structData.ConnectionInfo.ApplicationBuildMajor;
-                    simConnect.ApplicationBuildMinor = structData.ConnectionInfo.ApplicationBuildMinor;
-                    simConnect.SimConnectVersionMajor = structData.ConnectionInfo.SimConnectVersionMajor;
-                    simConnect.SimConnectVersionMinor = structData.ConnectionInfo.SimConnectVersionMinor;
-                    simConnect.SimConnectBuildMajor = structData.ConnectionInfo.SimConnectBuildMajor;
-                    simConnect.SimConnectBuildMinor = structData.ConnectionInfo.SimConnectBuildMinor;
-                    simConnect.InvokeConnectionStateChanged();
-                    break;
+                        log.Info("We are connected to '{0}'.", simConnect.SimName);
+                        simConnect.ApplicationVersionMajor = structData.ConnectionInfo.ApplicationVersionMajor;
+                        simConnect.ApplicationVersionMinor = structData.ConnectionInfo.ApplicationVersionMinor;
+                        simConnect.ApplicationBuildMajor = structData.ConnectionInfo.ApplicationBuildMajor;
+                        simConnect.ApplicationBuildMinor = structData.ConnectionInfo.ApplicationBuildMinor;
+                        simConnect.SimConnectVersionMajor = structData.ConnectionInfo.SimConnectVersionMajor;
+                        simConnect.SimConnectVersionMinor = structData.ConnectionInfo.SimConnectVersionMinor;
+                        simConnect.SimConnectBuildMajor = structData.ConnectionInfo.SimConnectBuildMajor;
+                        simConnect.SimConnectBuildMinor = structData.ConnectionInfo.SimConnectBuildMinor;
+                        simConnect.InvokeConnectionStateChanged();
+                        break;
 
-                case RecvId.SIMCONNECT_RECV_ID_QUIT:
-                    simConnect.Disconnect();
-                    break;
+                    case RecvId.SIMCONNECT_RECV_ID_QUIT:                    // 3
+                        log.Info("We are disconnected from '{0}'.", simConnect.SimName);
+                        simConnect.Disconnect();
+                        break;
 
-                case RecvId.SIMCONNECT_RECV_ID_SYSTEM_STATE:
-                    RequestManager.Instance.DispatchResult(structData.SystemState.RequestId, ref structData);
-                    break;
+                    case RecvId.SIMCONNECT_RECV_ID_EVENT:                   // 4
+                        log.Debug("Received event {0}.", structData.Event.Id);
+                        EventManager.Instance.DispatchResult(structData.Event.Id, ref structData);
+                        break;
 
-                default:
-                    break;
+                    case RecvId.SIMCONNECT_RECV_ID_EVENT_64:                // 67
+                        log.Debug("Received 64-bit event {0}.", structData.Event.Id);
+                        EventManager.Instance.DispatchResult(structData.Event.Id, ref structData);
+                        break;
+
+                    case RecvId.SIMCONNECT_RECV_ID_SYSTEM_STATE:            // 15
+                        log.Debug("Received systemState for request {0}.", structData.SystemState.RequestId);
+                        RequestManager.Instance.DispatchResult(structData.SystemState.RequestId, ref structData);
+                        break;
+
+                    default:
+                        break;
+                }
+            }
+            catch (Exception e)
+            {
+                log.Error("Exception caught while processing message: {0}", e.Message);
             }
         }
     }

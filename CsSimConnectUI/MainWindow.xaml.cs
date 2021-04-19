@@ -38,15 +38,26 @@ namespace CsSimConnectUI
     /// </summary>
     public partial class MainWindow : Window
     {
+
+        private static readonly Logger log = Logger.GetLogger(typeof(MainWindow));
+
         private readonly SimConnect simConnect = SimConnect.Instance;
         private readonly RequestManager requests = RequestManager.Instance;
+        private readonly CsSimConnect.EventManager events = CsSimConnect.EventManager.Instance;
 
         private int isConnected = 0; // Because we don't van `Interlocked.Exchange()` for `bool`s.
 
+        private void Run(Action action) {
+            this.Dispatcher.Invoke(action);
+        }
+
         public MainWindow()
         {
+            Logger.Configure();
             InitializeComponent();
-            simConnect.OnConnectionStateChange += (bool useAutoConnect, bool connected) =>
+
+            log.Info("Registering connectionstate listener");
+            simConnect.OnConnectionStateChange += (bool useAutoConnect, bool connected) => Run(() =>
             {
                 if (!connected && !useAutoConnect)
                 {
@@ -65,11 +76,10 @@ namespace CsSimConnectUI
                     if (Interlocked.Exchange(ref isConnected, 1) == 0)
                     {
                         // Haven't registered these yet
-                        requests.SubscribeToSystemStateBool(CsSimConnect.EventManager.ToString(SystemEvent.Pause),
-                            (bool running) => lPaused.Style = (Style)FindResource(running ? "StatusOff" : "StatusOn"),
-                            true);
-                        requests.SubscribeToSystemStateBool(CsSimConnect.EventManager.ToString(SystemEvent.Sim),
-                            (bool running) => lStopped.Style = (Style)FindResource(running ? "StatusOff" : "StatusOn"),
+                        events.SubscribeToSystemStateBool(CsSimConnect.EventManager.ToString(SystemEvent.Pause),
+                            (bool running) => Run(() => lPaused.Style = (Style)FindResource(running ? "StatusOn" : "StatusOff")));
+                        events.SubscribeToSystemStateBool(CsSimConnect.EventManager.ToString(SystemEvent.Sim),
+                            (bool running) => Run(() => lStopped.Style = (Style)FindResource(running ? "StatusOff" : "StatusOn")),
                             true);
                     }
                     if (simConnect.SimName.Length == 0)
@@ -88,7 +98,7 @@ namespace CsSimConnectUI
                     lPaused.Style = (Style)FindResource("StatusOff");
                     lStopped.Style = (Style)FindResource("StatusOff");
                 }
-            };
+            });
         }
 
         private void ToggleConnection(object sender, RoutedEventArgs e)

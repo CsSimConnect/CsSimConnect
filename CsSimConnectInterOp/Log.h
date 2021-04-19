@@ -89,6 +89,7 @@ namespace rakis {
 			stream(str, args...);
 		}
 
+		static Level rootLevel_;
 		static std::map<std::string, Level> levels_;
 		static std::map<std::string, size_t> logTargets_;
 		static size_t numTargets_;
@@ -151,13 +152,13 @@ namespace rakis {
 
 		template <class... Args>
 		void trace(const std::string& fmt, const Args&... args) {
-			if (isInfoEnabled()) {
+			if (isTraceEnabled()) {
 				log(LOGLVL_TRACE, fmt, args...);
 			}
 		}
 		template <class... Args>
 		void debug(const std::string& fmt, const Args&... args) {
-			if (isInfoEnabled()) {
+			if (isDebugEnabled()) {
 				log(LOGLVL_DEBUG, fmt, args...);
 			}
 		}
@@ -169,19 +170,19 @@ namespace rakis {
 		}
 		template <class... Args>
 		void warn(const std::string& fmt, const Args&... args) {
-			if (isInfoEnabled()) {
+			if (isWarnEnabled()) {
 				log(LOGLVL_WARN, fmt, args...);
 			}
 		}
 		template <class... Args>
 		void error(const std::string& fmt, const Args&... args) {
-			if (isInfoEnabled()) {
+			if (isErrorEnabled()) {
 				log(LOGLVL_ERROR, fmt, args...);
 			}
 		}
 		template <class... Args>
 		void fatal(const std::string& fmt, const Args&... args) {
-			if (isInfoEnabled()) {
+			if (isFatalEnabled()) {
 				log(LOGLVL_FATAL, fmt, args...);
 			}
 		}

@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 
-
 static nl::rakis::Logger logger{ nl::rakis::Logger::getLogger("CsSimConnectInterOp") };
 
 static bool logInitialized{ false };
@@ -40,7 +39,7 @@ CS_SIMCONNECT_DLL_EXPORT CsConnect(const char* appName, HANDLE& handle) {
 		logger.info("Connected to SimConnect.");
 		handle = h;
 	}
-	else {
+	else if (hr != E_FAIL) {
 		logger.error("Failed to connect to SimConnect");
 	}
 	return SUCCEEDED(hr);
@@ -53,23 +52,50 @@ CS_SIMCONNECT_DLL_EXPORT CsDisconnect(HANDLE handle) {
 	if (SUCCEEDED(hr)) {
 		logger.info("Disconnected from SimConnect.");
 	}
-	else {
+	else if (hr != E_FAIL) {
 		logger.error("Failed to disconnect from SimConnect");
 	}
 	return SUCCEEDED(hr);
 }
 
+void* messageHandler;
+
+void CsDispatch(SIMCONNECT_RECV* pData, DWORD cbData, void* pContext)
+{
+	logger.trace("Received message {}", long(pData->dwID));
+	((DispatchProc)messageHandler)(pData, cbData, pContext);
+}
+
 CS_SIMCONNECT_DLL_EXPORT CsCallDispatch(HANDLE handle, DispatchProc callback) {
 	initLog();
+	messageHandler = callback;
 	logger.debug("Calling CallDispatch()");
 
-	HRESULT hr = SimConnect_CallDispatch(handle, callback, nullptr);
+	HRESULT hr = SimConnect_CallDispatch(handle, CsDispatch, nullptr);
 
 	if (SUCCEEDED(hr)) {
 		logger.trace("Dispatch succeeded.");
 	}
-	else {
+	else if (hr != E_FAIL) {
 		logger.error("Dispatch failed (HRESULT = {}).", hr);
+	}
+	return SUCCEEDED(hr);
+}
+
+CS_SIMCONNECT_DLL_EXPORT CsGetNextDispatch(HANDLE handle, DispatchProc callback) {
+	initLog();
+	logger.trace("Calling GetNextDispatch()");
+
+	SIMCONNECT_RECV* msgPtr;
+	DWORD msgLen;
+	HRESULT hr = SimConnect_GetNextDispatch(handle, &msgPtr, &msgLen);
+
+	if (SUCCEEDED(hr)) {
+		logger.trace("Dispatching message {}", long(msgPtr->dwID));
+		callback(msgPtr, msgLen, nullptr);
+	}
+	else if (hr != E_FAIL) {
+		logger.error("Could not get a new message (HRESULT = {}).", hr);
 	}
 	return SUCCEEDED(hr);
 }
@@ -87,7 +113,7 @@ CS_SIMCONNECT_DLL_EXPORT CsSubscribeToSystemEvent(HANDLE handle, int requestId, 
 	if (SUCCEEDED(hr)) {
 		logger.trace("Subscribed to system event '{}'", eventName);
 	}
-	else {
+	else if (hr != E_FAIL) {
 		logger.error("Failed to subscribe to system event '{}'. (HRESULT = {})", eventName, hr);
 	}
 	return SUCCEEDED(hr);
@@ -106,7 +132,7 @@ CS_SIMCONNECT_DLL_EXPORT CsRequestSystemState(HANDLE handle, int requestId, cons
 	if (SUCCEEDED(hr)) {
 		logger.trace("Requested system state '{}'", eventName);
 	}
-	else {
+	else if (hr != E_FAIL) {
 		logger.error("Failed to requedst system state '{}'. (HRESULT = {})", eventName, hr);
 	}
 	return SUCCEEDED(hr);

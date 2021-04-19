@@ -31,28 +31,29 @@ using namespace nl::rakis;
 
 using namespace std;
 
-static const string CFG_SEPARATOR(".");
-static const string CFG_ROOTLOGGER("rootLogger");
-static const string CFG_FILENAME("filename");
-static const string CFG_LOGGER("logger");
+static const string CFG_SEPARATOR{"."};
+static const string CFG_ROOTLOGGER{"rootLogger"};
+static const string CFG_FILENAME{"filename"};
+static const string CFG_LOGGER{"logger"};
 
-static const string CFG_STDOUT("STDOUT");
-static const string CFG_STDERR("STDERR");
+static const string CFG_STDOUT{"STDOUT"};
+static const string CFG_STDERR{"STDERR"};
 
-static const string CFG_LEVEL_TRACE("TRACE");
-static const string CFG_LEVEL_DEBUG("DEBUG");
-static const string CFG_LEVEL_INFO("INFO");
-static const string CFG_LEVEL_WARN("WARN");
-static const string CFG_LEVEL_ERROR("ERROR");
-static const string CFG_LEVEL_FATAL("FATAL");
-static const string CFG_LEVEL_INIT("INIT");
+static const string CFG_LEVEL_TRACE{"TRACE"};
+static const string CFG_LEVEL_DEBUG{"DEBUG"};
+static const string CFG_LEVEL_INFO{"INFO"};
+static const string CFG_LEVEL_WARN{"WARN"};
+static const string CFG_LEVEL_ERROR{"ERROR"};
+static const string CFG_LEVEL_FATAL{"FATAL"};
+static const string CFG_LEVEL_INIT{"INIT"};
 
+/*static*/ Logger::Level Logger::rootLevel_{ LOGLVL_INFO };
 /*static*/ map<string, Logger::Level> Logger::levels_;
 /*static*/ map<string, size_t> Logger::logTargets_;
-/*static*/ size_t Logger::numTargets_(0);
+/*static*/ size_t Logger::numTargets_{0};
 /*static*/ Logger::TargetArray Logger::targets_;
 /*static*/ ofstream Logger::rootLog_;
-/*static*/ bool Logger::configDone_(false);
+/*static*/ bool Logger::configDone_{false};
 
 
 static string strip(string::const_iterator p, string::const_iterator q) {
@@ -131,7 +132,7 @@ Logger::Level nl::rakis::Logger::getLevel()
 /*static*/ Logger::Level Logger::getLevel(const string& name)
 {
 	if (!configDone_) { // Invalid rootLog_ => non-initialized
-		return LOGLVL_INIT;
+		return LOGLVL_INFO;
 	}
 
 	auto lvlIt = levels_.find(name);
@@ -147,7 +148,7 @@ Logger::Level nl::rakis::Logger::getLevel()
 		}
 
 		if ((pos == string::npos) || (pos == 0)) {
-			return LOGLVL_INFO;
+			return rootLevel_;
 		}
 
 		string next(name.begin(), name.begin() + pos);
@@ -241,9 +242,36 @@ static const string LOGLVL_NAME[] = {
 				split(parts, name, CFG_SEPARATOR);
 
 				if (parts[0] == CFG_ROOTLOGGER) {
-					rootLog_.open(value, ios_base::out|ios_base::app);
 					if (parts.size() > 1) {
 						rootLog_ << "configure(): ignoring name after \"rootLogger\"" << endl;
+					}
+					split(parts, value, ",", true);
+					if (parts.size() == 1) {
+						rootLog_.open(parts[0], ios_base::out | ios_base::app);
+					}
+					else if (parts.size() >= 2) {\
+						rootLog_.open(parts[1], ios_base::out | ios_base::app);
+					if (parts[0] == CFG_LEVEL_TRACE) {
+						rootLevel_ = LOGLVL_TRACE;
+					}
+					else if (parts[0] == CFG_LEVEL_DEBUG) {
+						rootLevel_ = LOGLVL_DEBUG;
+					}
+					else if (parts[0] == CFG_LEVEL_INFO) {
+						rootLevel_ = LOGLVL_INFO;
+					}
+					else if (parts[0] == CFG_LEVEL_WARN) {
+						rootLevel_ = LOGLVL_WARN;
+					}
+					else if (parts[0] == CFG_LEVEL_ERROR) {
+						rootLevel_ = LOGLVL_ERROR;
+					}
+					else if (parts[0] == CFG_LEVEL_FATAL) {
+						rootLevel_ = LOGLVL_FATAL;
+					}
+					else {
+						rootLog_ << "configure(): ignoring root level \"" << value << "\"" << endl;
+					}
 					}
 				}
 				else if (parts[0] == CFG_LOGGER) {
@@ -306,8 +334,8 @@ void Logger::startLine(ostream& s, Level level)
 	tm ti;
 
 	localtime_s(&ti, &tt);
-	
-	num(s, ti.tm_year + 1900); s << '/'; num(s, ti.tm_mon + 1); s << '/'; num(s, ti.tm_mday); s << "T";
+
+	num(s, ti.tm_year + 1900); s << '-'; num(s, ti.tm_mon + 1); s << '-'; num(s, ti.tm_mday); s << " ";
 	num(s, ti.tm_hour); s << ':'; num(s, ti.tm_min); s << ':'; num(s, ti.tm_sec);
-	s << " [" << LOGLVL_NAME [level] << "] " << name_ << " ";
+	s << (LOGLVL_NAME [level].length() == 4 ? "  [" : " [") << LOGLVL_NAME [level] << "] " << name_ << " ";
 }

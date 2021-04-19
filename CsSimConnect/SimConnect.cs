@@ -63,9 +63,8 @@ namespace CsSimConnect
             EventManager.Instance.Init();
 
             CsConnect("test", ref handle);
-            InvokeConnectionStateChanged();
-
             MessageDispatcher.Instance.Init();
+            InvokeConnectionStateChanged();
         }
 
         public void Disconnect()

@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+using CsSimConnect;
 using System;
 using System.Collections.Generic;
 using System.Configuration;

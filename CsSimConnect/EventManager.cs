@@ -18,6 +18,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Threading;
 
 namespace CsSimConnect
@@ -96,6 +97,10 @@ namespace CsSimConnect
 
     public sealed class EventManager
     {
+        [DllImport("CsSimConnectInterOp.dll")]
+        private static extern bool CsSubscribeToSystemEvent(IntPtr handle, UInt32 requestId, [MarshalAs(UnmanagedType.LPStr)] string eventName);
+
+        private static readonly Logger log = Logger.GetLogger(typeof(EventManager));
 
         private static readonly Lazy<EventManager> lazyInstance = new(() => new EventManager(SimConnect.Instance));
 
@@ -135,12 +140,86 @@ namespace CsSimConnect
             return Interlocked.Increment(ref lastEvent);
         }
 
+        internal delegate void EventHandler(ref ReceiveStruct msg);
+        private class EventHandlerRegistration
+        {
+            public readonly EventHandler Handler;
+            public readonly bool UseOnceOnly;
+
+            public EventHandlerRegistration(EventHandler handler, bool useOnceOnly = true)
+            {
+                Handler = handler;
+                UseOnceOnly = useOnceOnly;
+            }
+        }
+        private readonly ConcurrentDictionary<UInt32, EventHandlerRegistration> resultHandlers = new();
+
+        public void DispatchResult(UInt32 eventId, ref ReceiveStruct msg)
+        {
+            EventHandlerRegistration handler;
+            if (resultHandlers.TryGetValue(eventId, out handler))
+            {
+                handler.Handler.Invoke(ref msg);
+                if (handler.UseOnceOnly)
+                {
+                    resultHandlers.TryRemove(eventId, out _);
+                }
+            }
+            else
+            {
+                log.Error("Received a message for an unknown event {0}.", eventId);
+            }
+        }
+
         private void OnConnectionStateChange(bool useAutoConnect, bool isConnected)
         {
             if (isConnected)
             {
                 // TODO
 
+            }
+        }
+
+        public void SubscribeToSystemStateBool(string systemState, Action<bool> callback, bool requestOnce = false)
+        {
+            UInt32 eventId = NextEvent();
+            EventHandlerRegistration registration = new((ref ReceiveStruct msg) => callback(msg.Event.Data != 0), false);
+            resultHandlers.AddOrUpdate(eventId, registration, (_, _) => registration);
+            if (!CsSubscribeToSystemEvent(simConnect.handle, eventId, systemState))
+            {
+                log.Error("SimConnect_SubscribeToSystemEvent() failed");
+                resultHandlers.TryRemove(eventId, out _);
+            }
+            else if (requestOnce)
+            {
+                RequestManager.Instance.RequestSystemStateBool(systemState, callback);
+            }
+        }
+
+        public void SubscribeToSystemStateString(string systemState, Action<string> callback, bool requestOnce = false)
+        {
+            UInt32 eventId = NextEvent();
+            EventHandlerRegistration registration = new((ref ReceiveStruct msg) =>
+            {
+                string value;
+                unsafe
+                {
+                    fixed (ReceiveSystemState* r = &msg.SystemState)
+                    {
+                        value = Encoding.Latin1.GetString(r->stringValue, 260).Trim();
+                    }
+                }
+                callback(value);
+            }, false);
+            resultHandlers.AddOrUpdate(eventId, registration, (_, _) => registration);
+            if (!CsSubscribeToSystemEvent(simConnect.handle, eventId, systemState))
+            {
+                log.Error("SimConnect_SubscribeToSystemEvent() failed");
+                resultHandlers.TryRemove(eventId, out _);
+            }
+            else if (requestOnce)
+            {
+                RequestManager.Instance.RequestSystemStateString(systemState, callback);
             }
         }
     }

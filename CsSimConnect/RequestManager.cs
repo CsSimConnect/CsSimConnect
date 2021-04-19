@@ -29,8 +29,6 @@ namespace CsSimConnect
     {
         [DllImport("CsSimConnectInterOp.dll")]
         private static extern bool CsRequestSystemState(IntPtr handle, UInt32 requestId, [MarshalAs(UnmanagedType.LPStr)] string state);
-        [DllImport("CsSimConnectInterOp.dll")]
-        private static extern bool CsSubscribeToSystemEvent(IntPtr handle, UInt32 requestId, [MarshalAs(UnmanagedType.LPStr)] string eventName);
 
         private static readonly Lazy<RequestManager> lazyInstance = new(() => new RequestManager(SimConnect.Instance));
 
@@ -108,22 +106,6 @@ namespace CsSimConnect
             RequestSystemStateBool("Sim", callback);
         }
 
-        public void SubscribeToSystemStateBool(string systemState, Action<bool> processResult, bool requestOnce =false)
-        {
-            UInt32 requestId = NextRequest();
-            RequestResultHandlerRegistration registration = new((ref ReceiveStruct msg) => processResult(msg.SystemState.IntValue != 0), false);
-            resultHandlers.AddOrUpdate(requestId, registration, (_, _) => registration);
-            if (!CsSubscribeToSystemEvent(simConnect.handle, requestId, systemState))
-            {
-                //Complain
-                resultHandlers.TryRemove(requestId, out _);
-            }
-            else if (requestOnce)
-            {
-                CsRequestSystemState(simConnect.handle, requestId, systemState);
-            }
-        }
-
         public void RequestSystemStateString(string systemState, Action<string> callback)
         {
             UInt32 requestId = NextRequest();
@@ -160,31 +142,5 @@ namespace CsSimConnect
             RequestSystemStateString("FlightPlan", callback); // Inconsistent, SimConnect uses "FlightPlanLoaded" for the event.
         }
 
-        public void SubscribeToSystemStateString(string systemState, Action<string> callback, bool requestOnce =false)
-        {
-            UInt32 requestId = NextRequest();
-            RequestResultHandlerRegistration registration = new((ref ReceiveStruct msg) =>
-            {
-                string value;
-                unsafe
-                {
-                    fixed (ReceiveSystemState* r = &msg.SystemState)
-                    {
-                        value = Encoding.Latin1.GetString(r->stringValue, 260).Trim();
-                    }
-                }
-                callback(value);
-            }, false);
-            resultHandlers.AddOrUpdate(requestId, registration, (_, _) => registration);
-            if (!CsSubscribeToSystemEvent(simConnect.handle, requestId, systemState))
-            {
-                //Complain
-                resultHandlers.TryRemove(requestId, out _);
-            }
-            else if (requestOnce)
-            {
-                CsRequestSystemState(simConnect.handle, requestId, systemState);
-            }
-        }
     }
 }
