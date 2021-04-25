@@ -119,6 +119,10 @@ namespace CsSimConnect
                     }
                 }
             }
+            using FileStream fs = new(logPath, FileMode.Append, FileAccess.Write, FileShare.ReadWrite);
+            using StreamWriter fw = new(fs);
+            fw.WriteLine(String.Format("Logger initialized with root level '{0}'", rootLevel.ToString()));
+
             configDone = true;
         }
 

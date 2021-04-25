@@ -100,40 +100,56 @@ CS_SIMCONNECT_DLL_EXPORT CsGetNextDispatch(HANDLE handle, DispatchProc callback)
 	return SUCCEEDED(hr);
 }
 
-CS_SIMCONNECT_DLL_EXPORT CsSubscribeToSystemEvent(HANDLE handle, int requestId, const char* eventName) {
+/*
+ * System state handling.
+ */
+
+CS_SIMCONNECT_DLL_EXPORT CsSubscribeToSystemEvent(HANDLE handle, int eventId, const char* eventName) {
 	initLog();
-	logger.debug("CsSubscribeToSystemEvent(..., {}, '{}'", requestId, eventName);
+	logger.trace("CsSubscribeToSystemEvent(..., {}, '{}'", eventId, eventName);
 	if (handle == nullptr) {
 		logger.error("Handle passed to CsSubscribeToSystemEvent is null!");
-		return false;
+		return FALSE;
 	}
 
-	HRESULT hr = SimConnect_SubscribeToSystemEvent(handle, requestId, eventName);
+	HRESULT hr = SimConnect_SubscribeToSystemEvent(handle, eventId, eventName);
+	DWORD sendId{ 0 };
 
 	if (SUCCEEDED(hr)) {
-		logger.trace("Subscribed to system event '{}'", eventName);
+		if (FAILED(SimConnect_GetLastSentPacketID(handle, &sendId))) {
+			logger.error("Failed to retrieve SendID for SimConnect_SubscribeToSystemEvent(..., {}, '{}') call.", eventId, eventName);
+		}
+		else {
+			logger.debug("Subscribed to system event '{}', EventID={}, SendID={}.", eventName, eventId, sendId);
+		}
 	}
 	else if (hr != E_FAIL) {
 		logger.error("Failed to subscribe to system event '{}'. (HRESULT = {})", eventName, hr);
 	}
-	return SUCCEEDED(hr);
+	return SUCCEEDED(hr) ? sendId : hr;
 }
 
 CS_SIMCONNECT_DLL_EXPORT CsRequestSystemState(HANDLE handle, int requestId, const char* eventName) {
 	initLog();
-	logger.debug("CsRequestSystemState(..., {}, '{}'", requestId, eventName);
+	logger.trace("CsRequestSystemState(..., {}, '{}'", requestId, eventName);
 	if (handle == nullptr) {
 		logger.error("Handle passed to CsRequestSystemState is null!");
-		return false;
+		return FALSE;
 	}
 
 	HRESULT hr = SimConnect_RequestSystemState(handle, requestId, eventName);
+	DWORD sendId{ 0 };
 
 	if (SUCCEEDED(hr)) {
-		logger.trace("Requested system state '{}'", eventName);
+		if (FAILED(SimConnect_GetLastSentPacketID(handle, &sendId))) {
+			logger.error("Failed to retrieve SendID for SimConnect_SubscribeToSystemEvent(..., {}, '{}') call.", requestId, eventName);
+		}
+		else {
+			logger.debug("Requested system state '{}', RequestID={}, SendID={}.", eventName, requestId, sendId);
+		}
 	}
 	else if (hr != E_FAIL) {
 		logger.error("Failed to requedst system state '{}'. (HRESULT = {})", eventName, hr);
 	}
-	return SUCCEEDED(hr);
+	return SUCCEEDED(hr) ? sendId : hr;
 }

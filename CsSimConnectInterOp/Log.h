@@ -29,24 +29,42 @@ namespace nl {
 namespace rakis {
 
 	struct any {
-		enum class Type { Int, Long, Float, String };
-		any(const int   e) { m_data.INT = e; m_type = Type::Int; }
-		any(const long   e) { m_data.LONG = e; m_type = Type::Long; }
-		any(const float e) { m_data.FLOAT = e; m_type = Type::Float; }
-		any(const char* e) { m_data.STRING = e; m_type = Type::String; }
-		any(std::string const& s) { m_data.STRING = s.c_str(); m_type = Type::String; }
-		Type get_type() const { return m_type; }
-		int get_int() const { return m_data.INT; }
-		unsigned long get_long() const { return m_data.LONG; }
-		float get_float() const { return m_data.FLOAT; }
-		const char* get_string() const { return m_data.STRING; }
+		enum class Type { Char, Int, UInt, Long, ULong, LLong, ULLong, Float, Double, String };
+		any(char e) { m_data.char_ = e; m_type = Type::Char; }
+		any(const int   e) { m_data.int_ = e; m_type = Type::Int; }
+		any(const unsigned int   e) { m_data.uint_ = e; m_type = Type::UInt; }
+		any(const long   e) { m_data.long_ = e; m_type = Type::Long; }
+		any(const unsigned long   e) { m_data.ulong_ = e; m_type = Type::ULong; }
+		any(const long long   e) { m_data.llong_ = e; m_type = Type::LLong; }
+		any(const unsigned long long   e) { m_data.ullong_ = e; m_type = Type::ULLong; }
+		any(const float e) { m_data.float_ = e; m_type = Type::Float; }
+		any(const double e) { m_data.double_ = e; m_type = Type::Double; }
+		any(const char* e) { m_data.str_ = e; m_type = Type::String; }
+		any(std::string const& s) { m_data.str_ = s.c_str(); m_type = Type::String; }
+		Type type() const { return m_type; }
+		int asChar() const { return m_data.char_; }
+		int asInt() const { return m_data.int_; }
+		int asUInt() const { return m_data.uint_; }
+		long asLong() const { return m_data.long_; }
+		unsigned long asULong() const { return m_data.ulong_; }
+		long long asLLong() const { return m_data.llong_; }
+		unsigned long long asULLong() const { return m_data.ullong_; }
+		float asFloat() const { return m_data.float_; }
+		double asDouble() const { return m_data.double_; }
+		const char* asString() const { return m_data.str_; }
 	private:
 		Type m_type;
 		union {
-			int   INT;
-			long LONG;
-			float FLOAT;
-			const char* STRING;
+			char char_;
+			int   int_;
+			unsigned int uint_;
+			long long_;
+			unsigned long ulong_;
+			long long llong_;
+			unsigned long long ullong_;
+			float float_;
+			double double_;
+			const char* str_;
 		} m_data;
 	};
 
@@ -74,7 +92,7 @@ namespace rakis {
 		Logger(const std::string& name);
 
 		void startLine(std::ostream& s, Level level);
-		void stream(std::ostream& str) { str << std::endl; }
+		void stream(std::ostream& str) { str << std::endl << std::flush; }
 
 		template <class T, class... Types>
 		void stream(std::ostream& str, const T& arg, const Types&... args) {
@@ -116,11 +134,17 @@ namespace rakis {
 				else if ((fmt[i] == '{') && ((i + 1) < fmt.size()) && (fmt[i + 1] == '}')) {
 					i++;
 					if (arg < argVec.size()) {
-						switch (argVec[arg].get_type()) {
-						case any::Type::Int: s << argVec[arg].get_int(); break;
-						case any::Type::Long: s << argVec[arg].get_long(); break;
-						case any::Type::Float: s << argVec[arg].get_float(); break;
-						case any::Type::String: s << argVec[arg].get_string(); break;
+						switch (argVec[arg].type()) {
+						case any::Type::Char: s << argVec[arg].asChar(); break;
+						case any::Type::Int: s << argVec[arg].asInt(); break;
+						case any::Type::UInt: s << argVec[arg].asUInt(); break;
+						case any::Type::Long: s << argVec[arg].asLong(); break;
+						case any::Type::ULong: s << argVec[arg].asULong(); break;
+						case any::Type::LLong: s << argVec[arg].asLLong(); break;
+						case any::Type::ULLong: s << argVec[arg].asULLong(); break;
+						case any::Type::Float: s << argVec[arg].asFloat(); break;
+						case any::Type::Double: s << argVec[arg].asDouble(); break;
+						case any::Type::String: s << argVec[arg].asString(); break;
 						}
 						arg++;
 					}
@@ -129,8 +153,7 @@ namespace rakis {
 					s.put(fmt[i]);
 				}
 			}
-			s << std::endl;
-			s.flush();
+			s << std::endl << std::flush;
 		}
 
 	public:

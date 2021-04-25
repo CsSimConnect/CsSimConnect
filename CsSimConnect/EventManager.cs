@@ -116,7 +116,7 @@ namespace CsSimConnect
         }
 
 
-        private SimConnect simConnect;
+        private readonly SimConnect simConnect;
         private EventManager(SimConnect simConnect)
         {
             this.simConnect = simConnect;
@@ -127,7 +127,6 @@ namespace CsSimConnect
         {
             if (!initDone)
             {
-                simConnect.OnConnectionStateChange += OnConnectionStateChange;
                 initDone = true;
             }
         }
@@ -140,8 +139,8 @@ namespace CsSimConnect
             return Interlocked.Increment(ref lastEvent);
         }
 
-        internal delegate void EventHandler(ref ReceiveStruct msg);
-        private class EventHandlerRegistration
+        public delegate void EventHandler(ref ReceiveStruct msg);
+        public class EventHandlerRegistration
         {
             public readonly EventHandler Handler;
             public readonly bool UseOnceOnly;
@@ -171,35 +170,29 @@ namespace CsSimConnect
             }
         }
 
-        private void OnConnectionStateChange(bool useAutoConnect, bool isConnected)
-        {
-            if (isConnected)
-            {
-                // TODO
-
-            }
-        }
-
-        public void SubscribeToSystemStateBool(string systemState, Action<bool> callback, bool requestOnce = false)
+        public void SubscribeToSystemState(string systemState, EventHandlerRegistration registration)
         {
             UInt32 eventId = NextEvent();
-            EventHandlerRegistration registration = new((ref ReceiveStruct msg) => callback(msg.Event.Data != 0), false);
+            log.Debug("Event ID {0}: Subscribing to '{1}'", eventId, systemState);
             resultHandlers.AddOrUpdate(eventId, registration, (_, _) => registration);
             if (!CsSubscribeToSystemEvent(simConnect.handle, eventId, systemState))
             {
                 log.Error("SimConnect_SubscribeToSystemEvent() failed");
                 resultHandlers.TryRemove(eventId, out _);
             }
-            else if (requestOnce)
+        }
+
+        public void SubscribeToSystemStateBool(string systemState, Action<bool> callback, bool requestOnce = false)
+        {
+            SubscribeToSystemState(systemState, new((ref ReceiveStruct msg) => callback(msg.Event.Data != 0)));
+            if (requestOnce)
             {
                 RequestManager.Instance.RequestSystemStateBool(systemState, callback);
             }
         }
-
         public void SubscribeToSystemStateString(string systemState, Action<string> callback, bool requestOnce = false)
         {
-            UInt32 eventId = NextEvent();
-            EventHandlerRegistration registration = new((ref ReceiveStruct msg) =>
+            SubscribeToSystemState(systemState, new((ref ReceiveStruct msg) =>
             {
                 string value;
                 unsafe
@@ -210,14 +203,8 @@ namespace CsSimConnect
                     }
                 }
                 callback(value);
-            }, false);
-            resultHandlers.AddOrUpdate(eventId, registration, (_, _) => registration);
-            if (!CsSubscribeToSystemEvent(simConnect.handle, eventId, systemState))
-            {
-                log.Error("SimConnect_SubscribeToSystemEvent() failed");
-                resultHandlers.TryRemove(eventId, out _);
-            }
-            else if (requestOnce)
+            }, false));
+            if (requestOnce)
             {
                 RequestManager.Instance.RequestSystemStateString(systemState, callback);
             }

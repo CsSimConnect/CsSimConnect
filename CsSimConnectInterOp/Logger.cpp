@@ -243,7 +243,7 @@ static const string LOGLVL_NAME[] = {
 
 				if (parts[0] == CFG_ROOTLOGGER) {
 					if (parts.size() > 1) {
-						rootLog_ << "configure(): ignoring name after \"rootLogger\"" << endl;
+						rootLog_ << "Ignoring name after \"rootLogger\"" << endl;
 					}
 					split(parts, value, ",", true);
 					if (parts.size() == 1) {
@@ -270,7 +270,7 @@ static const string LOGLVL_NAME[] = {
 						rootLevel_ = LOGLVL_FATAL;
 					}
 					else {
-						rootLog_ << "configure(): ignoring root level \"" << value << "\"" << endl;
+						rootLog_ << "Ignoring root level \"" << value << "\"" << endl;
 					}
 					}
 				}
@@ -298,12 +298,12 @@ static const string LOGLVL_NAME[] = {
 							levels_[tag] = LOGLVL_FATAL;
 						}
 						else {
-							rootLog_ << "configure(): ignoring level \"" << value << "\" for \"" << tag << "\"" << endl;
+							rootLog_ << "Ignoring log level \"" << value << "\" for \"" << tag << "\"" << endl;
 						}
 					}
 					if (parts.size() > 1) {
 						if (numTargets_ == targets_.size()) {
-							rootLog_ << "configure(): ignoring target \"" << parts [1] << "\" for \"" << tag << "\". Limit of " << numTargets_ << "reached." << endl;
+							rootLog_ << "Ignoring logging target \"" << parts [1] << "\" for \"" << tag << "\". Limit of " << numTargets_ << "reached." << endl;
 						}
 						else {
 							size_t index = numTargets_++;
@@ -315,6 +315,7 @@ static const string LOGLVL_NAME[] = {
 			}
 		}
 		configDone_ = true;
+		rootLog_ << "Logging initialized. Root log threshold '" << rootLevel_ << "'" << endl << flush;
 	}
 }
 
