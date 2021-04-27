@@ -9,81 +9,81 @@ namespace CsSimConnect
 {
     public enum RecvId
     {
-        SIMCONNECT_RECV_ID_NULL,
-        SIMCONNECT_RECV_ID_EXCEPTION,
-        SIMCONNECT_RECV_ID_OPEN,
-        SIMCONNECT_RECV_ID_QUIT,
-        SIMCONNECT_RECV_ID_EVENT,
-        SIMCONNECT_RECV_ID_EVENT_OBJECT_ADDREMOVE,
-        SIMCONNECT_RECV_ID_EVENT_FILENAME,
-        SIMCONNECT_RECV_ID_EVENT_FRAME,
-        SIMCONNECT_RECV_ID_SIMOBJECT_DATA,
-        SIMCONNECT_RECV_ID_SIMOBJECT_DATA_BYTYPE,
-        SIMCONNECT_RECV_ID_WEATHER_OBSERVATION,
-        SIMCONNECT_RECV_ID_CLOUD_STATE,
-        SIMCONNECT_RECV_ID_ASSIGNED_OBJECT_ID,
-        SIMCONNECT_RECV_ID_RESERVED_KEY,
-        SIMCONNECT_RECV_ID_CUSTOM_ACTION,
-        SIMCONNECT_RECV_ID_SYSTEM_STATE,
-        SIMCONNECT_RECV_ID_CLIENT_DATA,
-        SIMCONNECT_RECV_ID_EVENT_WEATHER_MODE,
-        SIMCONNECT_RECV_ID_AIRPORT_LIST,
-        SIMCONNECT_RECV_ID_VOR_LIST,
-        SIMCONNECT_RECV_ID_NDB_LIST,
-        SIMCONNECT_RECV_ID_WAYPOINT_LIST,
-        SIMCONNECT_RECV_ID_EVENT_MULTIPLAYER_SERVER_STARTED,
-        SIMCONNECT_RECV_ID_EVENT_MULTIPLAYER_CLIENT_STARTED,
-        SIMCONNECT_RECV_ID_EVENT_MULTIPLAYER_SESSION_ENDED,
-        SIMCONNECT_RECV_ID_EVENT_RACE_END,
-        SIMCONNECT_RECV_ID_EVENT_RACE_LAP,
-        SIMCONNECT_RECV_ID_OBSERVER_DATA,
+        Null,
+        Exception,
+        Open,
+        Quit,
+        Event,
+        ObjectAddRemove,
+        EventFilename,
+        EventFrame,
+        SimObjectData,
+        SimObjectDataByType,
+        WeatherObservation,
+        CloudState,
+        AssignedObjectId,
+        ReservedKey,
+        CustomAction,
+        SystemState,
+        ClientData,
+        EventWeatherMode,
+        AirportList,
+        VorList,
+        NdbList,
+        WaypointList,
+        EventMultiplayerServerStarted,
+        EventMultiplayerClientStarted,
+        EventMultiplayerSessionEnded,
+        EventRaceEnd,
+        EventRaceLap,
+        ObserverData,
 
-        SIMCONNECT_RECV_ID_GROUND_INFO,
-        SIMCONNECT_RECV_ID_SYNCHRONOUS_BLOCK,
-        SIMCONNECT_RECV_ID_EXTERNAL_SIM_CREATE,
-        SIMCONNECT_RECV_ID_EXTERNAL_SIM_DESTROY,
-        SIMCONNECT_RECV_ID_EXTERNAL_SIM_SIMULATE,
-        SIMCONNECT_RECV_ID_EXTERNAL_SIM_LOCATION_CHANGED,
-        SIMCONNECT_RECV_ID_EXTERNAL_SIM_EVENT,
-        SIMCONNECT_RECV_ID_EVENT_WEAPON,
-        SIMCONNECT_RECV_ID_EVENT_COUNTERMEASURE,
-        SIMCONNECT_RECV_ID_EVENT_OBJECT_DAMAGED_BY_WEAPON,
-        SIMCONNECT_RECV_ID_VERSION,
-        SIMCONNECT_RECV_ID_SCENERY_COMPLEXITY,
-        SIMCONNECT_RECV_ID_SHADOW_FLAGS,
-        SIMCONNECT_RECV_ID_TACAN_LIST,
-        SIMCONNECT_RECV_ID_CAMERA_6DOF,
-        SIMCONNECT_RECV_ID_CAMERA_FOV,
-        SIMCONNECT_RECV_ID_CAMERA_SENSOR_MODE,
-        SIMCONNECT_RECV_ID_CAMERA_WINDOW_POSITION,
-        SIMCONNECT_RECV_ID_CAMERA_WINDOW_SIZE,
-        SIMCONNECT_RECV_ID_MISSION_OBJECT_COUNT,
-        SIMCONNECT_RECV_ID_GOAL,
-        SIMCONNECT_RECV_ID_MISSION_OBJECTIVE,
-        SIMCONNECT_RECV_ID_FLIGHT_SEGMENT,
-        SIMCONNECT_RECV_ID_PARAMETER_RANGE,
-        SIMCONNECT_RECV_ID_FLIGHT_SEGMENT_READY_FOR_GRADING,
-        SIMCONNECT_RECV_ID_GOAL_PAIR,
-        SIMCONNECT_RECV_ID_EVENT_FLIGHT_ANALYSIS_DIAGRAMS,
-        SIMCONNECT_RECV_ID_LANDING_TRIGGER_INFO,
-        SIMCONNECT_RECV_ID_LANDING_INFO,
-        SIMCONNECT_RECV_ID_SESSION_DURATION,
-        SIMCONNECT_RECV_ID_ATTACHPOINT_DATA,
-        SIMCONNECT_RECV_ID_PLAYBACK_STATE_CHANGED,
-        SIMCONNECT_RECV_ID_RECORDER_STATE_CHANGED,
-        SIMCONNECT_RECV_ID_RECORDING_INFO,
-        SIMCONNECT_RECV_ID_RECORDING_BOOKMARK_INFO,
-        SIMCONNECT_RECV_ID_TRAFFIC_SETTINGS,
-        SIMCONNECT_RECV_ID_JOYSTICK_DEVICE_INFO,
-        SIMCONNECT_RECV_ID_MOBILE_SCENERY_IN_RADIUS,
-        SIMCONNECT_RECV_ID_MOBILE_SCENERY_DATA,
-        SIMCONNECT_RECV_ID_EVENT_64,
-        SIMCONNECT_RECV_ID_EVENT_TEXT,
-        SIMCONNECT_RECV_ID_EVENT_TEXT_DESTROYED,
-        SIMCONNECT_RECV_ID_RECORDING_INFO_W,
-        SIMCONNECT_RECV_ID_RECORDING_BOOKMARK_INFO_W,
-        SIMCONNECT_RECV_ID_SYSTEM_STATE_W,
-        SIMCONNECT_RECV_ID_EVENT_FILENAME_W,
+        GroundInfo,
+        SynchronousBlock,
+        ExternalSimCreate,
+        ExternalSimDestroy,
+        ExternalSimSimulate,
+        ExternalSimLocationChanged,
+        ExternalSimEvent,
+        EventWeapon,
+        EventCounterMeasure,
+        EventObjectDamagedByWeapon,
+        Version,
+        SceneryComplexity,
+        ShadowFlags,
+        TacanList,
+        Camera6DOF,
+        CameraFOV,
+        CameraSensorMode,
+        CameraWindowPosition,
+        CameraWindowSize,
+        MissionObjectCount,
+        Goal,
+        MissionObjective,
+        FlightSegment,
+        ParameterRange,
+        FlightSegmentReadyForGrading,
+        GoalPair,
+        EventFlightAnalysisDiagrams,
+        LandingTriggerInfo,
+        LandingInfo,
+        SessionDuration,
+        AttachPointData,
+        PlaybackStateChanged,
+        RecorderStateChanged,
+        RecordingInfo,
+        RecordingBookmarkInfo,
+        TrafficSettings,
+        JoystickDeviceInfo,
+        MobileSceneryInRadius,
+        MobileSceneryData,
+        Event64,
+        EventText,
+        EventTextDestroyed,
+        RecordingInfoW,
+        RecordingBookmarkInfoW,
+        SystemStateW,
+        EventFilenameW,
     };
 
     [StructLayout(LayoutKind.Explicit)]
@@ -150,9 +150,9 @@ namespace CsSimConnect
         [FieldOffset(4)]
         public readonly Int32 IntValue;
         [FieldOffset(8)]
-        public readonly float floatValue;
+        public readonly float FloatValue;
         [FieldOffset(12)]
-        public fixed byte stringValue[260];
+        public fixed byte StringValue[260];
     }
 
     [StructLayout(LayoutKind.Explicit)]
@@ -178,6 +178,9 @@ namespace CsSimConnect
 
     public class SimConnectMessage
     {
+
+        private static readonly Logger log = Logger.GetLogger(typeof(SimConnectMessage));
+
         public RecvId Id { get; }
         public uint Version { get; }
 
@@ -185,6 +188,96 @@ namespace CsSimConnect
         {
             Id = (RecvId)msg.Id;
             Version = msg.Version;
+        }
+
+        internal SimConnectMessage(RecvId id, uint version)
+        {
+            Id = id;
+            Version = version;
+        }
+
+        internal static SimConnectMessage FromMessage(ref ReceiveStruct msg)
+        {
+            switch ((RecvId)msg.Id)
+            {
+                case RecvId.Null: break;
+                case RecvId.Exception: break;
+                case RecvId.Open: return new AppInfo(ref msg);
+                case RecvId.Quit: break;
+                case RecvId.Event: return new SimEvent(ref msg);
+                case RecvId.ObjectAddRemove: break;
+                case RecvId.EventFilename: break;
+                case RecvId.EventFrame: break;
+                case RecvId.SimObjectData: break;
+                case RecvId.SimObjectDataByType: break;
+                case RecvId.WeatherObservation: break;
+                case RecvId.CloudState: break;
+                case RecvId.AssignedObjectId: break;
+                case RecvId.ReservedKey: break;
+                case RecvId.CustomAction: break;
+                case RecvId.SystemState: return new SystemState(ref msg);
+                case RecvId.ClientData: break;
+                case RecvId.EventWeatherMode: break;
+                case RecvId.AirportList: break;
+                case RecvId.VorList: break;
+                case RecvId.NdbList: break;
+                case RecvId.WaypointList: break;
+                case RecvId.EventMultiplayerServerStarted: break;
+                case RecvId.EventMultiplayerClientStarted: break;
+                case RecvId.EventMultiplayerSessionEnded: break;
+                case RecvId.EventRaceEnd: break;
+                case RecvId.EventRaceLap: break;
+                case RecvId.ObserverData: break;
+
+                case RecvId.GroundInfo: break;
+                case RecvId.SynchronousBlock: break;
+                case RecvId.ExternalSimCreate: break;
+                case RecvId.ExternalSimDestroy: break;
+                case RecvId.ExternalSimSimulate: break;
+                case RecvId.ExternalSimLocationChanged: break;
+                case RecvId.ExternalSimEvent: break;
+                case RecvId.EventWeapon: break;
+                case RecvId.EventCounterMeasure: break;
+                case RecvId.EventObjectDamagedByWeapon: break;
+                case RecvId.Version: break;
+                case RecvId.SceneryComplexity: break;
+                case RecvId.ShadowFlags: break;
+                case RecvId.TacanList: break;
+                case RecvId.Camera6DOF: break;
+                case RecvId.CameraFOV: break;
+                case RecvId.CameraSensorMode: break;
+                case RecvId.CameraWindowPosition: break;
+                case RecvId.CameraWindowSize: break;
+                case RecvId.MissionObjectCount: break;
+                case RecvId.Goal: break;
+                case RecvId.MissionObjective: break;
+                case RecvId.FlightSegment: break;
+                case RecvId.ParameterRange: break;
+                case RecvId.FlightSegmentReadyForGrading: break;
+                case RecvId.GoalPair: break;
+                case RecvId.EventFlightAnalysisDiagrams: break;
+                case RecvId.LandingTriggerInfo: break;
+                case RecvId.LandingInfo: break;
+                case RecvId.SessionDuration: break;
+                case RecvId.AttachPointData: break;
+                case RecvId.PlaybackStateChanged: break;
+                case RecvId.RecorderStateChanged: break;
+                case RecvId.RecordingInfo: break;
+                case RecvId.RecordingBookmarkInfo: break;
+                case RecvId.TrafficSettings: break;
+                case RecvId.JoystickDeviceInfo: break;
+                case RecvId.MobileSceneryInRadius: break;
+                case RecvId.MobileSceneryData: break;
+                case RecvId.Event64: return new SimEvent(ref msg);
+                case RecvId.EventText: break;
+                case RecvId.EventTextDestroyed: break;
+                case RecvId.RecordingInfoW: break;
+                case RecvId.RecordingBookmarkInfoW: break;
+                case RecvId.SystemStateW: break;
+                case RecvId.EventFilenameW: break;
+            }
+            log.Error("Unknown message type {0}", msg.Id);
+            return null;
         }
     }
 
@@ -217,6 +310,86 @@ namespace CsSimConnect
             SimConnectVersionMinor = msg.ConnectionInfo.SimConnectVersionMinor;
             SimConnectBuildMajor = msg.ConnectionInfo.SimConnectBuildMajor;
             SimConnectBuildMinor = msg.ConnectionInfo.SimConnectBuildMinor;
+        }
+
+        internal AppInfo(string name) : base(RecvId.Open, 0)
+        {
+            Name = name;
+            ApplicationVersionMajor = 0;
+            ApplicationVersionMinor = 0;
+            ApplicationBuildMajor = 0;
+            ApplicationBuildMinor = 0;
+            SimConnectVersionMajor = 0;
+            SimConnectVersionMinor = 0;
+            SimConnectBuildMajor = 0;
+            SimConnectBuildMinor = 0;
+        }
+
+        public string SimVersion()
+        {
+            return String.Format("{0}.{1})", ApplicationVersionMajor, ApplicationVersionMinor);
+        }
+
+        public string SimNameAndVersion()
+        {
+            return String.Format("{0} {1}.{2}", Name, ApplicationVersionMajor, ApplicationVersionMinor);
+        }
+
+        public string SimNameAndFullVersion()
+        {
+            return String.Format("{0} {1}.{2} (build {3}.{4})", Name, ApplicationVersionMajor, ApplicationVersionMinor, ApplicationBuildMajor, ApplicationBuildMinor);
+        }
+
+        public string SimConnectVersion()
+        {
+            return String.Format("{0}.{1}", SimConnectVersionMajor, SimConnectVersionMinor);
+        }
+
+        public string SimConnectFullVersion()
+        {
+            return String.Format("{0}.{1} (build {2}.{3})", SimConnectVersionMajor, SimConnectVersionMinor, SimConnectBuildMajor, SimConnectBuildMinor);
+        }
+    }
+
+    public class SimEvent : SimConnectMessage
+    {
+        public UInt32? GroupId { get; init; }
+        public UInt32 EventId { get; init; }
+        public UInt32 Data { get; init; }
+        public UInt64 LongData { get; init; }
+
+        internal SimEvent(ref ReceiveStruct msg) : base(ref msg)
+        {
+            GroupId = (msg.Event.GroupId == 0xffffffff) ? null : msg.Event.GroupId;
+            EventId = msg.Event.Id;
+            Data = msg.Event.Data;
+            LongData = (((RecvId)msg.Id) == RecvId.Event64) ? msg.Event.Data64 : 0;
+        }
+    }
+
+    public class SystemState : SimConnectMessage
+    {
+        public int IntValue { get; init; }
+        public float FloatValue { get; init; }
+        public string StringValue { get; init; }
+
+        public bool AsBoolean()
+        {
+            return IntValue != 0;
+        }
+
+        internal SystemState(ref ReceiveStruct msg) : base(ref msg)
+        {
+            IntValue = msg.SystemState.IntValue;
+            FloatValue = msg.SystemState.FloatValue;
+            unsafe
+            {
+                fixed (ReceiveSystemState* r = &msg.SystemState)
+                {
+                    StringValue = Encoding.Latin1.GetString(r->StringValue, 260).Trim();
+                }
+            }
+
         }
     }
 }

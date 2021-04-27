@@ -29,7 +29,7 @@ void initLog() {
 	}
 }
 
-CS_SIMCONNECT_DLL_EXPORT CsConnect(const char* appName, HANDLE& handle) {
+CS_SIMCONNECT_DLL_EXPORT_BOOL CsConnect(const char* appName, HANDLE& handle) {
 	initLog();
 	logger.info("Trying to connect through SimConnect using client name '{}'", appName);
 	HANDLE h;
@@ -45,7 +45,7 @@ CS_SIMCONNECT_DLL_EXPORT CsConnect(const char* appName, HANDLE& handle) {
 	return SUCCEEDED(hr);
 }
 
-CS_SIMCONNECT_DLL_EXPORT CsDisconnect(HANDLE handle) {
+CS_SIMCONNECT_DLL_EXPORT_BOOL CsDisconnect(HANDLE handle) {
 	initLog();
 	HRESULT hr = SimConnect_Close(handle);
 
@@ -66,7 +66,7 @@ void CsDispatch(SIMCONNECT_RECV* pData, DWORD cbData, void* pContext)
 	((DispatchProc)messageHandler)(pData, cbData, pContext);
 }
 
-CS_SIMCONNECT_DLL_EXPORT CsCallDispatch(HANDLE handle, DispatchProc callback) {
+CS_SIMCONNECT_DLL_EXPORT_BOOL CsCallDispatch(HANDLE handle, DispatchProc callback) {
 	initLog();
 	messageHandler = callback;
 	logger.debug("Calling CallDispatch()");
@@ -82,7 +82,7 @@ CS_SIMCONNECT_DLL_EXPORT CsCallDispatch(HANDLE handle, DispatchProc callback) {
 	return SUCCEEDED(hr);
 }
 
-CS_SIMCONNECT_DLL_EXPORT CsGetNextDispatch(HANDLE handle, DispatchProc callback) {
+CS_SIMCONNECT_DLL_EXPORT_BOOL CsGetNextDispatch(HANDLE handle, DispatchProc callback) {
 	initLog();
 	logger.trace("Calling GetNextDispatch()");
 
@@ -104,7 +104,7 @@ CS_SIMCONNECT_DLL_EXPORT CsGetNextDispatch(HANDLE handle, DispatchProc callback)
  * System state handling.
  */
 
-CS_SIMCONNECT_DLL_EXPORT CsSubscribeToSystemEvent(HANDLE handle, int eventId, const char* eventName) {
+CS_SIMCONNECT_DLL_EXPORT_LONG CsSubscribeToSystemEvent(HANDLE handle, int eventId, const char* eventName) {
 	initLog();
 	logger.trace("CsSubscribeToSystemEvent(..., {}, '{}'", eventId, eventName);
 	if (handle == nullptr) {
@@ -129,7 +129,7 @@ CS_SIMCONNECT_DLL_EXPORT CsSubscribeToSystemEvent(HANDLE handle, int eventId, co
 	return SUCCEEDED(hr) ? sendId : hr;
 }
 
-CS_SIMCONNECT_DLL_EXPORT CsRequestSystemState(HANDLE handle, int requestId, const char* eventName) {
+CS_SIMCONNECT_DLL_EXPORT_LONG CsRequestSystemState(HANDLE handle, int requestId, const char* eventName) {
 	initLog();
 	logger.trace("CsRequestSystemState(..., {}, '{}'", requestId, eventName);
 	if (handle == nullptr) {

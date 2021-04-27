@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace CsSimConnect
 {
-    public class MessageStream<T> : SimConnectObserver, IObserver<T>, IAsyncEnumerator<T>
+    public class MessageStream<T> : SimConnectObserver<T>, IObserver<T>, IAsyncEnumerator<T>
         where T : SimConnectMessage
     {
 
@@ -18,27 +18,21 @@ namespace CsSimConnect
 
         private ConcurrentQueue<T> queue = new();
         private T current = null;
-        private bool completed = false;
         private bool disposedValue;
 
-        public MessageStream(uint sendID, uint queueSize) : base(sendID)
+        public MessageStream(uint sendID, uint queueSize) : base(sendID, true)
         {
             MaxSize = queueSize;
         }
 
-        public override void OnCompleted()
+        override public void OnNext(SimConnectMessage msg)
         {
-            completed = true;
+            base.OnNext(msg);
         }
 
-        public override void OnError(Exception error)
+        public void OnNext(T msg)
         {
-            throw new NotImplementedException();
-        }
-
-        public void OnNext(T value)
-        {
-            throw new NotImplementedException();
+            base.OnNext(msg);
         }
 
         public T Current => throw new NotImplementedException();
@@ -72,5 +66,6 @@ namespace CsSimConnect
         {
             throw new NotImplementedException();
         }
+
     }
 }

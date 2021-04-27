@@ -18,12 +18,12 @@
 #include "framework.h"
 #include <SimConnect.h>
 
-#define CS_SIMCONNECT_DLL_EXPORT	extern "C" __declspec(dllexport) uint64_t
+#define CS_SIMCONNECT_DLL_EXPORT_LONG	extern "C" __declspec(dllexport) int64_t
+#define CS_SIMCONNECT_DLL_EXPORT_BOOL	extern "C" __declspec(dllexport) bool
 
-CS_SIMCONNECT_DLL_EXPORT CsGetLastSentPacketId(HANDLE handle);
-CS_SIMCONNECT_DLL_EXPORT CsConnect(const char* appName, HANDLE& handle);
-CS_SIMCONNECT_DLL_EXPORT CsDisconnect(HANDLE handle);
-CS_SIMCONNECT_DLL_EXPORT CsCallDispatch(HANDLE handle, DispatchProc callback);
-CS_SIMCONNECT_DLL_EXPORT CsGetNextDispatch(HANDLE handle, DispatchProc callback);
-CS_SIMCONNECT_DLL_EXPORT CsSubscribeToSystemEvent(HANDLE handle, int id, const char* eventName);
-CS_SIMCONNECT_DLL_EXPORT CsRequestSystemState(HANDLE handle, int id, const char* eventName);
+CS_SIMCONNECT_DLL_EXPORT_BOOL CsConnect(const char* appName, HANDLE& handle);
+CS_SIMCONNECT_DLL_EXPORT_BOOL CsDisconnect(HANDLE handle);
+CS_SIMCONNECT_DLL_EXPORT_BOOL CsCallDispatch(HANDLE handle, DispatchProc callback);
+CS_SIMCONNECT_DLL_EXPORT_BOOL CsGetNextDispatch(HANDLE handle, DispatchProc callback);
+CS_SIMCONNECT_DLL_EXPORT_LONG CsSubscribeToSystemEvent(HANDLE handle, int id, const char* eventName);
+CS_SIMCONNECT_DLL_EXPORT_LONG CsRequestSystemState(HANDLE handle, int id, const char* eventName);

@@ -82,14 +82,15 @@ namespace CsSimConnectUI
                             (bool running) => Run(() => lStopped.Style = (Style)FindResource(running ? "StatusOff" : "StatusOn")),
                             true);
                     }
-                    if (simConnect.SimName.Length == 0)
+                    if (simConnect.Info.Name.Length == 0)
                     {
                         lStatus.Content = "Connected.";
                     }
                     else
                     {
-                        lStatus.Content = String.Format("Connected to {0}, SimConnect version {1}", simConnect.SimName, simConnect.GetSimConnectVersion());
+                        lStatus.Content = String.Format("Connected to {0}, SimConnect version {1}", simConnect.Info.Name, simConnect.Info.SimConnectVersion());
                     }
+                    new Task(TestGetSimState).Start();
                 }
                 else
                 {
@@ -111,6 +112,11 @@ namespace CsSimConnectUI
             {
                 simConnect.Connect();
             }
+        }
+
+        private void TestGetSimState()
+        {
+            log.Info("The simulator is {0}.", RequestManager.Instance.RequestSystemState("Sim").Get().AsBoolean() ? "Running" : "Stopped");
         }
     }
 }

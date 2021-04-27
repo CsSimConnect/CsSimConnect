@@ -98,7 +98,7 @@ namespace CsSimConnect
     public sealed class EventManager
     {
         [DllImport("CsSimConnectInterOp.dll")]
-        private static extern bool CsSubscribeToSystemEvent(IntPtr handle, UInt32 requestId, [MarshalAs(UnmanagedType.LPStr)] string eventName);
+        private static extern long CsSubscribeToSystemEvent(IntPtr handle, UInt32 requestId, [MarshalAs(UnmanagedType.LPStr)] string eventName);
 
         private static readonly Logger log = Logger.GetLogger(typeof(EventManager));
 
@@ -122,15 +122,6 @@ namespace CsSimConnect
             this.simConnect = simConnect;
         }
 
-        private bool initDone = false;
-        public void Init()
-        {
-            if (!initDone)
-            {
-                initDone = true;
-            }
-        }
-
         private static readonly UInt32 USREVT_FIRST = 64;
         private UInt32 lastEvent = USREVT_FIRST;
 
@@ -139,74 +130,42 @@ namespace CsSimConnect
             return Interlocked.Increment(ref lastEvent);
         }
 
-        public delegate void EventHandler(ref ReceiveStruct msg);
-        public class EventHandlerRegistration
-        {
-            public readonly EventHandler Handler;
-            public readonly bool UseOnceOnly;
+        private MessageDispatcher dispatcher = new("EventID");
 
-            public EventHandlerRegistration(EventHandler handler, bool useOnceOnly = true)
-            {
-                Handler = handler;
-                UseOnceOnly = useOnceOnly;
-            }
-        }
-        private readonly ConcurrentDictionary<UInt32, EventHandlerRegistration> resultHandlers = new();
-
-        public void DispatchResult(UInt32 eventId, ref ReceiveStruct msg)
+        public void DispatchResult(UInt32 eventId, SimConnectMessage msg)
         {
-            EventHandlerRegistration handler;
-            if (resultHandlers.TryGetValue(eventId, out handler))
-            {
-                handler.Handler.Invoke(ref msg);
-                if (handler.UseOnceOnly)
-                {
-                    resultHandlers.TryRemove(eventId, out _);
-                }
-            }
-            else
+            if (!dispatcher.DispatchToObserver(eventId, msg))
             {
                 log.Error("Received a message for an unknown event {0}.", eventId);
             }
         }
 
-        public void SubscribeToSystemState(string systemState, EventHandlerRegistration registration)
+        public MessageStream<T> SubscribeToSystemState<T>(string systemState)
+            where T : SimConnectMessage
         {
             UInt32 eventId = NextEvent();
             log.Debug("Event ID {0}: Subscribing to '{1}'", eventId, systemState);
-            resultHandlers.AddOrUpdate(eventId, registration, (_, _) => registration);
-            if (!CsSubscribeToSystemEvent(simConnect.handle, eventId, systemState))
+
+            long sendId = CsSubscribeToSystemEvent(simConnect.handle, eventId, systemState);
+            MessageStream<T> result;
+            if (sendId > 0)
             {
-                log.Error("SimConnect_SubscribeToSystemEvent() failed");
-                resultHandlers.TryRemove(eventId, out _);
+                result = new MessageStream<T>((uint)sendId, 1);
+                dispatcher.AddObserver(eventId, result);
             }
+            else
+            {
+                result = (MessageStream<T>)SimConnectObserver.ErrorResult(0, new SimConnectException(1, 0));
+            }
+            return result;
         }
 
         public void SubscribeToSystemStateBool(string systemState, Action<bool> callback, bool requestOnce = false)
         {
-            SubscribeToSystemState(systemState, new((ref ReceiveStruct msg) => callback(msg.Event.Data != 0)));
+            SubscribeToSystemState<SimEvent>(systemState).Subscribe((SimEvent evt) => callback(evt.Data != 0));
             if (requestOnce)
             {
                 RequestManager.Instance.RequestSystemStateBool(systemState, callback);
-            }
-        }
-        public void SubscribeToSystemStateString(string systemState, Action<string> callback, bool requestOnce = false)
-        {
-            SubscribeToSystemState(systemState, new((ref ReceiveStruct msg) =>
-            {
-                string value;
-                unsafe
-                {
-                    fixed (ReceiveSystemState* r = &msg.SystemState)
-                    {
-                        value = Encoding.Latin1.GetString(r->stringValue, 260).Trim();
-                    }
-                }
-                callback(value);
-            }, false));
-            if (requestOnce)
-            {
-                RequestManager.Instance.RequestSystemStateString(systemState, callback);
             }
         }
     }

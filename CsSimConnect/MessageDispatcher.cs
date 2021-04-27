@@ -17,6 +17,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -29,121 +30,107 @@ namespace CsSimConnect
     public sealed class MessageDispatcher
     {
 
-        [DllImport("CsSimConnectInterOp.dll")]
-        public static extern bool CsCallDispatch(IntPtr handle, DispatchProc dispatchProc);
-        [DllImport("CsSimConnectInterOp.dll")]
-        public static extern bool CsGetNextDispatch(IntPtr handle, DispatchProc dispatchProc);
-
         private static readonly Logger log = Logger.GetLogger(typeof(MessageDispatcher));
 
-        private static readonly Lazy<MessageDispatcher> lazyInstance = new Lazy<MessageDispatcher>(() => new MessageDispatcher(SimConnect.Instance));
+        private readonly string name;
 
-        public static MessageDispatcher Instance { get { return lazyInstance.Value; } }
+        private readonly Dictionary<UInt32, SimConnectObserver> MessageObservers = new();
+        private readonly Dictionary<UInt32, LinkedList<SimConnectMessage>> MessageObserverLobby = new();
+        private readonly object observerLock = new();
 
-        public delegate void DispatchProc(ref ReceiveStruct structData, Int32 wordData, IntPtr context);
-
-        private readonly SimConnect simConnect;
-
-        public MessageDispatcher(SimConnect simConnect)
+        public MessageDispatcher(string name)
         {
-            this.simConnect = simConnect;
+            this.name = name;
         }
 
-        private Task<bool> messagePoller;
-
-        public void Init()
+        public bool TryGetObserver(UInt32 id, [MaybeNullWhen(false)] out SimConnectObserver<SimConnectMessage> observer, bool removeIfFound =false)
         {
-            CsCallDispatch(simConnect.handle, HandleMessage);
-            messagePoller = new(() =>
+            log.Debug("Trying to find observer for {0} {1}.", name, id);
+
+            lock (observerLock)
             {
-                while (simConnect.IsConnected())
+                SimConnectObserver messageObserver;
+                bool found = MessageObservers.TryGetValue(id, out messageObserver);
+                if (found && !messageObserver.IsStreamable)
                 {
-                    while (CsGetNextDispatch(simConnect.handle, HandleMessage))
+                    MessageObservers.Remove(id, out _);
+                }
+                observer = messageObserver as SimConnectObserver<SimConnectMessage>;
+                return found;
+            }
+        }
+
+        public bool DispatchToObserver(UInt32 id, SimConnectMessage msg)
+        {
+            log.Debug("Dispatching {0} with {1} {2}.", ((RecvId)msg.Id).ToString(), name, id);
+
+            lock (observerLock)
+            {
+                bool found = MessageObservers.TryGetValue(id, out SimConnectObserver observer);
+                if (found)
+                {
+                    if (!observer.IsStreamable)
                     {
-                        log.Trace("Trying for another message");
+                        MessageObservers.Remove(id, out _);
                     }
-                    Thread.Sleep(100);
+
+                    observer.OnNext(msg);
+
+                    if (!observer.IsStreamable)
+                    {
+                        observer.OnCompleted();
+                    }
                 }
-                return true;
-            });
-            messagePoller.Start();
+                else
+                {
+                    if (!MessageObserverLobby.TryGetValue(id, out LinkedList<SimConnectMessage> waitingValues))
+                    {
+                        waitingValues = new();
+                        MessageObserverLobby.Add(id, waitingValues);
+                    }
+                    waitingValues.AddLast(msg);
+                }
+                return found;
+            }
         }
 
-        private ConcurrentDictionary<UInt32, SimConnectObserver> Messages = new();
-
-        private void HandleMessage(ref ReceiveStruct structData, Int32 wordData, IntPtr context)
+        public void AddObserver(UInt32 id, SimConnectObserver observer)
         {
-            if (structData.Id > (int)RecvId.SIMCONNECT_RECV_ID_EVENT_FILENAME_W)
+            log.Debug("Adding observer for {0} {1}.", name, id);
+
+            lock (observerLock)
             {
-                log.Error("Received message with Message ID {0}", structData.Id);
-                return;
-            }
-            log.Debug("Received message with ID {0}", structData.Id);
-            try
-            {
-                switch ((RecvId)structData.Id)
+                if (MessageObservers.ContainsKey(id))
                 {
-                    case RecvId.SIMCONNECT_RECV_ID_EXCEPTION:           // 1
-                        SimConnectException exc = new(structData.Exception.ExceptionId, structData.Exception.SendId, structData.Exception.Index);
-                        log.Debug("Exception returned: {0} (SendID={1}, Index={2})", exc.Message, exc.SendID, exc.Index);
-                        SimConnectObserver msg;
-                        if (Messages.Remove(exc.SendID, out msg))
+                    log.Error("Attempted to add second observer for {0} {1}", name, id);
+                    return;
+                }
+                MessageObservers.Add(id, observer);
+                if (MessageObserverLobby.Remove(id, out LinkedList<SimConnectMessage> waitingList) && (waitingList.Count != 0))
+                {
+                    var messageObserver = observer as SimConnectObserver<SimConnectMessage>;
+                    foreach (SimConnectMessage msg in waitingList) {
+                        messageObserver.OnNext(msg);
+                        if (!messageObserver.IsStreamable)
                         {
-                            msg.OnError(exc);
-                        }
-                        else
-                        {
-                            log.Warn("Ignoring exception for unknown SendID {0}: {1} (index={2})", exc.SendID, exc.Message, exc.Index);
-                        }
-                        break;
-
-                    case RecvId.SIMCONNECT_RECV_ID_OPEN:                // 2
-                        unsafe
-                        {
-                            fixed (ReceiveAppInfo* r = &structData.ConnectionInfo)
+                            MessageObservers.Remove(id);
+                            if (waitingList.Count > 1)
                             {
-                                simConnect.SimName = Encoding.Latin1.GetString(r->ApplicationName, 256).Trim();
+                                log.Error("Received multiple messages for {0} {1}", name, id);
                             }
+                            break;
                         }
-                        log.Info("We are connected to '{0}'.", simConnect.SimName);
-                        simConnect.ApplicationVersionMajor = structData.ConnectionInfo.ApplicationVersionMajor;
-                        simConnect.ApplicationVersionMinor = structData.ConnectionInfo.ApplicationVersionMinor;
-                        simConnect.ApplicationBuildMajor = structData.ConnectionInfo.ApplicationBuildMajor;
-                        simConnect.ApplicationBuildMinor = structData.ConnectionInfo.ApplicationBuildMinor;
-                        simConnect.SimConnectVersionMajor = structData.ConnectionInfo.SimConnectVersionMajor;
-                        simConnect.SimConnectVersionMinor = structData.ConnectionInfo.SimConnectVersionMinor;
-                        simConnect.SimConnectBuildMajor = structData.ConnectionInfo.SimConnectBuildMajor;
-                        simConnect.SimConnectBuildMinor = structData.ConnectionInfo.SimConnectBuildMinor;
-                        simConnect.InvokeConnectionStateChanged();
-                        break;
-
-                    case RecvId.SIMCONNECT_RECV_ID_QUIT:                    // 3
-                        log.Info("We are disconnected from '{0}'.", simConnect.SimName);
-                        simConnect.Disconnect();
-                        break;
-
-                    case RecvId.SIMCONNECT_RECV_ID_EVENT:                   // 4
-                        log.Debug("Received event {0}.", structData.Event.Id);
-                        EventManager.Instance.DispatchResult(structData.Event.Id, ref structData);
-                        break;
-
-                    case RecvId.SIMCONNECT_RECV_ID_EVENT_64:                // 67
-                        log.Debug("Received 64-bit event {0}.", structData.Event.Id);
-                        EventManager.Instance.DispatchResult(structData.Event.Id, ref structData);
-                        break;
-
-                    case RecvId.SIMCONNECT_RECV_ID_SYSTEM_STATE:            // 15
-                        log.Debug("Received systemState for request {0}.", structData.SystemState.RequestId);
-                        RequestManager.Instance.DispatchResult(structData.SystemState.RequestId, ref structData);
-                        break;
-
-                    default:
-                        break;
+                    }
                 }
             }
-            catch (Exception e)
+        }
+
+        internal void Remove(uint id)
+        {
+            lock (observerLock)
             {
-                log.Error("Exception caught while processing message: {0}", e.Message);
+                MessageObservers.Remove(id);
+                MessageObserverLobby.Remove(id);
             }
         }
     }

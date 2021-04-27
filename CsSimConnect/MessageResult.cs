@@ -14,32 +14,36 @@ namespace CsSimConnect
         }
     }
 
-    public class MessageResult<T> : SimConnectObserver, IObserver<T>
+    public class MessageResult<T> : SimConnectObserver<T>, IObserver<T>
         where T : SimConnectMessage
     {
 
         private T result;
-        private TaskCompletionSource<T> future;
+        private readonly TaskCompletionSource<T> future = new();
 
         public MessageResult(UInt32 sendID) : base(sendID)
         {
-
         }
 
-        public override void OnCompleted()
+        override public void OnCompleted()
         {
             if (!future.TrySetResult(result))
             {
-                throw new DoubleResultException();
+                OnError(new DoubleResultException());
             }
         }
 
-        void IObserver<T>.OnNext(T value)
+        override public void OnNext(SimConnectMessage value)
+        {
+            result = (T)value;
+        }
+
+        public void OnNext(T value)
         {
             result = value;
         }
 
-        public override void OnError(Exception error)
+        override public void OnError(Exception error)
         {
             future.SetException(error);
         }
@@ -47,6 +51,40 @@ namespace CsSimConnect
         public T Get()
         {
             return future.Task.Result;
+        }
+
+        public class ResultEnumerator<R> : SimConnectObserverEnumerator<R>, IDisposable
+            where R : SimConnectMessage
+        {
+
+            private readonly MessageResult<R> result;
+
+            public ResultEnumerator(MessageResult<R> result)
+            {
+                this.result = result;
+            }
+
+            public override R Current => result.result;
+
+            public override void Dispose()
+            {
+                // DONOTHING
+            }
+
+            public override bool MoveNext()
+            {
+                if (result.IsCompleted)
+                {
+                    return false;
+                }
+                result.future.Task.Wait();
+                return result.IsCompleted;
+            }
+
+            public override void Reset()
+            {
+                throw new NotImplementedException();
+            }
         }
     }
 }

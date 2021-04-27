@@ -15,8 +15,10 @@
  */
 
 using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace CsSimConnect
 {
@@ -24,28 +26,53 @@ namespace CsSimConnect
     public sealed class SimConnect
     {
 
+        private static readonly Logger log = Logger.GetLogger(typeof(SimConnect));
+
         private static readonly Lazy<SimConnect> lazyInstance = new Lazy<SimConnect>(() => new SimConnect());
 
         public static SimConnect Instance {  get { return lazyInstance.Value; } }
 
         public delegate void ConnectionStateHandler(bool willAutoConnect, bool isConnected);
+        private delegate void DispatchProc(ref ReceiveStruct structData, Int32 wordData, IntPtr context);
 
-        [DllImport("CsSimConnectInterOp.dll")]
-        private static extern bool CsCharArrayToStringBuilder(StringBuilder str, byte[] bytebuf, UInt64 bufLen);
         [DllImport("CsSimConnectInterOp.dll")]
         private static extern bool CsConnect([MarshalAs(UnmanagedType.LPStr)] string appName, ref IntPtr handle);
         [DllImport("CsSimConnectInterOp.dll")]
         private static extern bool CsDisconnect(IntPtr handle);
+        [DllImport("CsSimConnectInterOp.dll")]
+        private static extern bool CsCallDispatch(IntPtr handle, DispatchProc dispatchProc);
+        [DllImport("CsSimConnectInterOp.dll")]
+        private static extern bool CsGetNextDispatch(IntPtr handle, DispatchProc dispatchProc);
 
         internal IntPtr handle = IntPtr.Zero;
         public bool UseAutoConnect { get; set; }
+        private Task<bool> messagePoller;
 
+        private readonly Dictionary<uint, Action<Exception>> onError = new();
         public event ConnectionStateHandler OnConnectionStateChange;
 
         private SimConnect()
         {
             UseAutoConnect = false;
-            SimName = "";
+            Info = new("CsSimConnect");
+        }
+
+        public void InitDispatcher()
+        {
+            CsCallDispatch(handle, HandleMessage);
+            messagePoller = new(() =>
+            {
+                while (IsConnected())
+                {
+                    while (CsGetNextDispatch(handle, HandleMessage))
+                    {
+                        log.Trace("Trying for another message");
+                    }
+                    Task.Delay(100);
+                }
+                return true;
+            });
+            messagePoller.Start();
         }
 
         public bool IsConnected()
@@ -60,61 +87,88 @@ namespace CsSimConnect
 
         public void Connect()
         {
-            EventManager.Instance.Init();
-
-            CsConnect("test", ref handle);
-            MessageDispatcher.Instance.Init();
+            if (CsConnect("test", ref handle))
+            {
+                InitDispatcher();
+            }
             InvokeConnectionStateChanged();
         }
 
         public void Disconnect()
         {
-            CsDisconnect(handle);
+            IntPtr oldHandle = handle;
             handle = IntPtr.Zero;
+            CsDisconnect(oldHandle);
             InvokeConnectionStateChanged();
         }
 
-        public string SimName { get; set; }
-        public UInt32 ApplicationVersionMajor { get; set; }
-        public UInt32 ApplicationVersionMinor { get; set; }
-        public UInt32 ApplicationBuildMajor { get; set; }
-        public UInt32 ApplicationBuildMinor { get; set; }
-
-        public string GetSimVersion()
+        internal void MessageCompleted(uint sendId)
         {
-            return String.Format("{0}.{1})", ApplicationVersionMajor, ApplicationVersionMinor);
+            onError.Remove(sendId);
         }
 
-        public string GetSimNameAndVersion()
+        private void HandleMessage(ref ReceiveStruct structData, Int32 wordData, IntPtr context)
         {
-            return String.Format("{0} {1}.{2}", SimName, ApplicationVersionMajor, ApplicationVersionMinor);
+            if (structData.Id > (int)RecvId.EventFilenameW)
+            {
+                log.Error("Received message with Message ID {0}", structData.Id);
+                return;
+            }
+            log.Debug("Received message with ID {0}", structData.Id);
+            try
+            {
+                switch ((RecvId)structData.Id)
+                {
+                    case RecvId.Exception:           // 1
+                        SimConnectException exc = new(structData.Exception.ExceptionId, structData.Exception.SendId, structData.Exception.Index);
+                        log.Debug("Exception returned: {0} (SendID={1}, Index={2})", exc.Message, exc.SendID, exc.Index);
+                        Action<Exception> cleanup;
+                        if (onError.Remove(exc.SendID, out cleanup))
+                        {
+                            cleanup(exc);
+                        }
+                        else
+                        {
+                            log.Warn("Ignoring exception for unknown SendID {0}: {1} (index={2})", exc.SendID, exc.Message, exc.Index);
+                        }
+                        break;
+
+                    case RecvId.Open:                // 2
+                        Info = new(ref structData);
+                        InvokeConnectionStateChanged();
+                        break;
+
+                    case RecvId.Quit:                    // 3
+                        log.Info("We are disconnected from '{0}'.", Info.Name);
+                        Disconnect();
+                        break;
+
+                    case RecvId.Event:                   // 4
+                        log.Debug("Received event {0}.", structData.Event.Id);
+                        EventManager.Instance.DispatchResult(structData.Event.Id, SimConnectMessage.FromMessage(ref structData));
+                        break;
+
+                    case RecvId.Event64:                // 67
+                        log.Debug("Received 64-bit event {0}.", structData.Event.Id);
+                        EventManager.Instance.DispatchResult(structData.Event.Id, SimConnectMessage.FromMessage(ref structData));
+                        break;
+
+                    case RecvId.SystemState:            // 15
+                        log.Debug("Received systemState for request {0}.", structData.SystemState.RequestId);
+                        RequestManager.Instance.DispatchResult(structData.SystemState.RequestId, SimConnectMessage.FromMessage(ref structData));
+                        break;
+
+                    default:
+                        break;
+                }
+            }
+            catch (Exception e)
+            {
+                log.Error("Exception caught while processing message: {0}", e.Message);
+            }
         }
 
-        public string GetSimNameAndFullVersion()
-        {
-            return String.Format("{0} {1}.{2} (build {3}.{4})", SimName, ApplicationVersionMajor, ApplicationVersionMinor, ApplicationBuildMajor, ApplicationBuildMinor);
-        }
+        public AppInfo Info { get; private set; }
 
-        public UInt32 SimConnectVersionMajor { get; set; }
-        public UInt32 SimConnectVersionMinor { get; set; }
-        public UInt32 SimConnectBuildMajor { get; set; }
-        public UInt32 SimConnectBuildMinor { get; set; }
-
-        public string GetSimConnectVersion()
-        {
-            return String.Format("{0}.{1}", SimConnectVersionMajor, SimConnectVersionMinor);
-        }
-
-        public string GetSimConnectFullVersion()
-        {
-            return String.Format("{0}.{1} (build {2}.{3})", SimConnectVersionMajor, SimConnectVersionMinor, SimConnectBuildMajor, SimConnectBuildMinor);
-        }
-
-        public string StringFromBytes(byte[] bytes, UInt64 len)
-        {
-            StringBuilder bld = new((int)len);
-            CsCharArrayToStringBuilder(bld, bytes, len);
-            return bld.ToString();
-        }
     }
 }

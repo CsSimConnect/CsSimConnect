@@ -28,7 +28,9 @@ namespace CsSimConnect
     public class RequestManager
     {
         [DllImport("CsSimConnectInterOp.dll")]
-        private static extern bool CsRequestSystemState(IntPtr handle, UInt32 requestId, [MarshalAs(UnmanagedType.LPStr)] string state);
+        private static extern Int64 CsRequestSystemState(IntPtr handle, UInt32 requestId, [MarshalAs(UnmanagedType.LPStr)] string state);
+
+        private static readonly Logger log = Logger.GetLogger(typeof(RequestManager));
 
         private static readonly Lazy<RequestManager> lazyInstance = new(() => new RequestManager(SimConnect.Instance));
 
@@ -60,39 +62,45 @@ namespace CsSimConnect
                 UseOnceOnly = useOnceOnly;
             }
         }
-        private readonly ConcurrentDictionary<UInt32, RequestResultHandlerRegistration> resultHandlers = new();
 
-        public void DispatchResult(UInt32 requestId, ref ReceiveStruct msg)
+        private MessageDispatcher dispatcher = new("RequestID");
+
+        public void DispatchResult(UInt32 requestId, SimConnectMessage msg)
         {
-            RequestResultHandlerRegistration handler;
-            if (resultHandlers.TryGetValue(requestId, out handler))
+            if (!dispatcher.DispatchToObserver(requestId, msg))
             {
-                handler.Handler.Invoke(ref msg);
-                if (handler.UseOnceOnly)
-                {
-                    resultHandlers.TryRemove(requestId, out _);
-                }
+                log.Error("Received a message for an unknown request {0}.", requestId);
+            }
+        }
+
+        public MessageResult<SystemState> RequestSystemState(string systemState)
+        {
+            uint requestId = NextRequest();
+            log.Debug("Request ID {0}: Requesting '{1}'", requestId, systemState);
+
+            Int64 sendId = CsRequestSystemState(simConnect.handle, requestId, systemState);
+            MessageResult<SystemState> result;
+            if (sendId > 0)
+            {
+                result = new MessageResult<SystemState>((uint)sendId);
+                dispatcher.AddObserver(requestId, result);
             }
             else
             {
-                // Complain
+                result = (MessageResult<SystemState>)SimConnectObserver.ErrorResult(0, new SimConnectException(1, 0));
             }
+            return result;
         }
 
-        public void RequestSystemStateBool(string systemState, Action<bool> processResult)
+        public void RequestSystemStateBool(string systemState, Action<bool> callback)
         {
-            UInt32 requestId = NextRequest();
-            RequestResultHandlerRegistration registration = new((ref ReceiveStruct msg) =>
-            {
-                processResult(msg.SystemState.IntValue != 0);
-            });
-            resultHandlers.AddOrUpdate(requestId, registration, (_, _) => registration);
-            if (!CsRequestSystemState(simConnect.handle, requestId, systemState))
-            {
-                //Complain
-                resultHandlers.TryRemove(requestId, out _);
-            }
+            RequestSystemState(systemState).Subscribe((SystemState systemState) => callback(systemState.AsBoolean()));
         }
+        public void RequestSystemStateString(string systemState, Action<string> callback)
+        {
+            RequestSystemState(systemState).Subscribe((SystemState systemState) => callback(systemState.StringValue));
+        }
+
         public void RequestDialogMode(Action<bool> callback)
         {
             RequestSystemStateBool("DialogMode", callback);
@@ -105,30 +113,6 @@ namespace CsSimConnect
         {
             RequestSystemStateBool("Sim", callback);
         }
-
-        public void RequestSystemStateString(string systemState, Action<string> callback)
-        {
-            UInt32 requestId = NextRequest();
-            RequestResultHandlerRegistration registration = new((ref ReceiveStruct msg) =>
-            {
-                string value;
-                unsafe
-                {
-                    fixed (ReceiveSystemState* r = &msg.SystemState)
-                    {
-                        value = Encoding.Latin1.GetString(r->stringValue, 260).Trim();
-                    }
-                }
-                callback(value);
-            });
-            resultHandlers.AddOrUpdate(requestId, registration, (_, _) => registration);
-            if (!CsRequestSystemState(simConnect.handle, requestId, systemState))
-            {
-                //Complain
-                resultHandlers.TryRemove(requestId, out _);
-            }
-        }
-
         public void RequestAircraftLoaded(Action<string> callback)
         {
             RequestSystemStateString("AircraftLoaded", callback);
