@@ -91,6 +91,10 @@ namespace CsSimConnect
             {
                 InitDispatcher();
             }
+            else
+            {
+                log.Error("Failed to connect.");
+            }
             InvokeConnectionStateChanged();
         }
 
@@ -104,7 +108,19 @@ namespace CsSimConnect
 
         internal void MessageCompleted(uint sendId)
         {
-            onError.Remove(sendId);
+            if (onError.Remove(sendId))
+            {
+                log.Trace("Removed SendID {0}.");
+            }
+            else
+            {
+                log.Trace("SendID {0} already removed.");
+            }
+        }
+
+        internal void AddCleanup(uint sendId, Action<Exception> cleanup)
+        {
+            onError.Add(sendId, cleanup);
         }
 
         private void HandleMessage(ref ReceiveStruct structData, Int32 wordData, IntPtr context)
@@ -123,7 +139,7 @@ namespace CsSimConnect
                         SimConnectException exc = new(structData.Exception.ExceptionId, structData.Exception.SendId, structData.Exception.Index);
                         log.Debug("Exception returned: {0} (SendID={1}, Index={2})", exc.Message, exc.SendID, exc.Index);
                         Action<Exception> cleanup;
-                        if (onError.Remove(exc.SendID, out cleanup))
+                        if (onError.Remove(exc.SendID.Value, out cleanup))
                         {
                             cleanup(exc);
                         }

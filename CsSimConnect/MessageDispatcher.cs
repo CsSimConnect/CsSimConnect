@@ -32,7 +32,7 @@ namespace CsSimConnect
 
         private static readonly Logger log = Logger.GetLogger(typeof(MessageDispatcher));
 
-        private readonly string name;
+        public string Name { get; init; }
 
         private readonly Dictionary<UInt32, SimConnectObserver> MessageObservers = new();
         private readonly Dictionary<UInt32, LinkedList<SimConnectMessage>> MessageObserverLobby = new();
@@ -40,12 +40,12 @@ namespace CsSimConnect
 
         public MessageDispatcher(string name)
         {
-            this.name = name;
+            Name = name;
         }
 
         public bool TryGetObserver(UInt32 id, [MaybeNullWhen(false)] out SimConnectObserver<SimConnectMessage> observer, bool removeIfFound =false)
         {
-            log.Debug("Trying to find observer for {0} {1}.", name, id);
+            log.Debug("Trying to find observer for {0} {1}.", Name, id);
 
             lock (observerLock)
             {
@@ -62,7 +62,7 @@ namespace CsSimConnect
 
         public bool DispatchToObserver(UInt32 id, SimConnectMessage msg)
         {
-            log.Debug("Dispatching {0} with {1} {2}.", ((RecvId)msg.Id).ToString(), name, id);
+            log.Debug("Dispatching {0} with {1} {2}.", ((RecvId)msg.Id).ToString(), Name, id);
 
             lock (observerLock)
             {
@@ -74,6 +74,7 @@ namespace CsSimConnect
                         MessageObservers.Remove(id, out _);
                     }
 
+                    log.Trace("Dispatching {0} {1} to observer", Name, id);
                     observer.OnNext(msg);
 
                     if (!observer.IsStreamable)
@@ -83,6 +84,7 @@ namespace CsSimConnect
                 }
                 else
                 {
+                    log.Trace("No observer yet for {0} {1}", Name, id);
                     if (!MessageObserverLobby.TryGetValue(id, out LinkedList<SimConnectMessage> waitingValues))
                     {
                         waitingValues = new();
@@ -96,13 +98,13 @@ namespace CsSimConnect
 
         public void AddObserver(UInt32 id, SimConnectObserver observer)
         {
-            log.Debug("Adding observer for {0} {1}.", name, id);
+            log.Debug("Adding observer for {0} {1}.", Name, id);
 
             lock (observerLock)
             {
                 if (MessageObservers.ContainsKey(id))
                 {
-                    log.Error("Attempted to add second observer for {0} {1}", name, id);
+                    log.Error("Attempted to add second observer for {0} {1}", Name, id);
                     return;
                 }
                 MessageObservers.Add(id, observer);
@@ -110,13 +112,14 @@ namespace CsSimConnect
                 {
                     var messageObserver = observer as SimConnectObserver<SimConnectMessage>;
                     foreach (SimConnectMessage msg in waitingList) {
+                        log.Trace("Dispatching {0} {1} from lobby to observer", Name, id);
                         messageObserver.OnNext(msg);
                         if (!messageObserver.IsStreamable)
                         {
                             MessageObservers.Remove(id);
                             if (waitingList.Count > 1)
                             {
-                                log.Error("Received multiple messages for {0} {1}", name, id);
+                                log.Error("Received multiple messages for {0} {1}", Name, id);
                             }
                             break;
                         }

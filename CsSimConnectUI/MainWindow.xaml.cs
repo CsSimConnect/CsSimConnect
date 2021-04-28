@@ -51,6 +51,9 @@ namespace CsSimConnectUI
             this.Dispatcher.Invoke(action);
         }
 
+        private void SetPausedStatus(bool running) => Run(() => lPaused.Style = (Style)FindResource(running ? "StatusOn" : "StatusOff"));
+        private void SetStoppedStatus(bool running) => Run(() => lStopped.Style = (Style)FindResource(running ? "StatusOff" : "StatusOn"));
+
         public MainWindow()
         {
             Logger.Configure();
@@ -76,11 +79,9 @@ namespace CsSimConnectUI
                     if (Interlocked.Exchange(ref isConnected, 1) == 0)
                     {
                         // Haven't registered these yet
-                        events.SubscribeToSystemStateBool(CsSimConnect.EventManager.ToString(SystemEvent.Pause),
-                            (bool running) => Run(() => lPaused.Style = (Style)FindResource(running ? "StatusOn" : "StatusOff")));
-                        events.SubscribeToSystemStateBool(CsSimConnect.EventManager.ToString(SystemEvent.Sim),
-                            (bool running) => Run(() => lStopped.Style = (Style)FindResource(running ? "StatusOff" : "StatusOn")),
-                            true);
+                        events.SubscribeToSystemEventBool(SystemEvent.Pause, SetPausedStatus);
+                        events.SubscribeToSystemEventBool(SystemEvent.Sim, SetStoppedStatus);
+                        requests.RequestSystemStateBool(SystemState.Sim, SetStoppedStatus);
                     }
                     if (simConnect.Info.Name.Length == 0)
                     {
@@ -100,6 +101,7 @@ namespace CsSimConnectUI
                     lStopped.Style = (Style)FindResource("StatusOff");
                 }
             });
+            AircraftData data = DataManager.Instance.RequestData<AircraftData>();
         }
 
         private void ToggleConnection(object sender, RoutedEventArgs e)
@@ -116,7 +118,7 @@ namespace CsSimConnectUI
 
         private void TestGetSimState()
         {
-            log.Info("The simulator is {0}.", RequestManager.Instance.RequestSystemState("Sim").Get().AsBoolean() ? "Running" : "Stopped");
+            log.Info("The simulator is {0}.", RequestManager.Instance.RequestSystemState(SystemState.Sim).Get().AsBoolean() ? "Running" : "Stopped");
         }
     }
 }

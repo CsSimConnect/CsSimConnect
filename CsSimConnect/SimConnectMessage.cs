@@ -1,9 +1,22 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿/*
+ * Copyright (c) 2021. Bert Laverman
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+using System;
 using System.Runtime.InteropServices;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace CsSimConnect
 {
@@ -215,7 +228,7 @@ namespace CsSimConnect
                 case RecvId.AssignedObjectId: break;
                 case RecvId.ReservedKey: break;
                 case RecvId.CustomAction: break;
-                case RecvId.SystemState: return new SystemState(ref msg);
+                case RecvId.SystemState: return new SimState(ref msg);
                 case RecvId.ClientData: break;
                 case RecvId.EventWeatherMode: break;
                 case RecvId.AirportList: break;
@@ -367,7 +380,7 @@ namespace CsSimConnect
         }
     }
 
-    public class SystemState : SimConnectMessage
+    public class SimState : SimConnectMessage
     {
         public int IntValue { get; init; }
         public float FloatValue { get; init; }
@@ -378,7 +391,7 @@ namespace CsSimConnect
             return IntValue != 0;
         }
 
-        internal SystemState(ref ReceiveStruct msg) : base(ref msg)
+        internal SimState(ref ReceiveStruct msg) : base(ref msg)
         {
             IntValue = msg.SystemState.IntValue;
             FloatValue = msg.SystemState.FloatValue;

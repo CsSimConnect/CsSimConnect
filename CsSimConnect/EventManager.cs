@@ -15,10 +15,7 @@
  */
 
 using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using System.Text;
 using System.Threading;
 
 namespace CsSimConnect
@@ -95,7 +92,7 @@ namespace CsSimConnect
         MultiplayerSessionEnded,
     }
 
-    public sealed class EventManager
+    public sealed class EventManager : MessageManager
     {
         [DllImport("CsSimConnectInterOp.dll")]
         private static extern long CsSubscribeToSystemEvent(IntPtr handle, UInt32 requestId, [MarshalAs(UnmanagedType.LPStr)] string eventName);
@@ -115,58 +112,24 @@ namespace CsSimConnect
             return result;
         }
 
-
-        private readonly SimConnect simConnect;
-        private EventManager(SimConnect simConnect)
-        {
-            this.simConnect = simConnect;
-        }
-
         private static readonly UInt32 USREVT_FIRST = 64;
-        private UInt32 lastEvent = USREVT_FIRST;
 
-        public UInt32 NextEvent()
+        private EventManager(SimConnect simConnect) : base("EventID", USREVT_FIRST, simConnect)
         {
-            return Interlocked.Increment(ref lastEvent);
         }
 
-        private MessageDispatcher dispatcher = new("EventID");
-
-        public void DispatchResult(UInt32 eventId, SimConnectMessage msg)
-        {
-            if (!dispatcher.DispatchToObserver(eventId, msg))
-            {
-                log.Error("Received a message for an unknown event {0}.", eventId);
-            }
-        }
-
-        public MessageStream<T> SubscribeToSystemState<T>(string systemState)
+        public MessageStream<T> SubscribeToSystemEvent<T>(SystemEvent systemEvent)
             where T : SimConnectMessage
         {
-            UInt32 eventId = NextEvent();
-            log.Debug("Event ID {0}: Subscribing to '{1}'", eventId, systemState);
+            uint eventId = NextId();
+            log.Debug("Event ID {0}: Subscribing to '{1}'", eventId, systemEvent.ToString());
 
-            long sendId = CsSubscribeToSystemEvent(simConnect.handle, eventId, systemState);
-            MessageStream<T> result;
-            if (sendId > 0)
-            {
-                result = new MessageStream<T>((uint)sendId, 1);
-                dispatcher.AddObserver(eventId, result);
-            }
-            else
-            {
-                result = (MessageStream<T>)SimConnectObserver.ErrorResult(0, new SimConnectException(1, 0));
-            }
-            return result;
+            return RegisterStreamObserver<T>(eventId, CsSubscribeToSystemEvent(simConnect.handle, eventId, systemEvent.ToString()), "SubscribeToSystemEvent");
         }
 
-        public void SubscribeToSystemStateBool(string systemState, Action<bool> callback, bool requestOnce = false)
+        public void SubscribeToSystemEventBool(SystemEvent systemEvent, Action<bool> callback)
         {
-            SubscribeToSystemState<SimEvent>(systemState).Subscribe((SimEvent evt) => callback(evt.Data != 0));
-            if (requestOnce)
-            {
-                RequestManager.Instance.RequestSystemStateBool(systemState, callback);
-            }
+            SubscribeToSystemEvent<SimEvent>(systemEvent).Subscribe((SimEvent evt) => callback(evt.Data != 0));
         }
     }
 }
