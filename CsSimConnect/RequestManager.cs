@@ -29,6 +29,22 @@ namespace CsSimConnect
         FullScreenMode,
         Sim,
     }
+    public enum ObjectDataPeriod
+    {
+        Never,
+        Once,
+        PerVisualFrame,
+        PerSimFrame,
+        PerSecond,
+    }
+    public enum ClientDataPeriod
+    {
+        Never,
+        Once,
+        PerVisualFrame,
+        WhenSet,
+        PerSecond,
+    }
 
     public class RequestManager : MessageManager
     {
@@ -60,7 +76,7 @@ namespace CsSimConnect
             }
         }
 
-        public MessageResult<SimState> RequestSystemState(SystemState systemState)
+        public SimConnectMessageResult<SimState> RequestSystemState(SystemState systemState)
         {
             uint requestId = NextId();
             log.Debug("Request ID {0}: Requesting '{1}'", requestId, systemState.ToString());
@@ -102,5 +118,21 @@ namespace CsSimConnect
             RequestSystemStateString(SystemState.FlightPlan, callback);
         }
 
+        private static readonly uint simObjectUser = 0;
+        private static readonly uint whenChanged = 0x00000001;
+        private static readonly uint taggedFormat = 0x00000002;
+        private static readonly uint blockingDispatch = 0x00000004;
+
+        public SimConnectMessageResult<T> RequestObjectData<T>(ObjectDefinition objectDefinition, ObjectDataPeriod period,
+                                                     uint origin =0, uint interval =0, uint limit =0,
+                                                     bool onlyWhenChanged=false, bool useBlockingDispatch =false)
+            where T : SimConnectMessage
+        {
+            uint requestId = NextId();
+            uint flags = 0;
+            if (onlyWhenChanged) flags |= whenChanged;
+            if (useBlockingDispatch) flags |= blockingDispatch;
+            return RegisterResultObserver<T>(requestId, CsRequestDataOnSimObject(simConnect.handle, requestId, objectDefinition.DefinitionId, simObjectUser, (uint)period, flags, origin, interval, limit), "RequestObjectData");
+        }
     }
 }

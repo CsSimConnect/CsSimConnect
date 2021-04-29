@@ -17,10 +17,7 @@
 using CsSimConnect.Reflection;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace CsSimConnect
 {
@@ -131,6 +128,12 @@ namespace CsSimConnect
                 }
             }
 
+        }
+
+        public T GetData<T>(ObjectData data)
+            where T : class
+        {
+            return null;
         }
     }
 }

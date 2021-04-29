@@ -52,13 +52,13 @@ namespace CsSimConnect
             }
         }
 
-        protected MessageStream<T> RegisterStreamObserver<T>(uint id, long sendId, string api)
+        protected SimConnectMessageStream<T> RegisterStreamObserver<T>(uint id, long sendId, string api)
             where T : SimConnectMessage
         {
-            MessageStream<T> result;
+            SimConnectMessageStream<T> result;
             if (sendId > 0)
             {
-                result = new MessageStream<T>((uint)sendId, 1);
+                result = new SimConnectMessageStream<T>((uint)sendId, 1);
                 dispatcher.AddObserver(id, result);
                 simConnect.AddCleanup((uint)sendId, (Exception _) => dispatcher.Remove(id));
             }
@@ -66,18 +66,18 @@ namespace CsSimConnect
             {
                 var msg = String.Format("Call to {0} failed. (HRETURN=0x{1:X8})", api, sendId);
                 log.Error(msg);
-                result = (MessageStream<T>)SimConnectObserver.ErrorResult(0, new SimConnectException(msg));
+                result = (SimConnectMessageStream<T>)SimConnectMessageObserver.ErrorResult(0, new SimConnectException(msg));
             }
             return result;
         }
 
-        protected MessageResult<T> RegisterResultObserver<T>(uint id, long sendId, string api)
+        protected SimConnectMessageResult<T> RegisterResultObserver<T>(uint id, long sendId, string api)
             where T : SimConnectMessage
         {
-            MessageResult<T> result;
+            SimConnectMessageResult<T> result;
             if (sendId > 0)
             {
-                result = new MessageResult<T>((uint)sendId);
+                result = new SimConnectMessageResult<T>((uint)sendId);
                 dispatcher.AddObserver(id, result);
                 simConnect.AddCleanup((uint)sendId, (Exception _) => dispatcher.Remove(id));
             }
@@ -85,7 +85,7 @@ namespace CsSimConnect
             {
                 var msg = String.Format("Call to {0} failed. (HRETURN=0x{1:X8})", api, sendId);
                 log.Error(msg);
-                result = (MessageResult<T>)SimConnectObserver.ErrorResult(0, new SimConnectException(msg));
+                result = (SimConnectMessageResult<T>)SimConnectMessageObserver.ErrorResult(0, new SimConnectException(msg));
             }
             return result;
         }

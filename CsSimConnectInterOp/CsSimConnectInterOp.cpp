@@ -101,6 +101,21 @@ CS_SIMCONNECT_DLL_EXPORT_BOOL CsGetNextDispatch(HANDLE handle, DispatchProc call
 }
 
 /*
+ * Utilities
+ */
+long fetchSendId(HANDLE handle, HRESULT hr, const char* api)
+{
+	DWORD sendId{ 0 };
+
+	if (SUCCEEDED(hr)) {
+		if (FAILED(SimConnect_GetLastSentPacketID(handle, &sendId))) {
+			logger.error("Failed to retrieve SendID for '{}' call.", api);
+		}
+	}
+	return SUCCEEDED(hr) ? sendId : hr;
+}
+
+/*
  * System state handling.
  */
 
@@ -112,21 +127,7 @@ CS_SIMCONNECT_DLL_EXPORT_LONG CsSubscribeToSystemEvent(HANDLE handle, int eventI
 		return FALSE;
 	}
 
-	HRESULT hr = SimConnect_SubscribeToSystemEvent(handle, eventId, eventName);
-	DWORD sendId{ 0 };
-
-	if (SUCCEEDED(hr)) {
-		if (FAILED(SimConnect_GetLastSentPacketID(handle, &sendId))) {
-			logger.error("Failed to retrieve SendID for SimConnect_SubscribeToSystemEvent(..., {}, '{}') call.", eventId, eventName);
-		}
-		else {
-			logger.debug("Subscribed to system event '{}', EventID={}, SendID={}.", eventName, eventId, sendId);
-		}
-	}
-	else if (hr != E_FAIL) {
-		logger.error("Failed to subscribe to system event '{}'. (HRESULT = {})", eventName, hr);
-	}
-	return SUCCEEDED(hr) ? sendId : hr;
+	return fetchSendId(handle, SimConnect_SubscribeToSystemEvent(handle, eventId, eventName), "SubScribeToSystemEvent");
 }
 
 CS_SIMCONNECT_DLL_EXPORT_LONG CsRequestSystemState(HANDLE handle, int requestId, const char* eventName) {
@@ -137,19 +138,30 @@ CS_SIMCONNECT_DLL_EXPORT_LONG CsRequestSystemState(HANDLE handle, int requestId,
 		return FALSE;
 	}
 
-	HRESULT hr = SimConnect_RequestSystemState(handle, requestId, eventName);
-	DWORD sendId{ 0 };
+	return fetchSendId(handle, SimConnect_RequestSystemState(handle, requestId, eventName), "RequestSystemState");
+}
 
-	if (SUCCEEDED(hr)) {
-		if (FAILED(SimConnect_GetLastSentPacketID(handle, &sendId))) {
-			logger.error("Failed to retrieve SendID for SimConnect_SubscribeToSystemEvent(..., {}, '{}') call.", requestId, eventName);
-		}
-		else {
-			logger.debug("Requested system state '{}', RequestID={}, SendID={}.", eventName, requestId, sendId);
-		}
+CS_SIMCONNECT_DLL_EXPORT_LONG CsRequestDataOnSimObject(HANDLE handle, uint32_t requestId, uint32_t defId, uint32_t objectId, uint32_t period, uint32_t dataRequestFlags,
+	DWORD origin, DWORD interval, DWORD limit)
+{
+	initLog();
+	logger.trace("CsRequestDataOnSimObject(..., {}, {}, {}, {}, {}, {}, {}, {})", requestId, defId, objectId, period, dataRequestFlags, origin, interval, limit);
+	if (handle == nullptr) {
+		logger.error("Handle passed to CsRequestDataOnSimObject is null!");
+		return FALSE;
 	}
-	else if (hr != E_FAIL) {
-		logger.error("Failed to requedst system state '{}'. (HRESULT = {})", eventName, hr);
+
+	return fetchSendId(handle, SimConnect_RequestDataOnSimObject(handle, requestId, defId, objectId, SIMCONNECT_PERIOD(period), dataRequestFlags, origin, interval, limit), "RequestDataOnSimObject");
+}
+
+CS_SIMCONNECT_DLL_EXPORT_LONG CsAddToDataDefinition(HANDLE handle, uint32_t defId, const char* datumName, const char* unitsName, uint32_t datumType, float epsilon, uint32_t datumId)
+{
+	initLog();
+	logger.trace("CsAddToDataDefinition(..., {}, {}, {}, {}, {}, {})", defId, datumName, unitsName, datumType, epsilon, datumId);
+	if (handle == nullptr) {
+		logger.error("Handle passed to CsAddToDataDefinition is null!");
+		return FALSE;
 	}
-	return SUCCEEDED(hr) ? sendId : hr;
+
+	return fetchSendId(handle, SimConnect_AddToDataDefinition(handle, defId, datumName, unitsName, SIMCONNECT_DATATYPE(datumType), epsilon, datumId), "AddToDataDefinition");
 }

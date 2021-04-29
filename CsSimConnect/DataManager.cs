@@ -75,12 +75,16 @@ namespace CsSimConnect
             }
 
         }
-        public T RequestData<T>()
+
+        public IMessageResult<T> RequestData<T>()
             where T : class
         {
             Type t = typeof(T);
             ObjectDefinition def = GetObjectDefinition(t);
-            return null;
+            SimConnectMessageResult<ObjectData> data =  RequestManager.Instance.RequestObjectData<ObjectData>(def, ObjectDataPeriod.Once);
+            MessageResult<T> result = new();
+            data.Subscribe((ObjectData data) => result.OnNext(def.GetData<T>(data)));
+            return result;
         }
 
         internal void AddToDefinition(UInt32 defId, ObjectDefinition.DataDefInfo info)

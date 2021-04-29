@@ -14,19 +14,11 @@
  * limitations under the License.
  */
 
-using System;
+using System.Collections.Generic;
 
 namespace CsSimConnect
 {
-    public class MessageResult<T> : MessageObserver<T>, IMessageResult<T>
+    public interface IMessageStream<T> : IMessageObserver<T>, IAsyncEnumerator<T>
     {
-        internal MessageResult() : base(false)
-        {
-        }
-
-        public T Get()
-        {
-            throw new NotImplementedException();
-        }
     }
 }

@@ -14,19 +14,10 @@
  * limitations under the License.
  */
 
-using System;
-
 namespace CsSimConnect
 {
-    public class MessageResult<T> : MessageObserver<T>, IMessageResult<T>
+    public interface IMessageResult<T> : IMessageObserver<T>
     {
-        internal MessageResult() : base(false)
-        {
-        }
-
-        public T Get()
-        {
-            throw new NotImplementedException();
-        }
+        T Get();
     }
 }

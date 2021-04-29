@@ -24,11 +24,11 @@ using System.Threading.Tasks;
 
 namespace CsSimConnect
 {
-    public class MessageStream<T> : SimConnectObserver<T>, IObserver<T>, IAsyncEnumerator<T>
+    public class SimConnectMessageStream<T> : SimConnectObserver<T>, IMessageStream<T>
         where T : SimConnectMessage
     {
 
-        private static Logger log = Logger.GetLogger(typeof(MessageStream<T>));
+        private static Logger log = Logger.GetLogger(typeof(SimConnectMessageStream<T>));
 
         public uint MaxSize { get; set; }
 
@@ -36,7 +36,7 @@ namespace CsSimConnect
         private T current = null;
         private bool disposedValue;
 
-        public MessageStream(uint sendID, uint queueSize) : base(sendID, true)
+        public SimConnectMessageStream(uint sendID, uint queueSize) : base(sendID, true)
         {
             MaxSize = queueSize;
         }
@@ -46,7 +46,7 @@ namespace CsSimConnect
             base.OnNext(msg);
         }
 
-        public void OnNext(T msg)
+        override public void OnNext(T msg)
         {
             base.OnNext(msg);
         }
@@ -83,5 +83,9 @@ namespace CsSimConnect
             throw new NotImplementedException();
         }
 
+        override public IEnumerator<T> GetEnumerator()
+        {
+            throw new NotImplementedException();
+        }
     }
 }

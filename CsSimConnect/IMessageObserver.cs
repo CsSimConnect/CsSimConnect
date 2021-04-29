@@ -15,18 +15,15 @@
  */
 
 using System;
+using System.Collections.Generic;
 
 namespace CsSimConnect
 {
-    public class MessageResult<T> : MessageObserver<T>, IMessageResult<T>
-    {
-        internal MessageResult() : base(false)
-        {
-        }
 
-        public T Get()
-        {
-            throw new NotImplementedException();
-        }
+    public interface IMessageObserver<T> : IObserver<T>, IEnumerable<T>, IDisposable
+    {
+        bool IsStreamable();
+        bool IsCompleted();
     }
+
 }

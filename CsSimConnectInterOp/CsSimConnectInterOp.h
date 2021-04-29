@@ -27,3 +27,6 @@ CS_SIMCONNECT_DLL_EXPORT_BOOL CsCallDispatch(HANDLE handle, DispatchProc callbac
 CS_SIMCONNECT_DLL_EXPORT_BOOL CsGetNextDispatch(HANDLE handle, DispatchProc callback);
 CS_SIMCONNECT_DLL_EXPORT_LONG CsSubscribeToSystemEvent(HANDLE handle, int id, const char* eventName);
 CS_SIMCONNECT_DLL_EXPORT_LONG CsRequestSystemState(HANDLE handle, int id, const char* eventName);
+CS_SIMCONNECT_DLL_EXPORT_LONG CsRequestDataOnSimObject(HANDLE handle, uint32_t requestId, uint32_t defId, uint32_t objectId, uint32_t period, uint32_t dataRequestFlags,
+													   DWORD origin, DWORD interval, DWORD limit);
+CS_SIMCONNECT_DLL_EXPORT_LONG CsAddToDataDefinition(HANDLE handle, uint32_t defId, const char *datumName, const char *UnitsName, uint32_t datumType, float epsilon, uint32_t datumId);

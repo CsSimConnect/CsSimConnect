@@ -405,4 +405,12 @@ namespace CsSimConnect
 
         }
     }
+
+    public class ObjectData : SimConnectMessage
+    {
+        internal ObjectData(ref ReceiveStruct msg) : base(ref msg)
+        {
+
+        }
+    }
 }

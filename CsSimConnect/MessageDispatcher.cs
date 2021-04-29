@@ -34,7 +34,7 @@ namespace CsSimConnect
 
         public string Name { get; init; }
 
-        private readonly Dictionary<UInt32, SimConnectObserver> MessageObservers = new();
+        private readonly Dictionary<UInt32, SimConnectMessageObserver> MessageObservers = new();
         private readonly Dictionary<UInt32, LinkedList<SimConnectMessage>> MessageObserverLobby = new();
         private readonly object observerLock = new();
 
@@ -49,9 +49,9 @@ namespace CsSimConnect
 
             lock (observerLock)
             {
-                SimConnectObserver messageObserver;
+                SimConnectMessageObserver messageObserver;
                 bool found = MessageObservers.TryGetValue(id, out messageObserver);
-                if (found && !messageObserver.IsStreamable)
+                if (found && !messageObserver.IsStreamable())
                 {
                     MessageObservers.Remove(id, out _);
                 }
@@ -66,10 +66,10 @@ namespace CsSimConnect
 
             lock (observerLock)
             {
-                bool found = MessageObservers.TryGetValue(id, out SimConnectObserver observer);
+                bool found = MessageObservers.TryGetValue(id, out SimConnectMessageObserver observer);
                 if (found)
                 {
-                    if (!observer.IsStreamable)
+                    if (!observer.IsStreamable())
                     {
                         MessageObservers.Remove(id, out _);
                     }
@@ -77,7 +77,7 @@ namespace CsSimConnect
                     log.Trace("Dispatching {0} {1} to observer", Name, id);
                     observer.OnNext(msg);
 
-                    if (!observer.IsStreamable)
+                    if (!observer.IsStreamable())
                     {
                         observer.OnCompleted();
                     }
@@ -96,7 +96,7 @@ namespace CsSimConnect
             }
         }
 
-        public void AddObserver(UInt32 id, SimConnectObserver observer)
+        public void AddObserver(UInt32 id, SimConnectMessageObserver observer)
         {
             log.Debug("Adding observer for {0} {1}.", Name, id);
 
@@ -114,7 +114,7 @@ namespace CsSimConnect
                     foreach (SimConnectMessage msg in waitingList) {
                         log.Trace("Dispatching {0} {1} from lobby to observer", Name, id);
                         messageObserver.OnNext(msg);
-                        if (!messageObserver.IsStreamable)
+                        if (!messageObserver.IsStreamable())
                         {
                             MessageObservers.Remove(id);
                             if (waitingList.Count > 1)
