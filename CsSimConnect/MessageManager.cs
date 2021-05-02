@@ -52,13 +52,13 @@ namespace CsSimConnect
             }
         }
 
-        protected SimConnectMessageStream<T> RegisterStreamObserver<T>(uint id, long sendId, string api)
+        protected MessageStream<T> RegisterStreamObserver<T>(uint id, long sendId, string api)
             where T : SimConnectMessage
         {
-            SimConnectMessageStream<T> result;
+            MessageStream<T> result;
             if (sendId > 0)
             {
-                result = new SimConnectMessageStream<T>((uint)sendId, 1);
+                result = new MessageStream<T>((uint)sendId, 1);
                 dispatcher.AddObserver(id, result);
                 simConnect.AddCleanup((uint)sendId, (Exception _) => dispatcher.Remove(id));
             }
@@ -66,7 +66,7 @@ namespace CsSimConnect
             {
                 var msg = String.Format("Call to {0} failed. (HRETURN=0x{1:X8})", api, sendId);
                 log.Error(msg);
-                result = (SimConnectMessageStream<T>)SimConnectMessageObserver.ErrorResult(0, new SimConnectException(msg));
+                result = (MessageStream<T>)SimConnectMessageObserver.ErrorResult(0, new SimConnectException(msg));
             }
             return result;
         }

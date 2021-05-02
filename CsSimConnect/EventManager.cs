@@ -118,7 +118,7 @@ namespace CsSimConnect
         {
         }
 
-        public SimConnectMessageStream<T> SubscribeToSystemEvent<T>(SystemEvent systemEvent)
+        public MessageStream<T> SubscribeToSystemEvent<T>(SystemEvent systemEvent)
             where T : SimConnectMessage
         {
             uint eventId = NextId();

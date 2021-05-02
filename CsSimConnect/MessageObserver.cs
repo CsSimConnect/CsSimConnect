@@ -83,5 +83,12 @@ namespace CsSimConnect
             Cleanup?.Invoke();
         }
 
+        public static MessageObserver<T> ErrorResult(UInt32 sendId, Exception error)
+        {
+            MessageObserver<T> result = new(false);
+            result.OnError(error);
+            return result;
+        }
+
     }
 }

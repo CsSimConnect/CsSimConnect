@@ -21,6 +21,7 @@ namespace CsSimConnect
 {
 
     public interface IMessageObserver<T> : IObserver<T>, IEnumerable<T>, IDisposable
+        where T : class
     {
         bool IsStreamable();
         bool IsCompleted();

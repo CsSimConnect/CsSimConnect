@@ -15,18 +15,52 @@
  */
 
 using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace CsSimConnect
 {
-    public class MessageResult<T> : MessageObserver<T>, IMessageResult<T>
+    public class DoubleResultException : Exception
     {
-        internal MessageResult() : base(false)
+        public DoubleResultException() : base("Attempted to complete a MessageResult twice")
         {
+
+        }
+    }
+
+    public class MessageResult<T> : MessageObserver<T>, IMessageResult<T>
+        where T : class
+    {
+
+        private T result;
+        private readonly TaskCompletionSource<T> future = new();
+
+        public MessageResult() : base(false)
+        {
+        }
+
+        override public void OnCompleted()
+        {
+            if (!future.TrySetResult(result))
+            {
+                OnError(new DoubleResultException());
+            }
+        }
+
+        override public void OnNext(T value)
+        {
+            result = value;
+        }
+
+        override public void OnError(Exception error)
+        {
+            future.SetException(error);
         }
 
         public T Get()
         {
-            throw new NotImplementedException();
+            return future.Task.Result;
         }
+
     }
 }
