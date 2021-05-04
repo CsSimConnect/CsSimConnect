@@ -49,7 +49,7 @@ namespace CsSimConnect
     public class RequestManager : MessageManager
     {
         [DllImport("CsSimConnectInterOp.dll")]
-        private static extern Int64 CsRequestSystemState(IntPtr handle, UInt32 requestId, [MarshalAs(UnmanagedType.LPStr)] string state);
+        private static extern long CsRequestSystemState(IntPtr handle, UInt32 requestId, [MarshalAs(UnmanagedType.LPStr)] string state);
         [DllImport("CsSimConnectInterOp.dll")]
         private static extern long CsRequestDataOnSimObject(IntPtr handle, UInt32 requestId, UInt32 defId, UInt32 objectId, UInt32 period, UInt32 dataRequestFlags, UInt32 origin, UInt32 interval, UInt32 limit);
 
@@ -76,12 +76,15 @@ namespace CsSimConnect
             }
         }
 
-        public SimConnectMessageResult<SimState> RequestSystemState(SystemState systemState)
+        public MessageResult<SimState> RequestSystemState(SystemState systemState)
         {
             uint requestId = NextId();
             log.Debug("Request ID {0}: Requesting '{1}'", requestId, systemState.ToString());
 
-            return RegisterResultObserver<SimState>(requestId, CsRequestSystemState(simConnect.handle, requestId, systemState.ToString()), "RequestSystemState");
+            lock (simConnect)
+            {
+                return RegisterResultObserver<SimState>(requestId, CsRequestSystemState(simConnect.handle, requestId, systemState.ToString()), "RequestSystemState");
+            }
         }
 
         public void RequestSystemStateBool(SystemState systemState, Action<bool> callback)
@@ -123,16 +126,20 @@ namespace CsSimConnect
         private static readonly uint taggedFormat = 0x00000002;
         private static readonly uint blockingDispatch = 0x00000004;
 
-        public SimConnectMessageResult<T> RequestObjectData<T>(ObjectDefinition objectDefinition, ObjectDataPeriod period,
+        public MessageResult<T> RequestObjectData<T>(ObjectDefinition objectDefinition, ObjectDataPeriod period,
                                                      uint origin =0, uint interval =0, uint limit =0,
                                                      bool onlyWhenChanged=false, bool useBlockingDispatch =false)
             where T : SimConnectMessage
         {
             uint requestId = NextId();
+            log.Debug("RequestObjectData<{0}>(): RequestId {1}, target object type {2}, period = {3}", typeof(T).FullName, requestId, objectDefinition.Type.FullName, period.ToString());
             uint flags = 0;
             if (onlyWhenChanged) flags |= whenChanged;
             if (useBlockingDispatch) flags |= blockingDispatch;
-            return RegisterResultObserver<T>(requestId, CsRequestDataOnSimObject(simConnect.handle, requestId, objectDefinition.DefinitionId, simObjectUser, (uint)period, flags, origin, interval, limit), "RequestObjectData");
+            lock (simConnect)
+            {
+                return RegisterResultObserver<T>(requestId, CsRequestDataOnSimObject(simConnect.handle, requestId, objectDefinition.DefinitionId, simObjectUser, (uint)period, flags, origin, interval, limit), "RequestObjectData");
+            }
         }
     }
 }

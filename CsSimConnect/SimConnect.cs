@@ -17,7 +17,6 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace CsSimConnect
@@ -48,7 +47,7 @@ namespace CsSimConnect
         public bool UseAutoConnect { get; set; }
         private Task<bool> messagePoller;
 
-        private readonly Dictionary<uint, Action<Exception>> onError = new();
+        private readonly Dictionary<uint, Action<SimConnectException>> onError = new();
         public event ConnectionStateHandler OnConnectionStateChange;
 
         private SimConnect()
@@ -118,8 +117,9 @@ namespace CsSimConnect
             }
         }
 
-        internal void AddCleanup(uint sendId, Action<Exception> cleanup)
+        internal void AddCleanup(uint sendId, Action<SimConnectException> cleanup)
         {
+            log.Trace("Adding cleanup for SendId {0}", sendId);
             onError.Add(sendId, cleanup);
         }
 
@@ -137,8 +137,8 @@ namespace CsSimConnect
                 {
                     case RecvId.Exception:           // 1
                         SimConnectException exc = new(structData.Exception.ExceptionId, structData.Exception.SendId, structData.Exception.Index);
-                        log.Debug("Exception returned: {0} (SendID={1}, Index={2})", exc.Message, exc.SendID, exc.Index);
-                        Action<Exception> cleanup;
+                        log.Trace("Exception returned: {0} (SendID={1}, Index={2})", exc.Message, exc.SendID, exc.Index);
+                        Action<SimConnectException> cleanup;
                         if (onError.Remove(exc.SendID.Value, out cleanup))
                         {
                             cleanup(exc);
@@ -164,14 +164,19 @@ namespace CsSimConnect
                         EventManager.Instance.DispatchResult(structData.Event.Id, SimConnectMessage.FromMessage(ref structData));
                         break;
 
+                    case RecvId.SimObjectData:          // 8
+                        log.Trace("Received SimObjectData for request {0}", structData.ObjectData.Id);
+                        RequestManager.Instance.DispatchResult(structData.ObjectData.Id, SimConnectMessage.FromMessage(ref structData));
+                        break;
+
                     case RecvId.Event64:                // 67
                         log.Debug("Received 64-bit event {0}.", structData.Event.Id);
                         EventManager.Instance.DispatchResult(structData.Event.Id, SimConnectMessage.FromMessage(ref structData));
                         break;
 
                     case RecvId.SystemState:            // 15
-                        log.Debug("Received systemState for request {0}.", structData.SystemState.RequestId);
-                        RequestManager.Instance.DispatchResult(structData.SystemState.RequestId, SimConnectMessage.FromMessage(ref structData));
+                        log.Debug("Received systemState for request {0}.", structData.SystemState.Id);
+                        RequestManager.Instance.DispatchResult(structData.SystemState.Id, SimConnectMessage.FromMessage(ref structData));
                         break;
 
                     default:
@@ -180,7 +185,7 @@ namespace CsSimConnect
             }
             catch (Exception e)
             {
-                log.Error("Exception caught while processing message: {0}", e.Message);
+                log.Error("Exception caught while processing message: {0}\n{1}", e.Message, e.StackTrace);
             }
         }
 

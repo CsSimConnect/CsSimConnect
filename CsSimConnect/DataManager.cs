@@ -14,19 +14,14 @@
  * limitations under the License.
  */
 
-using CsSimConnect.Reflection;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
 using System.Runtime.InteropServices;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace CsSimConnect
 {
-    public sealed class DataManager
+    public sealed class DataManager : MessageManager
     {
 
         [DllImport("CsSimConnectInterOp.dll")]
@@ -38,59 +33,75 @@ namespace CsSimConnect
 
         public static DataManager Instance { get { return lazyInstance.Value; } }
 
-        private readonly SimConnect simConnect;
-
-        private DataManager(SimConnect simConnect)
+        private DataManager(SimConnect simConnect) : base("DefinitionID", 1, simConnect)
         {
-            this.simConnect = simConnect;
-        }
-
-        private UInt32 nextId = 1;
-
-        public UInt32 NextId()
-        {
-            return Interlocked.Increment(ref nextId);
         }
 
         private readonly Dictionary<Type, UInt32> registeredTypes = new();
         private readonly Dictionary<UInt32, ObjectDefinition> definedTypes = new();
 
-        internal ObjectDefinition GetObjectDefinition(Type type)
+        internal ObjectDefinition GetObjectDefinition(uint defineId)
         {
-            if (registeredTypes.TryGetValue(type, out UInt32 defId) && definedTypes.TryGetValue(defId, out ObjectDefinition def))
+            lock (this)
             {
-                return def;
+                return definedTypes.GetValueOrDefault(defineId);
             }
-            def = new(type);
-            definedTypes.Add(def.DefinitionId, def);
-            registeredTypes.Add(type, def.DefinitionId);
-            return def;
         }
 
-        private void BuildDataDefinition(ObjectDefinition def)
+        internal ObjectDefinition GetObjectDefinition(Type type)
         {
-            if (def.IsDefined)
+            lock (this)
             {
-                return;
+                if (registeredTypes.TryGetValue(type, out UInt32 defId) && definedTypes.TryGetValue(defId, out ObjectDefinition def))
+                {
+                    return def;
+                }
+                def = new(type);
+                definedTypes.Add(def.DefinitionId, def);
+                registeredTypes.Add(type, def.DefinitionId);
+                return def;
             }
-
         }
 
         public IMessageResult<T> RequestData<T>()
             where T : class
         {
             Type t = typeof(T);
+            log.Debug("RequestData<{0}>()", t.FullName);
             ObjectDefinition def = GetObjectDefinition(t);
-            SimConnectMessageResult<ObjectData> data =  RequestManager.Instance.RequestObjectData<ObjectData>(def, ObjectDataPeriod.Once);
+            def.DefineObject();
+            MessageResult<ObjectData> data =  RequestManager.Instance.RequestObjectData<ObjectData>(def, ObjectDataPeriod.Once);
+
             MessageResult<T> result = new();
-            data.Subscribe((ObjectData data) => result.OnNext(def.GetData<T>(data)));
+            data.Subscribe((ObjectData data) => {
+                log.Trace("RequestData<{0}> callback called", t.FullName);
+                try
+                {
+                    result.OnNext(def.GetData<T>(data));
+                }
+                catch (Exception e)
+                {
+                    result.OnError(e);
+                }
+            });
             return result;
         }
 
         internal void AddToDefinition(UInt32 defId, ObjectDefinition.DataDefInfo info)
         {
             log.Debug("AddToDataDefinition(..., {0}, '{1}', '{2}', {3}, {4}, {5})", defId, info.Definition.Name, info.Definition.Units, info.Definition.Type.ToString(), info.Definition.Epsilon, info.Definition.Tag);
-            //CsAddToDataDefinition(simConnect.handle, defId, info.Definition.Name, info.Definition.Units, (uint)info.Definition.Type, info.Definition.Epsilon, info.Definition.Tag);
+            lock(simConnect)
+            {
+                RegisterCleanup(
+                    CsAddToDataDefinition(simConnect.handle, defId, info.Definition.Name, info.Definition.Units, (uint)info.Definition.Type, info.Definition.Epsilon, info.Definition.Tag),
+                    "RequestObjectData",
+                    (SimConnectException error) => PrintError(defId, info, error.Message));
+            }
+        }
+
+        private void PrintError(uint defId, ObjectDefinition.DataDefInfo info, string error)
+        {
+            log.Error("AddToDataDefinition() failed for DefinitionID {0} var '{1}': {2}", defId, info.Definition.Name, error);
         }
     }
 }

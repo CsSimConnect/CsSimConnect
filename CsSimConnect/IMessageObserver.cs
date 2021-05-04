@@ -20,11 +20,18 @@ using System.Collections.Generic;
 namespace CsSimConnect
 {
 
-    public interface IMessageObserver<T> : IObserver<T>, IEnumerable<T>, IDisposable
-        where T : class
+    public interface IMessageObserver
     {
         bool IsStreamable();
         bool IsCompleted();
+        void OnNext(object msg);
+        void OnCompleted();
+        void OnError(Exception error);
+    }
+
+    public interface IMessageObserver<T> : IMessageObserver, IObserver<T>, IEnumerable<T>, IDisposable
+        where T : class
+    {
     }
 
 }

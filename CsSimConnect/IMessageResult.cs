@@ -17,6 +17,7 @@
 namespace CsSimConnect
 {
     public interface IMessageResult<T> : IMessageObserver<T>
+        where T : class
     {
         T Get();
     }

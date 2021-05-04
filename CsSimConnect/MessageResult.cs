@@ -15,7 +15,6 @@
  */
 
 using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace CsSimConnect
@@ -32,7 +31,6 @@ namespace CsSimConnect
         where T : class
     {
 
-        private T result;
         private readonly TaskCompletionSource<T> future = new();
 
         public MessageResult() : base(false)
@@ -41,15 +39,19 @@ namespace CsSimConnect
 
         override public void OnCompleted()
         {
-            if (!future.TrySetResult(result))
-            {
-                OnError(new DoubleResultException());
-            }
         }
 
         override public void OnNext(T value)
         {
-            result = value;
+            try
+            {
+                future.SetResult(value);
+                base.OnNext(value);
+            }
+            catch (Exception e) {
+                OnError(e);
+            }
+            OnCompleted();
         }
 
         override public void OnError(Exception error)
@@ -60,6 +62,13 @@ namespace CsSimConnect
         public T Get()
         {
             return future.Task.Result;
+        }
+
+        public static MessageResult<T> ErrorResult(UInt32 sendId, Exception error)
+        {
+            MessageResult<T> result = new();
+            result.OnError(error);
+            return result;
         }
 
     }

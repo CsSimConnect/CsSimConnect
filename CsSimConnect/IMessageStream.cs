@@ -19,6 +19,7 @@ using System.Collections.Generic;
 namespace CsSimConnect
 {
     public interface IMessageStream<T> : IMessageObserver<T>, IAsyncEnumerator<T>
+        where T : class
     {
     }
 }

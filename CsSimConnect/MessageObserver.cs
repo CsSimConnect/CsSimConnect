@@ -20,7 +20,8 @@ using System.Collections.Generic;
 
 namespace CsSimConnect
 {
-    public class MessageObserver<T> : IMessageObserver<T>
+    public class MessageObserver<T> : IMessageObserver, IMessageObserver<T>
+        where T : class
     {
 
         private readonly bool streamable;
@@ -45,6 +46,11 @@ namespace CsSimConnect
         public virtual void OnNext(T msg)
         {
             callback?.Invoke(msg);
+        }
+
+        public void OnNext(object msg)
+        {
+            OnNext((T)msg);
         }
 
         public virtual void OnCompleted()
@@ -81,13 +87,6 @@ namespace CsSimConnect
         public virtual void Dispose()
         {
             Cleanup?.Invoke();
-        }
-
-        public static MessageObserver<T> ErrorResult(UInt32 sendId, Exception error)
-        {
-            MessageObserver<T> result = new(false);
-            result.OnError(error);
-            return result;
         }
 
     }

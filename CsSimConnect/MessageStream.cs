@@ -75,5 +75,12 @@ namespace CsSimConnect
             throw new NotImplementedException();
         }
 
+        public static MessageStream<T> ErrorResult(UInt32 sendId, Exception error)
+        {
+            MessageStream<T> result = new(0);
+            result.OnError(error);
+            return result;
+        }
+
     }
 }

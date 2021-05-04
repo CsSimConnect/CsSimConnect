@@ -21,7 +21,7 @@ static bool logInitialized{ false };
 
 void initLog() {
 	if (!logInitialized) {
-		nl::rakis::File logConfig{ "rakisLog.properties" };
+		nl::rakis::File logConfig{ "rakisLog2.properties" };
 		if (logConfig.exists()) {
 			nl::rakis::Logger::configure(logConfig);
 		}
@@ -163,5 +163,8 @@ CS_SIMCONNECT_DLL_EXPORT_LONG CsAddToDataDefinition(HANDLE handle, uint32_t defI
 		return FALSE;
 	}
 
+	if ((unitsName != nullptr) && (strcmp(unitsName, "NULL") == 0)) {
+		unitsName = nullptr;
+	}
 	return fetchSendId(handle, SimConnect_AddToDataDefinition(handle, defId, datumName, unitsName, SIMCONNECT_DATATYPE(datumType), epsilon, datumId), "AddToDataDefinition");
 }

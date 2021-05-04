@@ -124,7 +124,10 @@ namespace CsSimConnect
             uint eventId = NextId();
             log.Debug("Event ID {0}: Subscribing to '{1}'", eventId, systemEvent.ToString());
 
-            return RegisterStreamObserver<T>(eventId, CsSubscribeToSystemEvent(simConnect.handle, eventId, systemEvent.ToString()), "SubscribeToSystemEvent");
+            lock (simConnect)
+            {
+                return RegisterStreamObserver<T>(eventId, CsSubscribeToSystemEvent(simConnect.handle, eventId, systemEvent.ToString()), "SubscribeToSystemEvent");
+            }
         }
 
         public void SubscribeToSystemEventBool(SystemEvent systemEvent, Action<bool> callback)

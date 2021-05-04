@@ -165,10 +165,13 @@ namespace CsSimConnect
         {
             if (GetThreshold() <= level)
             {
-                using FileStream fs = new(logPath, FileMode.Append, FileAccess.Write, FileShare.ReadWrite);
-                using StreamWriter f = new(fs);
-                f.Write(String.Format("{0,19} {1,7} {2} ", DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss"), "[" + level.ToString() + "]", name));
-                f.WriteLine(String.Format(fmt, msg));
+                lock (this)
+                {
+                    using FileStream fs = new(logPath, FileMode.Append, FileAccess.Write, FileShare.ReadWrite);
+                    using StreamWriter f = new(fs);
+                    f.Write(String.Format("{0,19} {1,7} {2} ", DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss"), "[" + level.ToString() + "]", name));
+                    f.WriteLine(String.Format(fmt, msg));
+                }
             }
         }
 
