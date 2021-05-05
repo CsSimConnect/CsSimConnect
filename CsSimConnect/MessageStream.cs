@@ -15,17 +15,14 @@
  */
 
 using System;
-using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace CsSimConnect
 {
-    public class MessageStream<T> : SimConnectObserver<T>, IObserver<T>, IAsyncEnumerator<T>
-        where T : SimConnectMessage
+    public class MessageStream<T> : MessageObserver<T>, IMessageStream<T>
+        where T : class
     {
 
         private static Logger log = Logger.GetLogger(typeof(MessageStream<T>));
@@ -36,17 +33,12 @@ namespace CsSimConnect
         private T current = null;
         private bool disposedValue;
 
-        public MessageStream(uint sendID, uint queueSize) : base(sendID, true)
+        public MessageStream(uint queueSize) : base(true)
         {
             MaxSize = queueSize;
         }
 
-        override public void OnNext(SimConnectMessage msg)
-        {
-            base.OnNext(msg);
-        }
-
-        public void OnNext(T msg)
+        override public void OnNext(T msg)
         {
             base.OnNext(msg);
         }
@@ -81,6 +73,13 @@ namespace CsSimConnect
         ValueTask IAsyncDisposable.DisposeAsync()
         {
             throw new NotImplementedException();
+        }
+
+        public static MessageStream<T> ErrorResult(UInt32 sendId, Exception error)
+        {
+            MessageStream<T> result = new(0);
+            result.OnError(error);
+            return result;
         }
 
     }

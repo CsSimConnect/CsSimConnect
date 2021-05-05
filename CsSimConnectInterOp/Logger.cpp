@@ -249,29 +249,29 @@ static const string LOGLVL_NAME[] = {
 					if (parts.size() == 1) {
 						rootLog_.open(parts[0], ios_base::out | ios_base::app);
 					}
-					else if (parts.size() >= 2) {\
+					else if (parts.size() >= 2) {
 						rootLog_.open(parts[1], ios_base::out | ios_base::app);
-					if (parts[0] == CFG_LEVEL_TRACE) {
-						rootLevel_ = LOGLVL_TRACE;
-					}
-					else if (parts[0] == CFG_LEVEL_DEBUG) {
-						rootLevel_ = LOGLVL_DEBUG;
-					}
-					else if (parts[0] == CFG_LEVEL_INFO) {
-						rootLevel_ = LOGLVL_INFO;
-					}
-					else if (parts[0] == CFG_LEVEL_WARN) {
-						rootLevel_ = LOGLVL_WARN;
-					}
-					else if (parts[0] == CFG_LEVEL_ERROR) {
-						rootLevel_ = LOGLVL_ERROR;
-					}
-					else if (parts[0] == CFG_LEVEL_FATAL) {
-						rootLevel_ = LOGLVL_FATAL;
-					}
-					else {
-						rootLog_ << "Ignoring root level \"" << value << "\"" << endl;
-					}
+						if (parts[0] == CFG_LEVEL_TRACE) {
+							rootLevel_ = LOGLVL_TRACE;
+						}
+						else if (parts[0] == CFG_LEVEL_DEBUG) {
+							rootLevel_ = LOGLVL_DEBUG;
+						}
+						else if (parts[0] == CFG_LEVEL_INFO) {
+							rootLevel_ = LOGLVL_INFO;
+						}
+						else if (parts[0] == CFG_LEVEL_WARN) {
+							rootLevel_ = LOGLVL_WARN;
+						}
+						else if (parts[0] == CFG_LEVEL_ERROR) {
+							rootLevel_ = LOGLVL_ERROR;
+						}
+						else if (parts[0] == CFG_LEVEL_FATAL) {
+							rootLevel_ = LOGLVL_FATAL;
+						}
+						else {
+							rootLog_ << "Ignoring root level \"" << value << "\"" << endl;
+						}
 					}
 				}
 				else if (parts[0] == CFG_LOGGER) {
@@ -315,7 +315,9 @@ static const string LOGLVL_NAME[] = {
 			}
 		}
 		configDone_ = true;
-		rootLog_ << "Logging initialized. Root log threshold '" << rootLevel_ << "'" << endl << flush;
+		rootLog_ << "Logging initialized. Root log threshold '" << LOGLVL_NAME [rootLevel_] << "'" << endl << flush;
+		Logger logger{ getLogger("CsSimConnectInterOp") };
+		rootLog_ << "getLevel(): '" << LOGLVL_NAME[logger.getLevel()] << "', trace is " << (logger.isTraceEnabled() ? "enabled" : "disabled") << endl << flush;
 	}
 }
 

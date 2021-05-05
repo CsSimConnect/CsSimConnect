@@ -15,11 +15,7 @@
  */
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace CsSimConnect
 {
@@ -58,15 +54,15 @@ namespace CsSimConnect
             MessageStream<T> result;
             if (sendId > 0)
             {
-                result = new MessageStream<T>((uint)sendId, 1);
+                result = new MessageStream<T>(1);
                 dispatcher.AddObserver(id, result);
-                simConnect.AddCleanup((uint)sendId, (Exception _) => dispatcher.Remove(id));
+                simConnect.AddCleanup((uint)sendId, (SimConnectException exc) => DefaultCleanup(api, id, exc));
             }
             else
             {
                 var msg = String.Format("Call to {0} failed. (HRETURN=0x{1:X8})", api, sendId);
                 log.Error(msg);
-                result = (MessageStream<T>)SimConnectObserver.ErrorResult(0, new SimConnectException(msg));
+                result = MessageStream<T>.ErrorResult(0, new SimConnectException(msg));
             }
             return result;
         }
@@ -77,18 +73,35 @@ namespace CsSimConnect
             MessageResult<T> result;
             if (sendId > 0)
             {
-                result = new MessageResult<T>((uint)sendId);
+                result = new MessageResult<T>();
                 dispatcher.AddObserver(id, result);
-                simConnect.AddCleanup((uint)sendId, (Exception _) => dispatcher.Remove(id));
+                simConnect.AddCleanup((uint)sendId, (SimConnectException exc) => DefaultCleanup(api, id, exc));
             }
             else
             {
                 var msg = String.Format("Call to {0} failed. (HRETURN=0x{1:X8})", api, sendId);
                 log.Error(msg);
-                result = (MessageResult<T>)SimConnectObserver.ErrorResult(0, new SimConnectException(msg));
+                result = MessageResult<T>.ErrorResult(0, new SimConnectException(msg));
             }
             return result;
         }
 
+        protected void RegisterCleanup(long sendId, string api, Action<SimConnectException> callback)
+        {
+            if (sendId > 0)
+            {
+                simConnect.AddCleanup((uint)sendId, callback);
+            }
+            else
+            {
+                log.Error("Call to {0} failed. (HRETURN=0x{1,X8})", api, sendId);
+            }
+        }
+
+        private void DefaultCleanup(string api, uint id, SimConnectException exc)
+        {
+            dispatcher.Remove(id);
+            log.Error("Exception returned for {0} {1} after calling '{2}': {3}", dispatcher.Name, id, api, exc.Message);
+        }
     }
 }

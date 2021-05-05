@@ -20,28 +20,28 @@ namespace CsSimConnect
 {
     public class AircraftData
     {
-		[DataDefinition("ATC TYPE", Type = DataType.String256)]
+		[DataDefinition("ATC TYPE", Type = DataType.String256)]							// 30
         public string Type { get; set; }
 
-		[DataDefinition("ATC MODEL", Type = DataType.String256)]
+		[DataDefinition("ATC MODEL", Type = DataType.String256)]						// 10
 		public string Model { get; set; }
 
-		[DataDefinition("ATC ID", Type = DataType.String256)]
+		[DataDefinition("ATC ID", Type = DataType.String256)]							// 10
 		public string Id { get; set; }
 
-		[DataDefinition("ATC AIRLINE", Type = DataType.String256)]
+		[DataDefinition("ATC AIRLINE", Type = DataType.String256)]						// 10
 		public string Airline { get; set; }
 
-		[DataDefinition("ATC FLIGHT NUMBER", Type = DataType.String256)]
+		[DataDefinition("ATC FLIGHT NUMBER", Type = DataType.String256)]				// 6
 		public string FlightNumber { get; set; }
 
-		[DataDefinition("TITLE", Type = DataType.String256)]
+		[DataDefinition("TITLE", Type = DataType.String256)]							// <var>
 		public string Title { get; set; }
 
-		[DataDefinition("NUMBER OF ENGINES", Units = "Number", Type = DataType.Int32)]
+		[DataDefinition("NUMBER OF ENGINES", Units = "Number", Type = DataType.Int32)]	// 4
 		public int NumberOfEngines { get; set; }
 
-		[DataDefinition("ENGINE TYPE", Units = "Number", Type = DataType.Int32)]
+		[DataDefinition("ENGINE TYPE", Units = "Number", Type = DataType.Int32)]		// 4
 		public int EngineType { get; set; }
 	}
 }

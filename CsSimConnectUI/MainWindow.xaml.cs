@@ -16,20 +16,10 @@
 
 using CsSimConnect;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace CsSimConnectUI
 {
@@ -64,10 +54,12 @@ namespace CsSimConnectUI
             {
                 if (!connected && !useAutoConnect)
                 {
+                    log.Info("Not connected, no autoconnect");
                     iconSim.Source = new BitmapImage(new Uri("Images/dark-slider-off-64.png", UriKind.Relative));
                 }
                 else if (!connected)
                 {
+                    log.Info("Not connected, autoconnect");
                     iconSim.Source = new BitmapImage(new Uri("Images/dark-slider-on-notok-64.png", UriKind.Relative));
                 }
                 else
@@ -76,6 +68,7 @@ namespace CsSimConnectUI
                 }
                 if (connected)
                 {
+                    log.Info("Connected");
                     if (Interlocked.Exchange(ref isConnected, 1) == 0)
                     {
                         // Haven't registered these yet
@@ -95,13 +88,14 @@ namespace CsSimConnectUI
                 }
                 else
                 {
+                    log.Info("Not connected");
+
                     isConnected = 0;
                     lStatus.Content = "Disconnected.";
                     lPaused.Style = (Style)FindResource("StatusOff");
                     lStopped.Style = (Style)FindResource("StatusOff");
                 }
             });
-            AircraftData data = DataManager.Instance.RequestData<AircraftData>();
         }
 
         private void ToggleConnection(object sender, RoutedEventArgs e)
@@ -119,6 +113,8 @@ namespace CsSimConnectUI
         private void TestGetSimState()
         {
             log.Info("The simulator is {0}.", RequestManager.Instance.RequestSystemState(SystemState.Sim).Get().AsBoolean() ? "Running" : "Stopped");
+            AircraftData data = DataManager.Instance.RequestData<AircraftData>().Get();
+            log.Info("Currently selected aircraft is '{0}'.", data.Title);
         }
     }
 }

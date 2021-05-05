@@ -159,13 +159,34 @@ namespace CsSimConnect
     unsafe public struct ReceiveSystemState
     {
         [FieldOffset(0)]
-        public readonly UInt32 RequestId;
+        public readonly UInt32 Id;
         [FieldOffset(4)]
         public readonly Int32 IntValue;
         [FieldOffset(8)]
         public readonly float FloatValue;
         [FieldOffset(12)]
         public fixed byte StringValue[260];
+    }
+
+    [StructLayout(LayoutKind.Explicit)]
+    unsafe public struct ReceiveSimObjectData
+    {
+        [FieldOffset(0)]
+        public readonly uint Id;
+        [FieldOffset(4)]
+        public readonly uint ObjectId;
+        [FieldOffset(8)]
+        public readonly uint DefineId;
+        [FieldOffset(12)]
+        public readonly uint Flags;
+        [FieldOffset(16)]
+        public readonly uint EntryNumber;
+        [FieldOffset(20)]
+        public readonly uint OutOf;
+        [FieldOffset(24)]
+        public readonly uint DefineCount;
+        [FieldOffset(28)]
+        public readonly byte Data;
     }
 
     [StructLayout(LayoutKind.Explicit)]
@@ -185,6 +206,8 @@ namespace CsSimConnect
         [FieldOffset(12)]
         public readonly ReceiveEvent Event;                         // SIMCONNECT_RECV_EVENT
         [FieldOffset(12)]
+        public readonly ReceiveSimObjectData ObjectData;
+        [FieldOffset(12)]
         public readonly ReceiveSystemState SystemState;             // SIMCONNECT_RECV_SYSTEM_STATE
 
     }
@@ -192,7 +215,7 @@ namespace CsSimConnect
     public class SimConnectMessage
     {
 
-        private static readonly Logger log = Logger.GetLogger(typeof(SimConnectMessage));
+        protected static readonly Logger log = Logger.GetLogger(typeof(SimConnectMessage));
 
         public RecvId Id { get; }
         public uint Version { get; }
@@ -221,7 +244,7 @@ namespace CsSimConnect
                 case RecvId.ObjectAddRemove: break;
                 case RecvId.EventFilename: break;
                 case RecvId.EventFrame: break;
-                case RecvId.SimObjectData: break;
+                case RecvId.SimObjectData: return new ObjectData(ref msg);
                 case RecvId.SimObjectDataByType: break;
                 case RecvId.WeatherObservation: break;
                 case RecvId.CloudState: break;
@@ -403,6 +426,98 @@ namespace CsSimConnect
                 }
             }
 
+        }
+    }
+
+    public class ObjectData : SimConnectMessage
+    {
+        public uint RequestId { get; }
+        public uint ObjectId { get; }
+        public uint DefineId { get; }
+        public uint Flags { get; }
+        public uint EntryNumber { get; }
+        public uint OutOf { get; }
+        public byte[] Data { get; }
+
+        internal ObjectData(ref ReceiveStruct msg) : base(ref msg)
+        {
+            RequestId = msg.ObjectData.Id;
+            ObjectId = msg.ObjectData.ObjectId;
+            DefineId = msg.ObjectData.DefineId;
+            Flags = msg.ObjectData.Flags;
+            EntryNumber = msg.ObjectData.EntryNumber;
+            OutOf = msg.ObjectData.OutOf;
+
+            ObjectDefinition def = DataManager.Instance.GetObjectDefinition(DefineId);
+            Data = new byte[def.TotalDataSize];
+            unsafe {
+                fixed (byte* msgData = &msg.ObjectData.Data, array = &Data[0])
+                {
+                    Buffer.MemoryCopy(msgData, array, Data.Length, def.TotalDataSize);
+                }
+            }
+            log.Trace("Copied {0} bytes of data into ObjectData.Data", Data.Length);
+        }
+
+        internal Int32 AsInt32(uint pos)
+        {
+            unsafe
+            {
+                fixed (byte* p = &Data[pos])
+                {
+                    Int32 result = *((Int32*)p);
+                    return result;
+                }
+            }
+        }
+
+        internal Int64 AsInt64(uint pos)
+        {
+            unsafe
+            {
+                fixed (byte* p = &Data[pos])
+                {
+                    Int64 result = *((Int64*)p);
+                    return result;
+                }
+            }
+        }
+
+        internal float AsFloat32(uint pos)
+        {
+            unsafe
+            {
+                fixed (byte* p = &Data[pos])
+                {
+                    float result = *((float*)p);
+                    return result;
+                }
+            }
+        }
+
+        internal double AsFloat64(uint pos)
+        {
+            unsafe
+            {
+                fixed (byte* p = &Data[pos])
+                {
+                    double result = *((double*)p);
+                    return result;
+                }
+            }
+        }
+
+        internal string AsFixedString(uint pos, uint len)
+        {
+            int strLen = Array.IndexOf<byte>(Data, 0, (int)pos, (int)len) - (int)pos;
+            unsafe
+            {
+                fixed (byte* p = &Data[pos])
+                {
+                    string result = Encoding.Latin1.GetString(p, strLen).Trim();
+                    return result;
+                }
+            }
         }
     }
 }

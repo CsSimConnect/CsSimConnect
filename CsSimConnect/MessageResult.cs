@@ -15,9 +15,6 @@
  */
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace CsSimConnect
@@ -30,33 +27,31 @@ namespace CsSimConnect
         }
     }
 
-    public class MessageResult<T> : SimConnectObserver<T>, IObserver<T>
-        where T : SimConnectMessage
+    public class MessageResult<T> : MessageObserver<T>, IMessageResult<T>
+        where T : class
     {
 
-        private T result;
         private readonly TaskCompletionSource<T> future = new();
 
-        public MessageResult(UInt32 sendID) : base(sendID)
+        public MessageResult() : base(false)
         {
         }
 
         override public void OnCompleted()
         {
-            if (!future.TrySetResult(result))
+        }
+
+        override public void OnNext(T value)
+        {
+            try
             {
-                OnError(new DoubleResultException());
+                future.SetResult(value);
+                base.OnNext(value);
             }
-        }
-
-        override public void OnNext(SimConnectMessage value)
-        {
-            result = (T)value;
-        }
-
-        public void OnNext(T value)
-        {
-            result = value;
+            catch (Exception e) {
+                OnError(e);
+            }
+            OnCompleted();
         }
 
         override public void OnError(Exception error)
@@ -69,38 +64,12 @@ namespace CsSimConnect
             return future.Task.Result;
         }
 
-        public class ResultEnumerator<R> : SimConnectObserverEnumerator<R>, IDisposable
-            where R : SimConnectMessage
+        public static MessageResult<T> ErrorResult(UInt32 sendId, Exception error)
         {
-
-            private readonly MessageResult<R> result;
-
-            public ResultEnumerator(MessageResult<R> result)
-            {
-                this.result = result;
-            }
-
-            public override R Current => result.result;
-
-            public override void Dispose()
-            {
-                // DONOTHING
-            }
-
-            public override bool MoveNext()
-            {
-                if (result.IsCompleted)
-                {
-                    return false;
-                }
-                result.future.Task.Wait();
-                return result.IsCompleted;
-            }
-
-            public override void Reset()
-            {
-                throw new NotImplementedException();
-            }
+            MessageResult<T> result = new();
+            result.OnError(error);
+            return result;
         }
+
     }
 }
