@@ -35,6 +35,7 @@ namespace CsSimConnect
 
         private DataManager(SimConnect simConnect) : base("DefinitionID", 1, simConnect)
         {
+            simConnect.OnDisconnect += ResetObjectDefinitions;
         }
 
         private readonly Dictionary<Type, UInt32> registeredTypes = new();
@@ -63,6 +64,16 @@ namespace CsSimConnect
             }
         }
 
+        private void ResetObjectDefinitions()
+        {
+            log.Info("Clearing ObjectDefinition registration");
+            lock (this)
+            {
+                registeredTypes.Clear();
+                definedTypes.Clear();
+            }
+        }
+
         public IMessageResult<T> RequestData<T>()
             where T : class
         {
@@ -70,9 +81,33 @@ namespace CsSimConnect
             log.Debug("RequestData<{0}>()", t.FullName);
             ObjectDefinition def = GetObjectDefinition(t);
             def.DefineObject();
-            MessageResult<ObjectData> data =  RequestManager.Instance.RequestObjectData<ObjectData>(def, ObjectDataPeriod.Once);
+            MessageResult<ObjectData> data =  RequestManager.Instance.RequestObjectData<ObjectData>(def);
 
             MessageResult<T> result = new();
+            data.Subscribe((ObjectData data) => {
+                log.Trace("RequestData<{0}> callback called", t.FullName);
+                try
+                {
+                    result.OnNext(def.GetData<T>(data));
+                }
+                catch (Exception e)
+                {
+                    result.OnError(e);
+                }
+            });
+            return result;
+        }
+
+        public IMessageStream<T> RequestData<T>(ObjectDataPeriod period, bool onlyWhenChanged = false)
+            where T : class
+        {
+            Type t = typeof(T);
+            log.Debug("RequestData<{0}>()", t.FullName);
+            ObjectDefinition def = GetObjectDefinition(t);
+            def.DefineObject();
+            MessageStream<ObjectData> data = RequestManager.Instance.RequestObjectData<ObjectData>(def, period, onlyWhenChanged: onlyWhenChanged);
+
+            MessageStream<T> result = new(1);
             data.Subscribe((ObjectData data) => {
                 log.Trace("RequestData<{0}> callback called", t.FullName);
                 try

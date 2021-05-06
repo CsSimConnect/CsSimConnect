@@ -126,9 +126,22 @@ namespace CsSimConnect
         private static readonly uint taggedFormat = 0x00000002;
         private static readonly uint blockingDispatch = 0x00000004;
 
-        public MessageResult<T> RequestObjectData<T>(ObjectDefinition objectDefinition, ObjectDataPeriod period,
-                                                     uint origin =0, uint interval =0, uint limit =0,
-                                                     bool onlyWhenChanged=false, bool useBlockingDispatch =false)
+        public MessageResult<T> RequestObjectData<T>(ObjectDefinition objectDefinition, bool useBlockingDispatch = false)
+            where T : SimConnectMessage
+        {
+            uint requestId = NextId();
+            log.Debug("RequestObjectData<{0}>(): RequestId {1}, target object type {2}", typeof(T).FullName, requestId, objectDefinition.Type.FullName);
+            uint flags = 0;
+            if (useBlockingDispatch) flags |= blockingDispatch;
+            lock (simConnect)
+            {
+                return RegisterResultObserver<T>(requestId, CsRequestDataOnSimObject(simConnect.handle, requestId, objectDefinition.DefinitionId, simObjectUser, (uint)ObjectDataPeriod.Once, flags, 0, 0, 0), "RequestObjectData");
+            }
+        }
+
+        public MessageStream<T> RequestObjectData<T>(ObjectDefinition objectDefinition, ObjectDataPeriod period,
+                                                     uint origin = 0, uint interval = 0, uint limit = 0,
+                                                     bool onlyWhenChanged = false, bool useBlockingDispatch = false)
             where T : SimConnectMessage
         {
             uint requestId = NextId();
@@ -138,7 +151,7 @@ namespace CsSimConnect
             if (useBlockingDispatch) flags |= blockingDispatch;
             lock (simConnect)
             {
-                return RegisterResultObserver<T>(requestId, CsRequestDataOnSimObject(simConnect.handle, requestId, objectDefinition.DefinitionId, simObjectUser, (uint)period, flags, origin, interval, limit), "RequestObjectData");
+                return RegisterStreamObserver<T>(requestId, CsRequestDataOnSimObject(simConnect.handle, requestId, objectDefinition.DefinitionId, simObjectUser, (uint)period, flags, origin, interval, limit), "RequestObjectData");
             }
         }
     }

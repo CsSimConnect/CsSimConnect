@@ -49,11 +49,14 @@ namespace CsSimConnect
 
         private readonly Dictionary<uint, Action<SimConnectException>> onError = new();
         public event ConnectionStateHandler OnConnectionStateChange;
+        public event Action OnConnect;
+        public event Action OnDisconnect;
 
         private SimConnect()
         {
             UseAutoConnect = false;
             Info = new("CsSimConnect");
+            OnDisconnect += ResetErrorCallbacks;
         }
 
         public void InitDispatcher()
@@ -89,6 +92,10 @@ namespace CsSimConnect
             if (CsConnect("test", ref handle))
             {
                 InitDispatcher();
+                if (OnConnect != null)
+                {
+                    OnConnect.Invoke();
+                }
             }
             else
             {
@@ -102,7 +109,17 @@ namespace CsSimConnect
             IntPtr oldHandle = handle;
             handle = IntPtr.Zero;
             CsDisconnect(oldHandle);
+            OnDisconnect.Invoke();
             InvokeConnectionStateChanged();
+        }
+
+        private void ResetErrorCallbacks()
+        {
+            log.Info("Clearing Error callbacks");
+            lock (this)
+            {
+                onError.Clear();
+            }
         }
 
         internal void MessageCompleted(uint sendId)

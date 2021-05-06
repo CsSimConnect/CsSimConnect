@@ -33,6 +33,12 @@ namespace CsSimConnect
             dispatcher = new(dispatcherType);
             nextId = firstId;
             this.simConnect = simConnect;
+            simConnect.OnDisconnect += ClearDispatcher;
+        }
+
+        protected void ClearDispatcher()
+        {
+            dispatcher.Clear();
         }
 
         public uint NextId()

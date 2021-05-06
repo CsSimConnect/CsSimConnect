@@ -115,6 +115,10 @@ namespace CsSimConnectUI
             log.Info("The simulator is {0}.", RequestManager.Instance.RequestSystemState(SystemState.Sim).Get().AsBoolean() ? "Running" : "Stopped");
             AircraftData data = DataManager.Instance.RequestData<AircraftData>().Get();
             log.Info("Currently selected aircraft is '{0}'.", data.Title);
+
+            log.Info("Starting stream");
+            DataManager.Instance.RequestData<AircraftData>(ObjectDataPeriod.PerSecond, onlyWhenChanged: true)
+                                .Subscribe((AircraftData data) => log.Info("[stream] Currently selected aircraft is '{0}'.", data.Title));
         }
     }
 }

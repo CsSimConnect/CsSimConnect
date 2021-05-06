@@ -38,6 +38,16 @@ namespace CsSimConnect
             Name = name;
         }
 
+        internal void Clear()
+        {
+            log.Info("Clearing Dispatcher '{0}'", Name);
+            lock (observerLock)
+            {
+                MessageObservers.Clear();
+                MessageObserverLobby.Clear();
+            }
+        }
+
         public bool TryGetObserver<T>(UInt32 id, [MaybeNullWhen(false)] out MessageObserver<T> observer, bool removeIfFound =false)
             where T : SimConnectMessage
         {

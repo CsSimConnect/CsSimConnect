@@ -32,6 +32,7 @@ namespace CsSimConnect
     public interface IMessageObserver<T> : IMessageObserver, IObserver<T>, IEnumerable<T>, IDisposable
         where T : class
     {
+        public void Subscribe(Action<T> callback);
     }
 
 }
