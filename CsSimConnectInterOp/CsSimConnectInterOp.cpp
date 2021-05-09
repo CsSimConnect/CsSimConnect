@@ -14,6 +14,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <mutex>
+
 
 static nl::rakis::Logger logger{ nl::rakis::Logger::getLogger("CsSimConnectInterOp") };
 
@@ -29,31 +31,38 @@ void initLog() {
 	}
 }
 
+static std::mutex scMutex;
+
+/*
+ * Lifecycle functions
+ */
+
 CS_SIMCONNECT_DLL_EXPORT_BOOL CsConnect(const char* appName, HANDLE& handle) {
 	initLog();
-	logger.info("Trying to connect through SimConnect using client name '{}'", appName);
+	logger.trace("Trying to connect through SimConnect using client name '{}'", appName);
 	HANDLE h;
+
+	std::unique_lock<std::mutex> scLock(scMutex);
 	HRESULT hr = SimConnect_Open(&h, appName, nullptr, 0, nullptr, 0);
 
 	if (SUCCEEDED(hr)) {
-		logger.info("Connected to SimConnect.");
+		logger.trace("Connected to SimConnect.");
 		handle = h;
 	}
 	else if (hr != E_FAIL) {
-		logger.error("Failed to connect to SimConnect");
+		logger.trace("Failed to connect to SimConnect");
 	}
 	return SUCCEEDED(hr);
 }
 
 CS_SIMCONNECT_DLL_EXPORT_BOOL CsDisconnect(HANDLE handle) {
 	initLog();
+
+	std::unique_lock<std::mutex> scLock(scMutex);
 	HRESULT hr = SimConnect_Close(handle);
 
-	if (SUCCEEDED(hr)) {
-		logger.info("Disconnected from SimConnect.");
-	}
-	else if (hr != E_FAIL) {
-		logger.error("Failed to disconnect from SimConnect");
+	if (hr != E_FAIL) {
+		logger.error("Call to SimConnect_Close() failed.");
 	}
 	return SUCCEEDED(hr);
 }
@@ -73,10 +82,7 @@ CS_SIMCONNECT_DLL_EXPORT_BOOL CsCallDispatch(HANDLE handle, DispatchProc callbac
 
 	HRESULT hr = SimConnect_CallDispatch(handle, CsDispatch, nullptr);
 
-	if (SUCCEEDED(hr)) {
-		logger.trace("Dispatch succeeded.");
-	}
-	else if (hr != E_FAIL) {
+	if (hr != E_FAIL) {
 		logger.error("Dispatch failed (HRESULT = {}).", hr);
 	}
 	return SUCCEEDED(hr);
@@ -103,6 +109,7 @@ CS_SIMCONNECT_DLL_EXPORT_BOOL CsGetNextDispatch(HANDLE handle, DispatchProc call
 /*
  * Utilities
  */
+
 long fetchSendId(HANDLE handle, HRESULT hr, const char* api)
 {
 	DWORD sendId{ 0 };
@@ -116,28 +123,203 @@ long fetchSendId(HANDLE handle, HRESULT hr, const char* api)
 }
 
 /*
+ * Client Event handling.
+ */
+
+CS_SIMCONNECT_DLL_EXPORT_LONG CsAddClientEventToNotificationGroup(HANDLE handle, uint32_t groupId, uint32_t eventId, uint32_t maskable) {
+	initLog();
+
+	logger.trace("CsAddClientEventToNotificationGroup(..., {}, {}, {})", groupId, eventId, maskable);
+	if (handle == nullptr) {
+		logger.error("Handle passed to CsAddClientEventToNotificationGroup is null!");
+		return FALSE;
+	}
+
+	std::unique_lock<std::mutex> scLock(scMutex);
+	return fetchSendId(handle, SimConnect_AddClientEventToNotificationGroup(handle, groupId, eventId, maskable), "AddClientEventToNotificationGroup");
+}
+
+CS_SIMCONNECT_DLL_EXPORT_LONG CsMapClientEventToSimEvent(HANDLE handle, uint32_t eventId, const char* eventName) {
+	initLog();
+
+	logger.trace("CsMapClientEventToSimEvent(..., {}, '{}')", eventId, eventName);
+	if (handle == nullptr) {
+		logger.error("Handle passed to CsMapClientEventToSimEvent is null!");
+		return FALSE;
+	}
+
+	std::unique_lock<std::mutex> scLock(scMutex);
+	return fetchSendId(handle, SimConnect_MapClientEventToSimEvent(handle, eventId, eventName), "MapClientEventToSimEvent");
+}
+
+CS_SIMCONNECT_DLL_EXPORT_LONG CsMapInputEventToClientEvent(HANDLE handle, uint32_t groupId, const char* inputDefinition, uint32_t downEventId, DWORD downValue, uint32_t upEventId, DWORD upValue, uint32_t maskable) {
+	initLog();
+
+	logger.trace("CsMapInputEventToClientEvent(..., {}, '{}', {}, {}, {}, {}, {})", groupId, inputDefinition, downEventId, downValue, upEventId, upValue, maskable);
+	if (handle == nullptr) {
+		logger.error("Handle passed to CsMapInputEventToClientEvent is null!");
+		return FALSE;
+	}
+
+	std::unique_lock<std::mutex> scLock(scMutex);
+	return fetchSendId(handle, SimConnect_MapInputEventToClientEvent(handle, groupId, inputDefinition, downEventId, downValue, upEventId, upValue, maskable), "MapInputEventToClientEvent");
+}
+
+CS_SIMCONNECT_DLL_EXPORT_LONG CsRemoveClientEvent(HANDLE handle, uint32_t groupId, uint32_t eventId) {
+	initLog();
+
+	logger.trace("CsRemoveClientEvent(..., {}, {})", groupId, eventId);
+	if (handle == nullptr) {
+		logger.error("Handle passed to CsRemoveClientEvent is null!");
+		return FALSE;
+	}
+
+	std::unique_lock<std::mutex> scLock(scMutex);
+	return fetchSendId(handle, SimConnect_RemoveClientEvent(handle, groupId, eventId), "RemoveClientEvent");
+}
+
+CS_SIMCONNECT_DLL_EXPORT_LONG CsTransmitClientEvent(HANDLE handle, uint32_t objectId, uint32_t eventId, uint32_t data, uint32_t groupId, uint32_t flags) {
+	initLog();
+
+	logger.trace("CsTransmitClientEvent(..., {}, {}, {}, {}, {})", objectId, eventId, data, groupId, flags);
+	if (handle == nullptr) {
+		logger.error("Handle passed to CsTransmitClientEvent is null!");
+		return FALSE;
+	}
+
+	std::unique_lock<std::mutex> scLock(scMutex);
+	return fetchSendId(handle, SimConnect_TransmitClientEvent(handle, objectId, eventId, data, groupId, flags), "TransmitClientEvent");
+}
+
+#if IS_PREPAR3D
+
+CS_SIMCONNECT_DLL_EXPORT_LONG CsTransmitClientEvent64(HANDLE handle, uint32_t objectId, uint32_t eventId, uint64_t data, uint32_t groupId, uint32_t flags) {
+	initLog();
+
+	logger.trace("CsTransmitClientEvent64(..., {}, {}, {}, {}, {})", objectId, eventId, data, groupId, flags);
+	if (handle == nullptr) {
+		logger.error("Handle passed to CsTransmitClientEvent64 is null!");
+		return FALSE;
+	}
+
+	std::unique_lock<std::mutex> scLock(scMutex);
+	return fetchSendId(handle, SimConnect_TransmitClientEvent64(handle, objectId, eventId, data, groupId, flags), "TransmitClientEvent");
+}
+
+#endif
+
+/*
+ * Client Data handling.
+ */
+
+CS_SIMCONNECT_DLL_EXPORT_LONG CsAddToClientDataDefinition(HANDLE handle, uint32_t defId, DWORD offset, int32_t sizeOrType, float epsilon, DWORD datumId)
+{
+	initLog();
+
+	logger.trace("CsAddToClientDataDefinition(..., {}, {}, {}, {}, {})", defId, offset, sizeOrType, epsilon, datumId);
+	if (handle == nullptr) {
+		logger.error("Handle passed to CsAddToClientDataDefinition is null!");
+		return FALSE;
+	}
+
+	std::unique_lock<std::mutex> scLock(scMutex);
+	return fetchSendId(handle, SimConnect_AddToClientDataDefinition(handle, defId, offset, sizeOrType, epsilon, datumId), "AddToClientDataDefinition");
+}
+
+CS_SIMCONNECT_DLL_EXPORT_LONG CsCreateClientData(HANDLE handle, uint32_t clientDataId, DWORD size, uint32_t flags)
+{
+	initLog();
+
+	logger.trace("CsCreateClientData(..., {}, {}, {})", clientDataId, size, flags);
+	if (handle == nullptr) {
+		logger.error("Handle passed to CsCreateClientData is null!");
+		return FALSE;
+	}
+
+	std::unique_lock<std::mutex> scLock(scMutex);
+	return fetchSendId(handle, SimConnect_CreateClientData(handle, clientDataId, size, flags), "CreateClientData");
+}
+
+CS_SIMCONNECT_DLL_EXPORT_LONG CsMapClientDataNameToID(HANDLE handle, const char* clientDataName, uint32_t clientDataId) {
+	initLog();
+
+	logger.trace("CsMapClientDataNameToID(..., '{}', {})", clientDataName, clientDataId);
+	if (handle == nullptr) {
+		logger.error("Handle passed to CsMapClientDataNameToID is null!");
+		return FALSE;
+	}
+
+	std::unique_lock<std::mutex> scLock(scMutex);
+	return fetchSendId(handle, SimConnect_MapClientDataNameToID(handle, clientDataName, clientDataId), "MapClientDataNameToID");
+}
+
+CS_SIMCONNECT_DLL_EXPORT_LONG CsRequestClientData(HANDLE handle, uint32_t clientDataId, uint32_t requestId, uint32_t defineId, uint32_t period, uint32_t flags, DWORD origin, DWORD interval, DWORD limit)
+{
+	initLog();
+
+	logger.trace("CsRequestClientData(..., {}, {}, {}, {}, {}, {}, {}, {})", clientDataId, requestId, defineId, period, flags, origin, interval, limit);
+	if (handle == nullptr) {
+		logger.error("Handle passed to CsRequestClientData is null!");
+		return FALSE;
+	}
+
+	std::unique_lock<std::mutex> scLock(scMutex);
+	return fetchSendId(handle, SimConnect_RequestClientData(handle, clientDataId, requestId, defineId, SIMCONNECT_CLIENT_DATA_PERIOD(period), flags, origin, interval, limit), "RequestClientData");
+}
+
+CS_SIMCONNECT_DLL_EXPORT_LONG CsSetClientData(HANDLE handle, uint32_t clientDataId, uint32_t defineId, DWORD flags, DWORD unitSize, void* dataSet) {
+	initLog();
+
+	logger.trace("CsSetClientData(..., {}, {}, {}, ..., {}, ...)", clientDataId, defineId, flags, unitSize);
+	if (handle == nullptr) {
+		logger.error("Handle passed to CsSetClientData is null!");
+		return FALSE;
+	}
+
+	std::unique_lock<std::mutex> scLock(scMutex);
+	return fetchSendId(handle, SimConnect_SetClientData(handle, clientDataId, defineId, flags, 0, unitSize, dataSet), "SetClientData");
+}
+
+CS_SIMCONNECT_DLL_EXPORT_LONG CsClearClientDataDefinition(HANDLE handle, uint32_t clientDataId) {
+	initLog();
+
+	logger.trace("CsClearClientDataDefinition(..., {})", clientDataId);
+	if (handle == nullptr) {
+		logger.error("Handle passed to CsClearClientDataDefinition is null!");
+		return FALSE;
+	}
+
+	std::unique_lock<std::mutex> scLock(scMutex);
+	return fetchSendId(handle, SimConnect_ClearClientDataDefinition(handle, clientDataId), "ClearClientDataDefinition");
+}
+
+/*
  * System state handling.
  */
 
 CS_SIMCONNECT_DLL_EXPORT_LONG CsSubscribeToSystemEvent(HANDLE handle, int eventId, const char* eventName) {
 	initLog();
-	logger.trace("CsSubscribeToSystemEvent(..., {}, '{}'", eventId, eventName);
+
+	logger.trace("CsSubscribeToSystemEvent(..., {}, '{}')", eventId, eventName);
 	if (handle == nullptr) {
 		logger.error("Handle passed to CsSubscribeToSystemEvent is null!");
 		return FALSE;
 	}
 
+	std::unique_lock<std::mutex> scLock(scMutex);
 	return fetchSendId(handle, SimConnect_SubscribeToSystemEvent(handle, eventId, eventName), "SubScribeToSystemEvent");
 }
 
 CS_SIMCONNECT_DLL_EXPORT_LONG CsRequestSystemState(HANDLE handle, int requestId, const char* eventName) {
 	initLog();
+
 	logger.trace("CsRequestSystemState(..., {}, '{}'", requestId, eventName);
 	if (handle == nullptr) {
 		logger.error("Handle passed to CsRequestSystemState is null!");
 		return FALSE;
 	}
 
+	std::unique_lock<std::mutex> scLock(scMutex);
 	return fetchSendId(handle, SimConnect_RequestSystemState(handle, requestId, eventName), "RequestSystemState");
 }
 
@@ -145,18 +327,21 @@ CS_SIMCONNECT_DLL_EXPORT_LONG CsRequestDataOnSimObject(HANDLE handle, uint32_t r
 	DWORD origin, DWORD interval, DWORD limit)
 {
 	initLog();
+
 	logger.trace("CsRequestDataOnSimObject(..., {}, {}, {}, {}, {}, {}, {}, {})", requestId, defId, objectId, period, dataRequestFlags, origin, interval, limit);
 	if (handle == nullptr) {
 		logger.error("Handle passed to CsRequestDataOnSimObject is null!");
 		return FALSE;
 	}
 
+	std::unique_lock<std::mutex> scLock(scMutex);
 	return fetchSendId(handle, SimConnect_RequestDataOnSimObject(handle, requestId, defId, objectId, SIMCONNECT_PERIOD(period), dataRequestFlags, origin, interval, limit), "RequestDataOnSimObject");
 }
 
 CS_SIMCONNECT_DLL_EXPORT_LONG CsAddToDataDefinition(HANDLE handle, uint32_t defId, const char* datumName, const char* unitsName, uint32_t datumType, float epsilon, uint32_t datumId)
 {
 	initLog();
+
 	logger.trace("CsAddToDataDefinition(..., {}, {}, {}, {}, {}, {})", defId, datumName, unitsName, datumType, epsilon, datumId);
 	if (handle == nullptr) {
 		logger.error("Handle passed to CsAddToDataDefinition is null!");
@@ -166,5 +351,6 @@ CS_SIMCONNECT_DLL_EXPORT_LONG CsAddToDataDefinition(HANDLE handle, uint32_t defI
 	if ((unitsName != nullptr) && (strcmp(unitsName, "NULL") == 0)) {
 		unitsName = nullptr;
 	}
+	std::unique_lock<std::mutex> scLock(scMutex);
 	return fetchSendId(handle, SimConnect_AddToDataDefinition(handle, defId, datumName, unitsName, SIMCONNECT_DATATYPE(datumType), epsilon, datumId), "AddToDataDefinition");
 }

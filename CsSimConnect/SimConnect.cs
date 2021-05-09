@@ -27,7 +27,7 @@ namespace CsSimConnect
 
         private static readonly Logger log = Logger.GetLogger(typeof(SimConnect));
 
-        private static readonly Lazy<SimConnect> lazyInstance = new Lazy<SimConnect>(() => new SimConnect());
+        private static readonly Lazy<SimConnect> lazyInstance = new (() => new SimConnect());
 
         public static SimConnect Instance {  get { return lazyInstance.Value; } }
 
@@ -89,7 +89,7 @@ namespace CsSimConnect
 
         public void Connect()
         {
-            if (CsConnect("test", ref handle))
+            if (CsConnect("CsSimConnect", ref handle))
             {
                 InitDispatcher();
                 if (OnConnect != null)
@@ -108,8 +108,14 @@ namespace CsSimConnect
         {
             IntPtr oldHandle = handle;
             handle = IntPtr.Zero;
-            CsDisconnect(oldHandle);
-            OnDisconnect.Invoke();
+            if (CsDisconnect(oldHandle))
+            {
+                OnDisconnect.Invoke();
+            }
+            else
+            {
+                log.Error("Failed to disconnect from simulator");
+            }
             InvokeConnectionStateChanged();
         }
 

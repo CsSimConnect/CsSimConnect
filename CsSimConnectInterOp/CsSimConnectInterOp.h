@@ -18,6 +18,19 @@
 #include "framework.h"
 #include <SimConnect.h>
 
+// The MSFS SDK adds defines for several C++ keywords
+#if defined(SIMCONNECT_ENUM)
+
+#define IS_PREPAR3D 0
+#define IS_MSFS2020 1
+
+#else
+
+#define IS_PREPAR3D 1
+#define IS_MSFS2020 0
+
+#endif
+
 #define CS_SIMCONNECT_DLL_EXPORT_LONG	extern "C" __declspec(dllexport) int64_t
 #define CS_SIMCONNECT_DLL_EXPORT_BOOL	extern "C" __declspec(dllexport) bool
 
