@@ -134,7 +134,7 @@ namespace CsSimConnect
             }
         }
 
-        private void PrintError(uint defId, ObjectDefinition.DataDefInfo info, string error)
+        private static void PrintError(uint defId, ObjectDefinition.DataDefInfo info, string error)
         {
             log.Error("AddToDataDefinition() failed for DefinitionID {0} var '{1}': {2}", defId, info.Definition.Name, error);
         }

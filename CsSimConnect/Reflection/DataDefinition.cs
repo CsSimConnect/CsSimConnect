@@ -110,7 +110,6 @@ namespace CsSimConnect.Reflection
                 log.Error("Cannot assign a {0} to a {1}.", Type.ToString(), prop.PropertyType.FullName);
                 throw new NoConversionAvailableException(Type, prop.PropertyType);
             }
-            pos += Size;
         }
 
         private void Set<T>(object obj, FieldInfo prop, ValueGetter<T> get, ref uint pos)
@@ -124,7 +123,6 @@ namespace CsSimConnect.Reflection
                 log.Error("Cannot assign a {0} to a {1}.", Type.ToString(), prop.FieldType.FullName);
                 throw new NoConversionAvailableException(Type, prop.FieldType);
             }
-            pos += Size;
         }
 
         public void FinishSetup()
@@ -132,23 +130,23 @@ namespace CsSimConnect.Reflection
             switch (Type)
             {
                 case DataType.Int32:
-                    SetPropertyValue = (object obj, PropertyInfo prop, ObjectData data, ref uint pos) => Set(obj, prop, (ref uint p) => data.AsInt32(p), ref pos);
-                    SetFieldValue = (object obj, FieldInfo field, ObjectData data, ref uint pos) => Set(obj, field, (ref uint p) => data.AsInt32(p), ref pos);
+                    SetPropertyValue = (object obj, PropertyInfo prop, ObjectData data, ref uint pos) => Set(obj, prop, (ref uint p) => data.AsInt32(ref p), ref pos);
+                    SetFieldValue = (object obj, FieldInfo field, ObjectData data, ref uint pos) => Set(obj, field, (ref uint p) => data.AsInt32(ref p), ref pos);
                     break;
 
                 case DataType.Int64:
-                    SetPropertyValue = (object obj, PropertyInfo prop, ObjectData data, ref uint pos) => Set(obj, prop, (ref uint p) => data.AsInt64(p), ref pos);
-                    SetFieldValue = (object obj, FieldInfo field, ObjectData data, ref uint pos) => Set(obj, field, (ref uint p) => data.AsInt64(p), ref pos);
+                    SetPropertyValue = (object obj, PropertyInfo prop, ObjectData data, ref uint pos) => Set(obj, prop, (ref uint p) => data.AsInt64(ref p), ref pos);
+                    SetFieldValue = (object obj, FieldInfo field, ObjectData data, ref uint pos) => Set(obj, field, (ref uint p) => data.AsInt64(ref p), ref pos);
                     break;
 
                 case DataType.Float32:
-                    SetPropertyValue = (object obj, PropertyInfo prop, ObjectData data, ref uint pos) => Set(obj, prop, (ref uint p) => data.AsFloat32(p), ref pos);
-                    SetFieldValue = (object obj, FieldInfo field, ObjectData data, ref uint pos) => Set(obj, field, (ref uint p) => data.AsFloat32(p), ref pos);
+                    SetPropertyValue = (object obj, PropertyInfo prop, ObjectData data, ref uint pos) => Set(obj, prop, (ref uint p) => data.AsFloat32(ref p), ref pos);
+                    SetFieldValue = (object obj, FieldInfo field, ObjectData data, ref uint pos) => Set(obj, field, (ref uint p) => data.AsFloat32(ref p), ref pos);
                     break;
 
                 case DataType.Float64:
-                    SetPropertyValue = (object obj, PropertyInfo prop, ObjectData data, ref uint pos) => Set(obj, prop, (ref uint p) => data.AsFloat64(p), ref pos);
-                    SetFieldValue = (object obj, FieldInfo field, ObjectData data, ref uint pos) => Set(obj, field, (ref uint p) => data.AsFloat64(p), ref pos);
+                    SetPropertyValue = (object obj, PropertyInfo prop, ObjectData data, ref uint pos) => Set(obj, prop, (ref uint p) => data.AsFloat64(ref p), ref pos);
+                    SetFieldValue = (object obj, FieldInfo field, ObjectData data, ref uint pos) => Set(obj, field, (ref uint p) => data.AsFloat64(ref p), ref pos);
                     break;
 
                 case DataType.String8:
@@ -157,11 +155,15 @@ namespace CsSimConnect.Reflection
                 case DataType.String128:
                 case DataType.String256:
                 case DataType.String260:
-                    SetPropertyValue = (object obj, PropertyInfo prop, ObjectData data, ref uint pos) => Set(obj, prop, (ref uint p) => data.AsFixedString(p, Size), ref pos);
-                    SetFieldValue = (object obj, FieldInfo field, ObjectData data, ref uint pos) => Set(obj, field, (ref uint p) => data.AsFixedString(p, Size), ref pos);
+                    SetPropertyValue = (object obj, PropertyInfo prop, ObjectData data, ref uint pos) => Set(obj, prop, (ref uint p) => data.AsFixedString(ref p, Size), ref pos);
+                    SetFieldValue = (object obj, FieldInfo field, ObjectData data, ref uint pos) => Set(obj, field, (ref uint p) => data.AsFixedString(ref p, Size), ref pos);
                     break;
 
                 case DataType.StringV:
+                    SetPropertyValue = (object obj, PropertyInfo prop, ObjectData data, ref uint pos) => Set(obj, prop, (ref uint p) => data.AsVariableString(ref p, Size), ref pos);
+                    SetFieldValue = (object obj, FieldInfo field, ObjectData data, ref uint pos) => Set(obj, field, (ref uint p) => data.AsVariableString(ref p, Size), ref pos);
+                    break;
+
                 case DataType.InitPosition:
                 case DataType.MarkerState:
                 case DataType.Waypoint:

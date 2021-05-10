@@ -39,18 +39,21 @@ static std::mutex scMutex;
 
 CS_SIMCONNECT_DLL_EXPORT_BOOL CsConnect(const char* appName, HANDLE& handle) {
 	initLog();
-	logger.trace("Trying to connect through SimConnect using client name '{}'", appName);
+	logger.info("Trying to connect through SimConnect using client name '{}'", appName);
 	HANDLE h;
 
-	std::unique_lock<std::mutex> scLock(scMutex);
+//	std::unique_lock<std::mutex> scLock(scMutex);
 	HRESULT hr = SimConnect_Open(&h, appName, nullptr, 0, nullptr, 0);
 
 	if (SUCCEEDED(hr)) {
-		logger.trace("Connected to SimConnect.");
+		logger.info("Connected to SimConnect.");
 		handle = h;
 	}
 	else if (hr != E_FAIL) {
-		logger.trace("Failed to connect to SimConnect");
+		logger.error("Failed to connect to SimConnect");
+	}
+	else {
+		logger.error("Failed to connect to SimConnect (hr={})", hr);
 	}
 	return SUCCEEDED(hr);
 }
@@ -328,7 +331,7 @@ CS_SIMCONNECT_DLL_EXPORT_LONG CsRequestDataOnSimObject(HANDLE handle, uint32_t r
 {
 	initLog();
 
-	logger.trace("CsRequestDataOnSimObject(..., {}, {}, {}, {}, {}, {}, {}, {})", requestId, defId, objectId, period, dataRequestFlags, origin, interval, limit);
+	logger.info("CsRequestDataOnSimObject(..., {}, {}, {}, {}, {}, {}, {}, {})", requestId, defId, objectId, period, dataRequestFlags, origin, interval, limit);
 	if (handle == nullptr) {
 		logger.error("Handle passed to CsRequestDataOnSimObject is null!");
 		return FALSE;

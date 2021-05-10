@@ -32,7 +32,7 @@ namespace CsSimConnect
         public static SimConnect Instance {  get { return lazyInstance.Value; } }
 
         public delegate void ConnectionStateHandler(bool willAutoConnect, bool isConnected);
-        private delegate void DispatchProc(ref ReceiveStruct structData, Int32 wordData, IntPtr context);
+        private delegate void DispatchProc(ref ReceiveStruct structData, UInt32 wordData, IntPtr context);
 
         [DllImport("CsSimConnectInterOp.dll")]
         private static extern bool CsConnect([MarshalAs(UnmanagedType.LPStr)] string appName, ref IntPtr handle);
@@ -146,7 +146,7 @@ namespace CsSimConnect
             onError.Add(sendId, cleanup);
         }
 
-        private void HandleMessage(ref ReceiveStruct structData, Int32 wordData, IntPtr context)
+        private void HandleMessage(ref ReceiveStruct structData, UInt32 structLen, IntPtr context)
         {
             if (structData.Id > (int)RecvId.EventFilenameW)
             {
@@ -156,20 +156,23 @@ namespace CsSimConnect
             log.Debug("Received message with ID {0}", structData.Id);
             try
             {
+                Action followup = null;
+
                 switch ((RecvId)structData.Id)
                 {
                     case RecvId.Exception:           // 1
                         SimConnectException exc = new(structData.Exception.ExceptionId, structData.Exception.SendId, structData.Exception.Index);
-                        log.Trace("Exception returned: {0} (SendID={1}, Index={2})", exc.Message, exc.SendID, exc.Index);
-                        Action<SimConnectException> cleanup;
-                        if (onError.Remove(exc.SendID.Value, out cleanup))
-                        {
-                            cleanup(exc);
-                        }
-                        else
-                        {
-                            log.Warn("Ignoring exception for unknown SendID {0}: {1} (index={2})", exc.SendID, exc.Message, exc.Index);
-                        }
+                        followup = () => {
+                            log.Trace("Exception returned: {0} (SendID={1}, Index={2})", exc.Message, exc.SendID, exc.Index);
+                            if (onError.Remove(exc.SendID.Value, out Action<SimConnectException> cleanup))
+                            {
+                                cleanup(exc);
+                            }
+                            else
+                            {
+                                log.Warn("Ignoring exception for unknown SendID {0}: {1} (index={2})", exc.SendID, exc.Message, exc.Index);
+                            }
+                        };
                         break;
 
                     case RecvId.Open:                // 2
@@ -184,26 +187,30 @@ namespace CsSimConnect
 
                     case RecvId.Event:                   // 4
                         log.Debug("Received event {0}.", structData.Event.Id);
-                        EventManager.Instance.DispatchResult(structData.Event.Id, SimConnectMessage.FromMessage(ref structData));
+                        EventManager.Instance.DispatchResult(structData.Event.Id, SimConnectMessage.FromMessage(ref structData, structLen));
                         break;
 
                     case RecvId.SimObjectData:          // 8
                         log.Trace("Received SimObjectData for request {0}", structData.ObjectData.Id);
-                        RequestManager.Instance.DispatchResult(structData.ObjectData.Id, SimConnectMessage.FromMessage(ref structData));
+                        RequestManager.Instance.DispatchResult(structData.ObjectData.Id, SimConnectMessage.FromMessage(ref structData, structLen));
                         break;
 
                     case RecvId.Event64:                // 67
                         log.Debug("Received 64-bit event {0}.", structData.Event.Id);
-                        EventManager.Instance.DispatchResult(structData.Event.Id, SimConnectMessage.FromMessage(ref structData));
+                        EventManager.Instance.DispatchResult(structData.Event.Id, SimConnectMessage.FromMessage(ref structData, structLen));
                         break;
 
                     case RecvId.SystemState:            // 15
                         log.Debug("Received systemState for request {0}.", structData.SystemState.Id);
-                        RequestManager.Instance.DispatchResult(structData.SystemState.Id, SimConnectMessage.FromMessage(ref structData));
+                        RequestManager.Instance.DispatchResult(structData.SystemState.Id, SimConnectMessage.FromMessage(ref structData, structLen));
                         break;
 
                     default:
                         break;
+                }
+                if (followup != null)
+                {
+                    followup.Invoke();
                 }
             }
             catch (Exception e)

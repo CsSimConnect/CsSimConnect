@@ -185,6 +185,9 @@ namespace CsSimConnect
         public readonly uint OutOf;
         [FieldOffset(24)]
         public readonly uint DefineCount;
+
+        internal readonly static uint SimConnect_Recv_SimObject_Data_Prefix_len = 28;
+
         [FieldOffset(28)]
         public readonly byte Data;
     }
@@ -198,6 +201,8 @@ namespace CsSimConnect
         public readonly UInt32 Version;
         [FieldOffset(8)]
         public readonly UInt32 Id;
+
+        internal readonly static uint SimConnect_Recv_Prefix_Len = 12;
 
         [FieldOffset(12)]
         public readonly ReceiveException Exception;                 // SIMCONNECT_RECV_EXCEPTION
@@ -232,7 +237,7 @@ namespace CsSimConnect
             Version = version;
         }
 
-        internal static SimConnectMessage FromMessage(ref ReceiveStruct msg)
+        internal static SimConnectMessage FromMessage(ref ReceiveStruct msg, uint structLen)
         {
             switch ((RecvId)msg.Id)
             {
@@ -244,7 +249,7 @@ namespace CsSimConnect
                 case RecvId.ObjectAddRemove: break;
                 case RecvId.EventFilename: break;
                 case RecvId.EventFrame: break;
-                case RecvId.SimObjectData: return new ObjectData(ref msg);
+                case RecvId.SimObjectData: return new ObjectData(ref msg, structLen);
                 case RecvId.SimObjectDataByType: break;
                 case RecvId.WeatherObservation: break;
                 case RecvId.CloudState: break;
@@ -439,7 +444,9 @@ namespace CsSimConnect
         public uint OutOf { get; }
         public byte[] Data { get; }
 
-        internal ObjectData(ref ReceiveStruct msg) : base(ref msg)
+        private static readonly uint prefixSize = ReceiveStruct.SimConnect_Recv_Prefix_Len + ReceiveSimObjectData.SimConnect_Recv_SimObject_Data_Prefix_len;
+
+        internal ObjectData(ref ReceiveStruct msg, uint structLen) : base(ref msg)
         {
             RequestId = msg.ObjectData.Id;
             ObjectId = msg.ObjectData.ObjectId;
@@ -448,66 +455,69 @@ namespace CsSimConnect
             EntryNumber = msg.ObjectData.EntryNumber;
             OutOf = msg.ObjectData.OutOf;
 
-            ObjectDefinition def = DataManager.Instance.GetObjectDefinition(DefineId);
-            Data = new byte[def.TotalDataSize];
+            Data = new byte[structLen - prefixSize];
             unsafe {
                 fixed (byte* msgData = &msg.ObjectData.Data, array = &Data[0])
                 {
-                    Buffer.MemoryCopy(msgData, array, Data.Length, def.TotalDataSize);
+                    Buffer.MemoryCopy(msgData, array, Data.Length, structLen - prefixSize);
                 }
             }
             log.Trace("Copied {0} bytes of data into ObjectData.Data", Data.Length);
         }
 
-        internal Int32 AsInt32(uint pos)
+        internal Int32 AsInt32(ref uint pos)
         {
             unsafe
             {
                 fixed (byte* p = &Data[pos])
                 {
                     Int32 result = *((Int32*)p);
+                    pos += sizeof(Int32);
                     return result;
                 }
             }
         }
 
-        internal Int64 AsInt64(uint pos)
+        internal Int64 AsInt64(ref uint pos)
         {
             unsafe
             {
                 fixed (byte* p = &Data[pos])
                 {
                     Int64 result = *((Int64*)p);
+                    pos += sizeof(Int64);
                     return result;
                 }
             }
         }
 
-        internal float AsFloat32(uint pos)
+        internal float AsFloat32(ref uint pos)
         {
             unsafe
             {
                 fixed (byte* p = &Data[pos])
                 {
                     float result = *((float*)p);
+                    pos += sizeof(float);
                     return result;
                 }
             }
         }
 
-        internal double AsFloat64(uint pos)
+        internal double AsFloat64(ref uint pos)
         {
             unsafe
             {
                 fixed (byte* p = &Data[pos])
                 {
                     double result = *((double*)p);
+                    pos += sizeof(double);
                     return result;
                 }
             }
-        }
+         }
 
-        internal string AsFixedString(uint pos, uint len)
+        internal string AsFixedString(ref uint pos, uint len)
         {
             int strLen = Array.IndexOf<byte>(Data, 0, (int)pos, (int)len) - (int)pos;
             unsafe
@@ -515,6 +525,30 @@ namespace CsSimConnect
                 fixed (byte* p = &Data[pos])
                 {
                     string result = Encoding.Latin1.GetString(p, strLen).Trim();
+                    pos += len;
+                    return result;
+                }
+            }
+        }
+
+        internal string AsVariableString(ref uint pos, uint maxLen)
+        {
+            log.Trace("AsVariableString({0}, {1}), {2} bytes in Data", pos, maxLen, Data.Length);
+            int strLen = 0;//Array.IndexOf<byte>(Data, 0, (int)pos, (int)maxLen) - (int)pos;
+            if (maxLen == 0)
+            {
+                maxLen = (uint)Data.Length - pos;
+                log.Warn("AsVariableString called with maxLen 0, setting to {} instead.", maxLen);
+            }
+            while ((strLen <= maxLen) && (Data[pos + strLen] != 0)) strLen++;
+            unsafe
+            {
+                fixed (byte* p = &Data[pos])
+                {
+                    string result = Encoding.Latin1.GetString(p, strLen).Trim();
+                    pos += (uint)result.Length;
+                    pos += 4-(pos & 0x03);
+                    log.Trace("String extracted = '{0}'", result);
                     return result;
                 }
             }

@@ -111,7 +111,10 @@ namespace CsSimConnect
                 if (def != null)
                 {
                     def.Tag = tag++;
-                    def.Size = DataSize[(uint)def.Type];
+                    if (def.Size == 0)
+                    {
+                        def.Size = DataSize[(uint)def.Type];
+                    }
                     TotalDataSize += def.Size;
                     fields.Add(new(field, def));
                     def.FinishSetup();
@@ -123,7 +126,10 @@ namespace CsSimConnect
                 if (def != null)
                 {
                     def.Tag = tag++;
-                    def.Size = DataSize[(uint)def.Type];
+                    if (def.Size == 0)
+                    {
+                        def.Size = DataSize[(uint)def.Type];
+                    }
                     TotalDataSize += def.Size;
                     fields.Add(new(prop, def));
                     def.FinishSetup();

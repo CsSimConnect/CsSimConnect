@@ -145,7 +145,8 @@ namespace CsSimConnect
             where T : SimConnectMessage
         {
             uint requestId = NextId();
-            log.Debug("RequestObjectData<{0}>(): RequestId {1}, target object type {2}, period = {3}", typeof(T).FullName, requestId, objectDefinition.Type.FullName, period.ToString());
+            log.Debug("RequestObjectData<{0}>(): RequestId {1}, target object type {2}, period = {3}, onlyWhenChanged = {4}, useBlockingDispatch = {5}", 
+                typeof(T).FullName, requestId, objectDefinition.Type.FullName, period.ToString(), onlyWhenChanged, useBlockingDispatch);
             uint flags = 0;
             if (onlyWhenChanged) flags |= whenChanged;
             if (useBlockingDispatch) flags |= blockingDispatch;
