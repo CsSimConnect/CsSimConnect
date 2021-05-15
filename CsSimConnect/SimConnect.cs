@@ -16,16 +16,29 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Runtime.InteropServices;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace CsSimConnect
 {
 
+    public enum FlightSimType
+    {
+        Unknown,
+        Prepar3Dv4,
+        Prepar3Dv5,
+        MSFS2020
+    }
+
     public sealed class SimConnect
     {
 
         private static readonly Logger log = Logger.GetLogger(typeof(SimConnect));
+
+        public static FlightSimType InterOpType { get; set; }
 
         private static readonly Lazy<SimConnect> lazyInstance = new (() => new SimConnect());
 
@@ -33,6 +46,24 @@ namespace CsSimConnect
 
         public delegate void ConnectionStateHandler(bool willAutoConnect, bool isConnected);
         private delegate void DispatchProc(ref ReceiveStruct structData, UInt32 wordData, IntPtr context);
+
+        [DllImport("kernel32", SetLastError = true, CharSet = CharSet.Ansi)]
+        private static extern IntPtr LoadLibrary([MarshalAs(UnmanagedType.LPStr)] string lpFileName);
+
+        private static void LoadInterOpLibrary(string path)
+        {
+            try
+            {
+                var hExe = LoadLibrary(path);
+                if (hExe == IntPtr.Zero)
+                {
+                    log.Fatal("Unable to load '{0}'", path);
+                }
+            }
+            catch (Exception e) {
+                log.Error("Exception caught in LoadInterOpLibrary('{0}'): {1}", path, e.Message);
+            }
+        }
 
         [DllImport("CsSimConnectInterOp.dll")]
         private static extern bool CsConnect([MarshalAs(UnmanagedType.LPStr)] string appName, ref IntPtr handle);
@@ -48,15 +79,47 @@ namespace CsSimConnect
         private Task<bool> messagePoller;
 
         private readonly Dictionary<uint, Action<SimConnectException>> onError = new();
-        public event ConnectionStateHandler OnConnectionStateChange;
+
         public event Action OnConnect;
         public event Action OnDisconnect;
+        public event ConnectionStateHandler OnConnectionStateChange;
+
+        private static Dictionary<string, FlightSimType> simulatorTypes = null;
+        public AppInfo Info { get; private set; }
+        public FlightSimType ConnectedSim { get; private set; }
+        public event Action<AppInfo> OnOpen;
+        public event Action OnClose;
 
         private SimConnect()
         {
+            log.Info("Loading InterOp DLL for '{0}'.", InterOpType.ToString());
+            if (InterOpType == FlightSimType.Unknown)
+            {
+                log.Fatal("Target InterOp type not set!");
+            }
+            else if (InterOpType == FlightSimType.Prepar3Dv4)
+            {
+                LoadInterOpLibrary("P3Dv4\\CsSimConnectInterOp.dll");
+            }
+            else if (InterOpType == FlightSimType.Prepar3Dv5)
+            {
+                LoadInterOpLibrary("P3Dv5\\CsSimConnectInterOp.dll");
+            }
+            else if (InterOpType == FlightSimType.MSFS2020)
+            {
+                LoadInterOpLibrary("MSFS\\CsSimConnectInterOp.dll");
+            }
+            else
+            {
+                log.Fatal("Unknown FlightSimType '{0}'", InterOpType.ToString());
+            }
+
             UseAutoConnect = false;
             Info = new("CsSimConnect");
+            OnOpen += SetConnectedSim;
+            OnConnect += InvokeConnectionStateChanged;
             OnDisconnect += ResetErrorCallbacks;
+            OnDisconnect += InvokeConnectionStateChanged;
         }
 
         public void InitDispatcher()
@@ -92,16 +155,34 @@ namespace CsSimConnect
             if (CsConnect("CsSimConnect", ref handle))
             {
                 InitDispatcher();
-                if (OnConnect != null)
-                {
-                    OnConnect.Invoke();
-                }
+                OnConnect?.Invoke();
             }
             else
             {
                 log.Error("Failed to connect.");
             }
-            InvokeConnectionStateChanged();
+        }
+
+        private void SetConnectedSim(AppInfo info)
+        {
+            Info = info;
+            if (simulatorTypes == null)
+            {
+                var text = File.ReadAllText("SimulatorTypes.json");
+                var options = new JsonSerializerOptions
+                {
+                    WriteIndented = true,
+                    Converters = {
+                            new JsonStringEnumConverter(JsonNamingPolicy.CamelCase)
+                        }
+                };
+                simulatorTypes = JsonSerializer.Deserialize<Dictionary<string, FlightSimType>>(text, options);
+            }
+            if (!simulatorTypes.ContainsKey(info.Name))
+            {
+                log.Error("Connected to unknown simulator type '{0}'", info.Name);
+            }
+            ConnectedSim = simulatorTypes.GetValueOrDefault(info.Name, FlightSimType.Unknown);
         }
 
         public void Disconnect()
@@ -110,13 +191,12 @@ namespace CsSimConnect
             handle = IntPtr.Zero;
             if (CsDisconnect(oldHandle))
             {
-                OnDisconnect.Invoke();
+                OnDisconnect?.Invoke();
             }
             else
             {
                 log.Error("Failed to disconnect from simulator");
             }
-            InvokeConnectionStateChanged();
         }
 
         private void ResetErrorCallbacks()
@@ -176,12 +256,12 @@ namespace CsSimConnect
                         break;
 
                     case RecvId.Open:                // 2
-                        Info = new(ref structData);
-                        InvokeConnectionStateChanged();
+                        OnOpen?.Invoke(new(ref structData));
                         break;
 
                     case RecvId.Quit:                    // 3
                         log.Info("We are disconnected from '{0}'.", Info.Name);
+                        OnClose?.Invoke();
                         Disconnect();
                         break;
 
@@ -218,8 +298,6 @@ namespace CsSimConnect
                 log.Error("Exception caught while processing message: {0}\n{1}", e.Message, e.StackTrace);
             }
         }
-
-        public AppInfo Info { get; private set; }
 
     }
 }

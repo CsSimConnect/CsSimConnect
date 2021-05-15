@@ -31,10 +31,6 @@ namespace CsSimConnectUI
 
         private static readonly Logger log = Logger.GetLogger(typeof(MainWindow));
 
-        private readonly SimConnect simConnect = SimConnect.Instance;
-        private readonly RequestManager requests = RequestManager.Instance;
-        private readonly CsSimConnect.EventManager events = CsSimConnect.EventManager.Instance;
-
         private int isConnected = 0; // Because we don't van `Interlocked.Exchange()` for `bool`s.
 
         private void Run(Action action) {
@@ -47,10 +43,14 @@ namespace CsSimConnectUI
         public MainWindow()
         {
             Logger.Configure();
+            SimConnect.InterOpType = FlightSimType.Prepar3Dv5;
+            SimConnect.Instance.OnOpen += OnOpen;
+            SimConnect.Instance.OnClose += OnClose;
+
             InitializeComponent();
 
             log.Info("Registering connectionstate listener");
-            simConnect.OnConnectionStateChange += (bool useAutoConnect, bool connected) => Run(() =>
+            SimConnect.Instance.OnConnectionStateChange += (bool useAutoConnect, bool connected) => Run(() =>
             {
                 if (!connected && !useAutoConnect)
                 {
@@ -66,47 +66,49 @@ namespace CsSimConnectUI
                 {
                     iconSim.Source = new BitmapImage(new Uri("Images/dark-slider-on-ok-64.png", UriKind.Relative));
                 }
-                if (connected)
-                {
-                    log.Info("Connected");
-                    if (Interlocked.Exchange(ref isConnected, 1) == 0)
-                    {
-                        // Haven't registered these yet
-                        events.SubscribeToSystemEventBool(SystemEvent.Pause, SetPausedStatus);
-                        events.SubscribeToSystemEventBool(SystemEvent.Sim, SetStoppedStatus);
-                        requests.RequestSystemStateBool(SystemState.Sim, SetStoppedStatus);
-                    }
-                    if (simConnect.Info.Name.Length == 0)
-                    {
-                        lStatus.Content = "Connected.";
-                    }
-                    else
-                    {
-                        lStatus.Content = String.Format("Connected to {0}, SimConnect version {1}", simConnect.Info.Name, simConnect.Info.SimConnectVersion());
-                    }
-                    new Task(TestGetSimState).Start();
-                }
-                else
-                {
-                    log.Info("Not connected");
-
-                    isConnected = 0;
-                    lStatus.Content = "Disconnected.";
-                    lPaused.Style = (Style)FindResource("StatusOff");
-                    lStopped.Style = (Style)FindResource("StatusOff");
-                }
             });
+        }
+
+        private void OnOpen(AppInfo info)
+        {
+            log.Info("Connected");
+            if (Interlocked.Exchange(ref isConnected, 1) == 0)
+            {
+                // Haven't registered these yet
+                CsSimConnect.EventManager.Instance.SubscribeToSystemEventBool(SystemEvent.Pause, SetPausedStatus);
+                CsSimConnect.EventManager.Instance.SubscribeToSystemEventBool(SystemEvent.Sim, SetStoppedStatus);
+                RequestManager.Instance.RequestSystemStateBool(SystemState.Sim, SetStoppedStatus);
+            }
+            if (SimConnect.Instance.Info.Name.Length == 0)
+            {
+                lStatus.Content = "Connected.";
+            }
+            else
+            {
+                lStatus.Content = String.Format("Connected to {0}, SimConnect version {1}", info.Name, info.SimConnectVersion());
+            }
+            new Task(TestGetSimState).Start();
+        }
+
+        private void OnClose()
+        {
+            log.Info("Not connected");
+
+            isConnected = 0;
+            lStatus.Content = "Disconnected.";
+            lPaused.Style = (Style)FindResource("StatusOff");
+            lStopped.Style = (Style)FindResource("StatusOff");
         }
 
         private void ToggleConnection(object sender, RoutedEventArgs e)
         {
-            if (simConnect.IsConnected())
+            if (SimConnect.Instance.IsConnected())
             {
-                simConnect.Disconnect();
+                SimConnect.Instance.Disconnect();
             }
             else
             {
-                simConnect.Connect();
+                SimConnect.Instance.Connect();
             }
         }
 

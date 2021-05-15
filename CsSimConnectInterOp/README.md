@@ -3,6 +3,25 @@
 The `CsSimConnectInterOp.dll` library is a C++ layer between the (static) SimConnect library and Managed Code.
 The intent is to keep it as thin as possible, but provide useful logging and translation functions as needed.
 
+## Building the InterOp DLL
+
+If you want to use the commandline tools of Visual Studio to build this DLL, use:
+
+```
+C:\dev\FS\CsSimConnect\CsSimConnectInterOp> msbuild CsSimConnectInterOp.vcxproj -property:Configuration=<config>
+```
+
+Where Config is one of:
+| Configuration | Required env var | Goal |
+| :--- | :--- | :--- |
+| P3Dv4_Debug | P3D45_SDK | Build a Debug DLL using the Prepar3D v4.5 SDK |
+| P3Dv4_Release | P3D45_SDK | Build a Release DLL using the Prepar3D v4.5 SDK |
+| P3Dv5_Debug | P3D51_SDK | Build a Debug DLL using the Prepar3D v5.1 SDK |
+| P3Dv5_Release | P3D51_SDK | Build a Release DLL using the Prepar3D v5.1 SDK |
+| MSFS2020_Debug | MSFS_SDK | Build a Debug DLL using the MSFS 2020 SDK |
+| MSFS2020_Release | MSFS_SDK | Build a Release DLL using the MSFS 2020 SDK |
+
+
 ## Function interfaces and DLL exports
 
 A DLL in Windows is essentially an executable with a customized entry point defined in the

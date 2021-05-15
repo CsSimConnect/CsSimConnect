@@ -353,3 +353,7 @@ MigrationBackup/
 # Test files
 cssimconnect.log
 *.dll
+
+P3Dv4/
+P3Dv5/
+MSFS/
