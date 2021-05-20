@@ -170,7 +170,7 @@
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
       <AdditionalDependencies>SimConnect.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <OutputFile>..\P3Dv4\$(TargetName)$(TargetExt)</OutputFile>
+      <OutputFile>..\dist\P3Dv4\$(TargetName)$(TargetExt)</OutputFile>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='P3Dv5_Debug|x64'">
@@ -212,7 +212,7 @@
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
       <AdditionalDependencies>SimConnect.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <OutputFile>..\P3Dv5\$(TargetName)$(TargetExt)</OutputFile>
+      <OutputFile>..\dist\P3Dv5\$(TargetName)$(TargetExt)</OutputFile>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='MSFS2020_Debug|x64'">
@@ -254,7 +254,7 @@
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
       <AdditionalDependencies>SimConnect.lib;shlwapi.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <OutputFile>..\MSFS\$(TargetName)$(TargetExt)</OutputFile>
+      <OutputFile>..\dist\MSFS\$(TargetName)$(TargetExt)</OutputFile>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

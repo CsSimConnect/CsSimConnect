@@ -117,7 +117,7 @@ namespace CsSimConnect
                     }
                     TotalDataSize += def.Size;
                     fields.Add(new(field, def));
-                    def.FinishSetup();
+                    def.Setup(field);
                 }
             }
             foreach (PropertyInfo prop in Type.GetProperties())
@@ -132,7 +132,7 @@ namespace CsSimConnect
                     }
                     TotalDataSize += def.Size;
                     fields.Add(new(prop, def));
-                    def.FinishSetup();
+                    def.Setup(prop);
                 }
             }
 
@@ -197,20 +197,8 @@ namespace CsSimConnect
             uint pos = 0;
             foreach (DataDefInfo info in fields)
             {
-                if (info.Member is PropertyInfo prop)
-                {
-                    log.Trace("Copying value of {0} into property {1}", info.Definition.Name, prop.Name);
-                    info.Definition.SetPropertyValue(obj, prop, data, ref pos);
-                }
-                else if (info.Member is FieldInfo field)
-                {
-                    log.Trace("Copying value of {0} into field {1}", info.Definition.Name, field.Name);
-                    info.Definition.SetFieldValue(obj, field, data, ref pos);
-                }
-                else
-                {
-                    throw new NoConversionAvailableException(info.Member);
-                }
+                log.Trace("Copying value of '{0}' into member '{1}'", info.Definition.Name, info.Definition.MemberName);
+                info.Definition?.SetValue(obj, data, ref pos);
             }
 
             return obj;

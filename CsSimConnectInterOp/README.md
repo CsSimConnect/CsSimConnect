@@ -14,12 +14,12 @@ C:\dev\FS\CsSimConnect\CsSimConnectInterOp> msbuild CsSimConnectInterOp.vcxproj 
 Where Config is one of:
 | Configuration | Required env var | Goal |
 | :--- | :--- | :--- |
-| P3Dv4_Debug | P3D45_SDK | Build a Debug DLL using the Prepar3D v4.5 SDK |
-| P3Dv4_Release | P3D45_SDK | Build a Release DLL using the Prepar3D v4.5 SDK |
-| P3Dv5_Debug | P3D51_SDK | Build a Debug DLL using the Prepar3D v5.1 SDK |
-| P3Dv5_Release | P3D51_SDK | Build a Release DLL using the Prepar3D v5.1 SDK |
-| MSFS2020_Debug | MSFS_SDK | Build a Debug DLL using the MSFS 2020 SDK |
-| MSFS2020_Release | MSFS_SDK | Build a Release DLL using the MSFS 2020 SDK |
+| P3Dv4_Debug | P3D45_SDK | `..\P3Dv4\CsSimConnectInterOp.dll` |
+| P3Dv4_Release | P3D45_SDK | `..\dist\P3Dv4\CsSimConnectInterOp.dll` |
+| P3Dv5_Debug | P3D51_SDK | `..\P3Dv5\CsSimConnectInterOp.dll` |
+| P3Dv5_Release | P3D51_SDK | `..\dist\P3Dv5\CsSimConnectInterOp.dll` |
+| MSFS2020_Debug | MSFS_SDK | `..\MSFS\CsSimConnectInterOp.dll` |
+| MSFS2020_Release | MSFS_SDK | `..\dist\MSFS\CsSimConnectInterOp.dll` |
 
 
 ## Function interfaces and DLL exports
