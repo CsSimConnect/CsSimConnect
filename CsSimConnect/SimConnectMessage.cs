@@ -442,7 +442,7 @@ namespace CsSimConnect
         public uint Flags { get; }
         public uint EntryNumber { get; }
         public uint OutOf { get; }
-        public byte[] Data { get; }
+        public DataBlock Data { get; }
 
         private static readonly uint prefixSize = ReceiveStruct.SimConnect_Recv_Prefix_Len + ReceiveSimObjectData.SimConnect_Recv_SimObject_Data_Prefix_len;
 
@@ -455,103 +455,13 @@ namespace CsSimConnect
             EntryNumber = msg.ObjectData.EntryNumber;
             OutOf = msg.ObjectData.OutOf;
 
-            Data = new byte[structLen - prefixSize];
             unsafe {
-                fixed (byte* msgData = &msg.ObjectData.Data, array = &Data[0])
+                fixed (byte* msgData = &msg.ObjectData.Data)
                 {
-                    Buffer.MemoryCopy(msgData, array, Data.Length, structLen - prefixSize);
-                }
-            }
-            log.Trace("Copied {0} bytes of data into ObjectData.Data", Data.Length);
-        }
-
-        internal Int32 AsInt32(ref uint pos)
-        {
-            unsafe
-            {
-                fixed (byte* p = &Data[pos])
-                {
-                    Int32 result = *((Int32*)p);
-                    pos += sizeof(Int32);
-                    return result;
+                    Data = new(structLen - prefixSize, msgData);
                 }
             }
         }
 
-        internal Int64 AsInt64(ref uint pos)
-        {
-            unsafe
-            {
-                fixed (byte* p = &Data[pos])
-                {
-                    Int64 result = *((Int64*)p);
-                    pos += sizeof(Int64);
-                    return result;
-                }
-            }
-        }
-
-        internal float AsFloat32(ref uint pos)
-        {
-            unsafe
-            {
-                fixed (byte* p = &Data[pos])
-                {
-                    float result = *((float*)p);
-                    pos += sizeof(float);
-                    return result;
-                }
-            }
-        }
-
-        internal double AsFloat64(ref uint pos)
-        {
-            unsafe
-            {
-                fixed (byte* p = &Data[pos])
-                {
-                    double result = *((double*)p);
-                    pos += sizeof(double);
-                    return result;
-                }
-            }
-         }
-
-        internal string AsFixedString(ref uint pos, uint len)
-        {
-            int strLen = Array.IndexOf<byte>(Data, 0, (int)pos, (int)len) - (int)pos;
-            unsafe
-            {
-                fixed (byte* p = &Data[pos])
-                {
-                    string result = Encoding.Latin1.GetString(p, strLen).Trim();
-                    pos += len;
-                    return result;
-                }
-            }
-        }
-
-        internal string AsVariableString(ref uint pos, uint maxLen)
-        {
-            log.Trace("AsVariableString({0}, {1}), {2} bytes in Data", pos, maxLen, Data.Length);
-            int strLen = 0;//Array.IndexOf<byte>(Data, 0, (int)pos, (int)maxLen) - (int)pos;
-            if (maxLen == 0)
-            {
-                maxLen = (uint)Data.Length - pos;
-                log.Warn("AsVariableString called with maxLen 0, setting to {} instead.", maxLen);
-            }
-            while ((strLen <= maxLen) && (Data[pos + strLen] != 0)) strLen++;
-            unsafe
-            {
-                fixed (byte* p = &Data[pos])
-                {
-                    string result = Encoding.Latin1.GetString(p, strLen).Trim();
-                    pos += (uint)result.Length;
-                    pos += 4-(pos & 0x03);
-                    log.Trace("String extracted = '{0}'", result);
-                    return result;
-                }
-            }
-        }
     }
 }

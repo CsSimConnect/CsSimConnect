@@ -22,7 +22,9 @@ namespace CsSimConnect.DataDefs
         public const int AirSpeedCruise = -1;
         public const int AirSpeedKeep = -2;
 
+        [EmbeddedField]
         public LatLonAlt Position;
+        [EmbeddedField]
         public PBH Rotation;
         public bool OnGround;
         public int AirSpeed;
@@ -68,9 +70,8 @@ namespace CsSimConnect.DataDefs
         public const uint FlagReverse              = 0x00200000;
         public const uint FlagWrapToFirst          = 0x00400000;
 
-        public double Latitude;
-        public double Longitude;
-        public double Altitude;
+        [EmbeddedField]
+        public LatLonAlt Position;
         public uint flags;
         public double KtsSpeed;
         public double PercentThrottle;
@@ -106,8 +107,11 @@ namespace CsSimConnect.DataDefs
 
     public struct Observer
     {
+        [EmbeddedField]
         public LatLonAlt Position;
+        [EmbeddedField]
         public PBH Rotation;
+        [EmbeddedField]
         public ObserverRegime Regime;
         public bool RotateOnTarget;
         public bool FocusFixed;

@@ -15,24 +15,13 @@
  */
 
 using System;
-using System.Collections.Generic;
 
-namespace CsSimConnect
+namespace CsSimConnect.DataDefs
 {
-
-    public interface IMessageObserver
+    public interface IUpdatableData
     {
-        public bool IsStreamable();
-        public bool IsCompleted();
-        public void OnNext(object msg);
-        public void OnCompleted();
+        public void OnNext();
         public void OnError(Exception error);
+        public void OnComplete();
     }
-
-    public interface IMessageObserver<T> : IMessageObserver, IObserver<T>, IEnumerable<T>, IDisposable
-        where T : class
-    {
-        public void Subscribe(Action<T> callback, Action<Exception> onError = null, Action onComplete = null);
-    }
-
 }

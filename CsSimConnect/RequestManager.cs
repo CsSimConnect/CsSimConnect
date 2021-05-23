@@ -133,10 +133,8 @@ namespace CsSimConnect
             log.Debug("RequestObjectData<{0}>(): RequestId {1}, target object type {2}", typeof(T).FullName, requestId, objectDefinition.Type.FullName);
             uint flags = 0;
             if (useBlockingDispatch) flags |= blockingDispatch;
-            lock (simConnect)
-            {
-                return RegisterResultObserver<T>(requestId, CsRequestDataOnSimObject(simConnect.handle, requestId, objectDefinition.DefinitionId, simObjectUser, (uint)ObjectDataPeriod.Once, flags, 0, 0, 0), "RequestObjectData");
-            }
+
+            return RegisterResultObserver<T>(requestId, CsRequestDataOnSimObject(simConnect.handle, requestId, objectDefinition.DefinitionId, simObjectUser, (uint)ObjectDataPeriod.Once, flags, 0, 0, 0), "RequestObjectData");
         }
 
         public MessageStream<T> RequestObjectData<T>(ObjectDefinition objectDefinition, ObjectDataPeriod period,
@@ -150,10 +148,8 @@ namespace CsSimConnect
             uint flags = 0;
             if (onlyWhenChanged) flags |= whenChanged;
             if (useBlockingDispatch) flags |= blockingDispatch;
-            lock (simConnect)
-            {
-                return RegisterStreamObserver<T>(requestId, CsRequestDataOnSimObject(simConnect.handle, requestId, objectDefinition.DefinitionId, simObjectUser, (uint)period, flags, origin, interval, limit), "RequestObjectData");
-            }
+
+            return RegisterStreamObserver<T>(requestId, CsRequestDataOnSimObject(simConnect.handle, requestId, objectDefinition.DefinitionId, simObjectUser, (uint)period, flags, origin, interval, limit), "RequestObjectData");
         }
     }
 }

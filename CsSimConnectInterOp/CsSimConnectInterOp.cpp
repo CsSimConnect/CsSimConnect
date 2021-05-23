@@ -341,6 +341,20 @@ CS_SIMCONNECT_DLL_EXPORT_LONG CsRequestDataOnSimObject(HANDLE handle, uint32_t r
 	return fetchSendId(handle, SimConnect_RequestDataOnSimObject(handle, requestId, defId, objectId, SIMCONNECT_PERIOD(period), dataRequestFlags, origin, interval, limit), "RequestDataOnSimObject");
 }
 
+CS_SIMCONNECT_DLL_EXPORT_LONG CsSetDataOnSimObject(HANDLE handle, uint32_t defId, uint32_t objectId, uint32_t flags, uint32_t count, uint32_t unitSize, void* data)
+{
+	initLog();
+
+	logger.info("CsSetDataOnSimObject(..., {}, {}, {}, {}, {}, ...)", defId, objectId, flags, count, unitSize);
+	if (handle == nullptr) {
+		logger.error("Handle passed to CsSetDataOnSimObject is null!");
+		return FALSE;
+	}
+
+	std::unique_lock<std::mutex> scLock(scMutex);
+	return fetchSendId(handle, SimConnect_SetDataOnSimObject(handle, defId, objectId, flags, count, unitSize, data), "SetDataOnSimObject");
+}
+
 CS_SIMCONNECT_DLL_EXPORT_LONG CsAddToDataDefinition(HANDLE handle, uint32_t defId, const char* datumName, const char* unitsName, uint32_t datumType, float epsilon, uint32_t datumId)
 {
 	initLog();

@@ -31,6 +31,8 @@ namespace CsSimConnect
         public bool IsCompleted() => Completed;
 
         protected Action<T> callback = null;
+        protected Action<Exception> onError = null;
+        protected Action onComplete = null;
 
         public Exception Error { get; private set; }
 
@@ -56,12 +58,14 @@ namespace CsSimConnect
         public virtual void OnCompleted()
         {
             Completed = true;
+            onComplete?.Invoke();
         }
 
         public virtual void OnError(Exception error)
         {
             Completed = true;
             Error = error;
+            onError?.Invoke(error);
         }
 
         IEnumerator<T> IEnumerable<T>.GetEnumerator()
@@ -79,9 +83,11 @@ namespace CsSimConnect
             throw new NotImplementedException();
         }
 
-        public virtual void Subscribe(Action<T> callback)
+        public virtual void Subscribe(Action<T> callback, Action<Exception> onError = null, Action onCompleted = null)
         {
             this.callback = callback;
+            this.onError = onError;
+            this.onComplete = onCompleted;
         }
 
         public virtual void Dispose()

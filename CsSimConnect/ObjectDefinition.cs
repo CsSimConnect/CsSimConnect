@@ -18,7 +18,6 @@ using CsSimConnect.Reflection;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
-using System.Threading;
 
 namespace CsSimConnect
 {
@@ -189,19 +188,33 @@ namespace CsSimConnect
 
         }
 
-        public T GetData<T>(ObjectData data)
+        internal void CopyData<T>(ObjectData msg, T data)
             where T : class
         {
             log.Trace("Creating an instance of {0}.", typeof(T).FullName);
-            T obj = (T)Activator.CreateInstance(typeof(T));
-            uint pos = 0;
+
             foreach (DataDefInfo info in fields)
             {
                 log.Trace("Copying value of '{0}' into member '{1}'", info.Definition.Name, info.Definition.MemberName);
-                info.Definition?.SetValue(obj, data, ref pos);
+                info.Definition?.SetValue(data, msg.Data);
             }
+        }
 
-            return obj;
+        internal T GetData<T>(ObjectData msg)
+            where T : class
+        {
+            log.Trace("Creating an instance of {0}.", typeof(T).FullName);
+            T data = (T)Activator.CreateInstance(typeof(T));
+            CopyData(msg, data);
+
+            return data;
+        }
+
+        internal byte[] SetData<T>(T data)
+        {
+            byte[] result = new byte[TotalDataSize];
+
+            return result;
         }
     }
 }
