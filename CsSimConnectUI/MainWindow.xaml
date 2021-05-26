@@ -3,42 +3,23 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:CsSimConnectUI"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800"
-        FontFamily="Calibri" FontSize="16">
-    <Window.Resources>
-        <Style TargetType="{x:Type Label}">
-            <Setter Property="Foreground" Value="White" />
-        </Style>
-        <Style TargetType="{x:Type Button}">
-            <Setter Property="Foreground" Value="White" />
-        </Style>
-        <Style x:Key="StatusOn" TargetType="{x:Type Label}">
-            <Setter Property="Foreground" Value="White" />
-            <Setter Property="BorderBrush" Value="White" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="Margin" Value="2" />
-            <Setter Property="Padding" Value="2" />
-        </Style>
-        <Style x:Key="StatusOff" TargetType="{x:Type Label}">
-            <Setter Property="Foreground" Value="Gray" />
-            <Setter Property="BorderBrush" Value="Gray" />
-            <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="Margin" Value="2" />
-            <Setter Property="Padding" Value="2" />
-        </Style>
-    </Window.Resources>
+        TextElement.Foreground="{DynamicResource MaterialDesignBody}"
+        TextElement.FontWeight="Regular"
+        TextElement.FontSize="13"
+        TextOptions.TextFormattingMode="Ideal" 
+        TextOptions.TextRenderingMode="Auto"        
+        Background="{DynamicResource MaterialDesignPaper}"
+        FontFamily="{DynamicResource MaterialDesignFont}"
+        Title="MainWindow" Height="450" Width="800">
     <Grid>
-        <Grid.Background>
-            <ImageBrush ImageSource="/Images/asfalt.png" TileMode="Tile"/>
-        </Grid.Background>
         <Grid.RowDefinitions>
-            <RowDefinition Height="32" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
-            <RowDefinition Height="32" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
-        <Grid Grid.Row="2">
+        <Grid Grid.Row="2" Margin="0,10,0,10">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="Auto"/>
@@ -48,11 +29,26 @@
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
-            <Label x:Name="lSim" Content="Sim:" Grid.Column="0" Margin="10,0,5,0" />
-            <Image x:Name="iconSim" Source="/Images/dark-slider-off-64.png" Grid.Column="1" MouseDown="ToggleConnection"/>
-            <Label x:Name="lStatus" Content="" Grid.Column="3"/>
-            <Label x:Name="lPaused" Content="Paused" Grid.Column="5" Style="{StaticResource StatusOff}" />
-            <Label x:Name="lStopped" Content="Stopped" Grid.Column="6" Style="{StaticResource StatusOff}" />
+            <Button Grid.Column="0" Style="{StaticResource MaterialDesignFloatingActionMiniLightButton}" ToolTip="Connect" Click="Connect" Margin="10,0,10,0">
+                <StackPanel Orientation="Horizontal">
+                    <materialDesign:PackIcon Kind="Link" Width="24" Height="24" x:Name="iLink" Visibility="Collapsed" />
+                    <materialDesign:PackIcon Kind="LinkOff" Width="24" Height="24" x:Name="iLinkOff" Visibility="Visible" />
+                </StackPanel>
+            </Button>
+            <Button Grid.Column="1" Style="{StaticResource MaterialDesignFloatingActionMiniLightButton}" ToolTip="AutoConnect" Click="AutoConnect" Margin="10,0,10,0">
+                <Grid>
+                    <materialDesign:PackIcon Kind="Autorenew" Width="24" Height="24" x:Name="iRenew" />
+                    <materialDesign:PackIcon Kind="SlashForward" Width="24" Height="24" x:Name="iNoRenew" Visibility="Hidden"/>
+                </Grid>
+            </Button>
+            <materialDesign:Snackbar Grid.Column="3" x:Name="status" HorizontalAlignment="Stretch" MessageQueue="{materialDesign:MessageQueue}"/>
+            <Button Grid.Column="5" Style="{StaticResource MaterialDesignFloatingActionMiniAccentButton}" x:Name="bPaused" IsEnabled="False" ToolTip="Paused" Margin="10,0,10,0">
+                <materialDesign:PackIcon Kind="Pause" Width="24" Height="24" x:Name="iPaused" />
+            </Button>
+            <Button Grid.Column="6" Style="{StaticResource MaterialDesignFloatingActionMiniAccentButton}" x:Name="bStopped" IsEnabled="False" ToolTip="Stopped" Margin="10,0,10,0">
+                <materialDesign:PackIcon Kind="Stop" Width="24" Height="24" x:Name="iStopped" />
+            </Button>
+
         </Grid>
     </Grid>
 </Window>

@@ -100,29 +100,39 @@ namespace CsSimConnect
     };
 
     [StructLayout(LayoutKind.Explicit)]
-    unsafe public struct ReceiveAppInfo
+    public struct ReceiveAssignedObjectId
     {
         [FieldOffset(0)]
-        public fixed byte ApplicationName[256];
-        [FieldOffset(256)]
+        public UInt32 RequestId;
+        [FieldOffset(4)]
+        public UInt32 ObjectId;
+    }
+
+    [StructLayout(LayoutKind.Explicit)]
+    unsafe public struct ReceiveAppInfo
+    {
+        internal const int ApplicationNameSize = 256;
+        [FieldOffset(0)]
+        public fixed byte ApplicationName[ApplicationNameSize];
+        [FieldOffset(ApplicationNameSize)]
         public readonly UInt32 ApplicationVersionMajor;
-        [FieldOffset(260)]
+        [FieldOffset(ApplicationNameSize+4)]
         public readonly UInt32 ApplicationVersionMinor;
-        [FieldOffset(264)]
+        [FieldOffset(ApplicationNameSize+8)]
         public readonly UInt32 ApplicationBuildMajor;
-        [FieldOffset(268)]
+        [FieldOffset(ApplicationNameSize+12)]
         public readonly UInt32 ApplicationBuildMinor;
-        [FieldOffset(272)]
+        [FieldOffset(ApplicationNameSize+16)]
         public readonly UInt32 SimConnectVersionMajor;
-        [FieldOffset(276)]
+        [FieldOffset(ApplicationNameSize+20)]
         public readonly UInt32 SimConnectVersionMinor;
-        [FieldOffset(280)]
+        [FieldOffset(ApplicationNameSize+24)]
         public readonly UInt32 SimConnectBuildMajor;
-        [FieldOffset(284)]
+        [FieldOffset(ApplicationNameSize+28)]
         public readonly UInt32 SimConnectBuildMinor;
-        [FieldOffset(288)]
+        [FieldOffset(ApplicationNameSize+32)]
         private readonly UInt32 reserved1;
-        [FieldOffset(292)]
+        [FieldOffset(ApplicationNameSize+36)]
         private readonly UInt32 reserved2;
     }
 
@@ -150,9 +160,18 @@ namespace CsSimConnect
         // EVENT_64
         [FieldOffset(12)]
         public readonly UInt64 Data64;
+
         // EVENT_FILENAME
         [FieldOffset(12)]
         public fixed byte Filename[260];
+        [FieldOffset(272)]
+        public readonly UInt32 FileNameFlags;
+
+        // EVENT_OBJECT_ADDREMOVE
+        [FieldOffset(12)]
+        public UInt32 ObjectType;
+        [FieldOffset(16)]
+        public UInt32 ObjectFlags;
     }
 
     [StructLayout(LayoutKind.Explicit)]
@@ -202,18 +221,20 @@ namespace CsSimConnect
         [FieldOffset(8)]
         public readonly UInt32 Id;
 
-        internal readonly static uint SimConnect_Recv_Prefix_Len = 12;
+        internal const uint SimConnect_Recv_Prefix_Len = 12;
 
         [FieldOffset(12)]
-        public readonly ReceiveException Exception;                 // SIMCONNECT_RECV_EXCEPTION
+        public readonly ReceiveException Exception;                     // SIMCONNECT_RECV_EXCEPTION
         [FieldOffset(12)]
-        public readonly ReceiveAppInfo ConnectionInfo;              // SIMCONNECT_RECV_OPEN
+        public readonly ReceiveAppInfo ConnectionInfo;                  // SIMCONNECT_RECV_OPEN
         [FieldOffset(12)]
-        public readonly ReceiveEvent Event;                         // SIMCONNECT_RECV_EVENT
+        public readonly ReceiveEvent Event;                             // SIMCONNECT_RECV_EVENT, SIMCONNECT_RECV_EVENT_64, SIMCONNECT_RECV_EVENT_FILENAME, SIMCONNECT_RECV_EVENT_OBJECT_ADDREMOVE
         [FieldOffset(12)]
-        public readonly ReceiveSimObjectData ObjectData;
+        public readonly ReceiveAssignedObjectId AssignedObjectId;       // SIMCONNECT_RECV_ASSIGNED_OBJECT_ID
         [FieldOffset(12)]
-        public readonly ReceiveSystemState SystemState;             // SIMCONNECT_RECV_SYSTEM_STATE
+        public readonly ReceiveSimObjectData ObjectData;                // SIMCONNECT_RECV_SIMOBJECT_DATA
+        [FieldOffset(12)]
+        public readonly ReceiveSystemState SystemState;                 // SIMCONNECT_RECV_SYSTEM_STATE
 
     }
 
@@ -338,9 +359,10 @@ namespace CsSimConnect
         {
             unsafe
             {
-                fixed (ReceiveAppInfo* r = &msg.ConnectionInfo)
+                fixed (byte* str = &msg.ConnectionInfo.ApplicationName[0])
                 {
-                    Name = Encoding.Latin1.GetString(r->ApplicationName, 256).Trim();
+                    DataBlock data = new(ReceiveAppInfo.ApplicationNameSize, str);
+                    Name = data.FixedString(ReceiveAppInfo.ApplicationNameSize);
                 }
             }
             ApplicationVersionMajor = msg.ConnectionInfo.ApplicationVersionMajor;
@@ -394,10 +416,10 @@ namespace CsSimConnect
 
     public class SimEvent : SimConnectMessage
     {
-        public UInt32? GroupId { get; init; }
-        public UInt32 EventId { get; init; }
-        public UInt32 Data { get; init; }
-        public UInt64 LongData { get; init; }
+        public uint? GroupId { get; init; }
+        public uint EventId { get; init; }
+        public uint Data { get; init; }
+        public ulong LongData { get; init; }
 
         internal SimEvent(ref ReceiveStruct msg) : base(ref msg)
         {
@@ -463,5 +485,33 @@ namespace CsSimConnect
             }
         }
 
+    }
+
+    public class AssignedObjectId : SimConnectMessage
+    {
+        public uint RequestId { get; init; }
+        public uint ObjectId { get; init; }
+
+        internal AssignedObjectId(ref ReceiveStruct msg) : base(ref msg)
+        {
+            RequestId = msg.AssignedObjectId.RequestId;
+            ObjectId = msg.AssignedObjectId.ObjectId;
+        }
+    }
+
+    public class ObjectAddedRemoved : SimConnectMessage
+    {
+        public uint EventId { get; init; }
+        public uint ObjectId { get; init; }
+        public ObjectType Type { get; init; }
+        public uint ObjectFlags { get; init; }
+
+        internal ObjectAddedRemoved(ref ReceiveStruct msg) : base(ref msg)
+        {
+            EventId = msg.Event.Id;
+            ObjectId = msg.Event.Data;
+            Type = (ObjectType)msg.Event.ObjectType;
+            ObjectFlags = msg.Event.ObjectFlags;
+        }
     }
 }

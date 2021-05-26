@@ -270,9 +270,19 @@ namespace CsSimConnect
                         EventManager.Instance.DispatchResult(structData.Event.Id, SimConnectMessage.FromMessage(ref structData, structLen));
                         break;
 
+                    case RecvId.ObjectAddRemove:       // 5
+                        log.Trace("Received event {0} for add/remove of simulation object of type {1}", structData.Event.Id, ((ObjectType)structData.Event.ObjectType).ToString());
+                        EventManager.Instance.DispatchResult(structData.Event.Id, SimConnectMessage.FromMessage(ref structData, structLen));
+                        break;
+
                     case RecvId.SimObjectData:          // 8
                         log.Trace("Received SimObjectData for request {0}", structData.ObjectData.Id);
                         RequestManager.Instance.DispatchResult(structData.ObjectData.Id, SimConnectMessage.FromMessage(ref structData, structLen));
+                        break;
+
+                    case RecvId.AssignedObjectId:       // 12
+                        log.Trace("Received ObjectID {0} for AI creation request {1}", structData.AssignedObjectId.ObjectId, structData.AssignedObjectId.RequestId);
+                        RequestManager.Instance.DispatchResult(structData.AssignedObjectId.RequestId, SimConnectMessage.FromMessage(ref structData, structLen));
                         break;
 
                     case RecvId.Event64:                // 67

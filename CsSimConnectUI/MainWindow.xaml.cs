@@ -19,7 +19,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Media.Imaging;
+using System.Windows.Media;
 
 namespace CsSimConnectUI
 {
@@ -37,36 +37,29 @@ namespace CsSimConnectUI
             this.Dispatcher.Invoke(action);
         }
 
-        private void SetPausedStatus(bool running) => Run(() => lPaused.Style = (Style)FindResource(running ? "StatusOn" : "StatusOff"));
-        private void SetStoppedStatus(bool running) => Run(() => lStopped.Style = (Style)FindResource(running ? "StatusOff" : "StatusOn"));
+        private readonly SimConnect simConnect;
+        private bool isPaused = false;
+        private bool isRunning = false;
 
         public MainWindow()
         {
             Logger.Configure();
             SimConnect.InterOpType = FlightSimType.Prepar3Dv5;
-            SimConnect.Instance.OnOpen += OnOpen;
-            SimConnect.Instance.OnClose += OnClose;
+            simConnect = SimConnect.Instance;
+
+            simConnect.OnOpen += OnOpen;
+            simConnect.OnClose += OnClose;
 
             InitializeComponent();
+            SetButtons();
 
             log.Info("Registering connectionstate listener");
-            SimConnect.Instance.OnConnectionStateChange += (bool useAutoConnect, bool connected) => Run(() =>
-            {
-                if (!connected && !useAutoConnect)
+            simConnect.OnConnectionStateChange += (bool useAutoConnect, bool connected) => {
+                if (!connected)
                 {
-                    log.Info("Not connected, no autoconnect");
-                    iconSim.Source = new BitmapImage(new Uri("Images/dark-slider-off-64.png", UriKind.Relative));
+                    Run(() => status.MessageQueue.Enqueue("Disconnected."));
                 }
-                else if (!connected)
-                {
-                    log.Info("Not connected, autoconnect");
-                    iconSim.Source = new BitmapImage(new Uri("Images/dark-slider-on-notok-64.png", UriKind.Relative));
-                }
-                else
-                {
-                    iconSim.Source = new BitmapImage(new Uri("Images/dark-slider-on-ok-64.png", UriKind.Relative));
-                }
-            });
+            };
         }
 
         private void OnOpen(AppInfo info)
@@ -75,19 +68,20 @@ namespace CsSimConnectUI
             if (Interlocked.Exchange(ref isConnected, 1) == 0)
             {
                 // Haven't registered these yet
-                CsSimConnect.EventManager.Instance.SubscribeToSystemEventBool(SystemEvent.Pause, SetPausedStatus);
-                CsSimConnect.EventManager.Instance.SubscribeToSystemEventBool(SystemEvent.Sim, SetStoppedStatus);
-                RequestManager.Instance.RequestSystemStateBool(SystemState.Sim, SetStoppedStatus);
+                CsSimConnect.EventManager.Instance.SubscribeToSystemEventBool(SystemEvent.Pause, OnPause) ;
+                CsSimConnect.EventManager.Instance.SubscribeToSystemEventBool(SystemEvent.Sim, OnStop);
+                RequestManager.Instance.RequestSystemStateBool(SystemState.Sim, OnStop);
             }
-            if (SimConnect.Instance.Info.Name.Length == 0)
+            if (simConnect.Info.Name.Length != 0)
             {
-                lStatus.Content = "Connected.";
-            }
-            else
-            {
-                lStatus.Content = String.Format("Connected to {0}, SimConnect version {1}", info.Name, info.SimConnectVersion());
+                Run(() => status.MessageQueue.Enqueue(String.Format("Connected to {0}, SimConnect version {1}", info.Name, info.SimConnectVersion())));
             }
             new Task(TestGetSimState).Start();
+        }
+
+        private void UpdateStatus()
+        {
+            Run(SetButtons);
         }
 
         private void OnClose()
@@ -95,21 +89,70 @@ namespace CsSimConnectUI
             log.Info("Not connected");
 
             isConnected = 0;
-            lStatus.Content = "Disconnected.";
-            lPaused.Style = (Style)FindResource("StatusOff");
-            lStopped.Style = (Style)FindResource("StatusOff");
+            Run(() => status.MessageQueue.Enqueue("Disconnected."));
         }
 
-        private void ToggleConnection(object sender, RoutedEventArgs e)
+        private void OnPause(bool paused)
         {
-            if (SimConnect.Instance.IsConnected())
+            isPaused = paused;
+            Run(() =>
             {
-                SimConnect.Instance.Disconnect();
-            }
+                UpdateStatus();
+                if (isPaused)
+                {
+                    status.MessageQueue.Enqueue("Simulator paused.");
+                }
+                else
+                {
+                    status.MessageQueue.Enqueue("Simulator unpaused.");
+                }
+            });
+        }
+
+        private void OnStop(Boolean running)
+        {
+            isRunning = running;
+            Run(() =>
+            {
+                UpdateStatus();
+                if (isRunning)
+                {
+                    status.MessageQueue.Enqueue("Simulator resumed.");
+                }
+                else
+                {
+                    status.MessageQueue.Enqueue("Simulator stopped.");
+                }
+            });
+        }
+
+        private void SetButtons()
+        {
+            iLink.Visibility = simConnect.IsConnected() ? Visibility.Visible : Visibility.Collapsed;
+            iLinkOff.Visibility = simConnect.IsConnected() ? Visibility.Collapsed : Visibility.Visible;
+
+            iRenew.Foreground = simConnect.UseAutoConnect ? iNoRenew.Foreground : new SolidColorBrush(Colors.DarkGray);
+            iNoRenew.Visibility = simConnect.UseAutoConnect ? Visibility.Hidden : Visibility.Visible;
+
+            bPaused.IsEnabled = isPaused;
+            bStopped.IsEnabled = !isRunning;
+        }
+
+        private void Connect(object sender, RoutedEventArgs e)
+        {
+            if (simConnect.IsConnected())
+                simConnect.Disconnect();
             else
-            {
-                SimConnect.Instance.Connect();
-            }
+                simConnect.Connect();
+            Run(SetButtons);
+        }
+
+        private void AutoConnect(object sender, RoutedEventArgs e)
+        {
+            log.Debug("Togggle autoconnect.");
+            simConnect.UseAutoConnect = !simConnect.UseAutoConnect;
+            log.Debug("Autoconnect is now {0}.", simConnect.UseAutoConnect ? "ON" : "OFF");
+            Run(SetButtons);
         }
 
         private void TestGetSimState()
@@ -122,5 +165,6 @@ namespace CsSimConnectUI
             DataManager.Instance.RequestData<AircraftData>(ObjectDataPeriod.PerSecond, onlyWhenChanged: true)
                                 .Subscribe((AircraftData data) => log.Info("[stream] Currently selected aircraft is '{0}'.", data.Title));
         }
+
     }
 }

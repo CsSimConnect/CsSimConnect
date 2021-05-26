@@ -20,22 +20,22 @@ namespace CsSimConnect
 {
     public class AircraftData
     {
-		[DataDefinition("ATC TYPE", Type = DataType.StringV, Size = 30)]
+		[DataDefinition("ATC TYPE", Type = DataType.String32)]
         public string Type { get; set; }
 
-		[DataDefinition("ATC MODEL", Type = DataType.StringV, Size = 10)]
+		[DataDefinition("ATC MODEL", Type = DataType.String32)]
 		public string Model { get; set; }
 
-		[DataDefinition("ATC ID", Type = DataType.StringV, Size = 10)]
+		[DataDefinition("ATC ID", Type = DataType.String32)]
 		public string Id { get; set; }
 
-		[DataDefinition("ATC AIRLINE", Type = DataType.StringV, Size = 10)]
+		[DataDefinition("ATC AIRLINE", Type = DataType.String32)]
 		public string Airline { get; set; }
 
-		[DataDefinition("ATC FLIGHT NUMBER", Type = DataType.StringV, Size = 6)]
+		[DataDefinition("ATC FLIGHT NUMBER", Type = DataType.String8)]
 		public string FlightNumber { get; set; }
 
-		[DataDefinition("TITLE", Type = DataType.StringV, Size = 256)]
+		[DataDefinition("TITLE", Type = DataType.String256)]
 		public string Title { get; set; }
 
 		[DataDefinition("NUMBER OF ENGINES", Units = "Number", Type = DataType.Int32)]
