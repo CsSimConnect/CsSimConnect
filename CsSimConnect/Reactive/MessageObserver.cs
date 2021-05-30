@@ -18,7 +18,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 
-namespace CsSimConnect
+namespace CsSimConnect.Reactive
 {
     public class MessageObserver<T> : IMessageObserver, IMessageObserver<T>
         where T : class
@@ -28,21 +28,30 @@ namespace CsSimConnect
         public bool IsStreamable() => streamable;
 
         public bool Completed { set; private get; }
-        public bool IsCompleted() => Completed;
+        public bool IsCompleted => Completed;
+
 
         protected Action<T> callback = null;
-        protected Action<Exception> onError = null;
-        protected Action onComplete = null;
+        private event Action OnCompleteActions;
+        private event Action<Exception> OnErrorActions;
+        private event Action CleanupActions;
 
         public Exception Error { get; private set; }
-
-        public Action Cleanup { private get; set; }
 
         internal MessageObserver(bool streamable)
         {
             Completed = false;
             this.streamable = streamable;
-            Cleanup = null;
+        }
+
+        public void OnComplete(Action action)
+        {
+            OnCompleteActions += action;
+        }
+
+        public void OnError(Action<Exception> action)
+        {
+            OnErrorActions += action;
         }
 
         public virtual void OnNext(T msg)
@@ -58,14 +67,14 @@ namespace CsSimConnect
         public virtual void OnCompleted()
         {
             Completed = true;
-            onComplete?.Invoke();
+            OnCompleteActions?.Invoke();
         }
 
         public virtual void OnError(Exception error)
         {
             Completed = true;
             Error = error;
-            onError?.Invoke(error);
+            OnErrorActions?.Invoke(error);
         }
 
         IEnumerator<T> IEnumerable<T>.GetEnumerator()
@@ -86,13 +95,13 @@ namespace CsSimConnect
         public virtual void Subscribe(Action<T> callback, Action<Exception> onError = null, Action onCompleted = null)
         {
             this.callback = callback;
-            this.onError = onError;
-            this.onComplete = onCompleted;
+            this.OnErrorActions += onError;
+            this.OnCompleteActions += onCompleted;
         }
 
         public virtual void Dispose()
         {
-            Cleanup?.Invoke();
+            CleanupActions?.Invoke();
         }
 
     }

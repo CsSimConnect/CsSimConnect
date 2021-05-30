@@ -81,7 +81,7 @@ namespace CsSimConnect
         private readonly Dictionary<uint, Action<SimConnectException>> onError = new();
 
         public event Action OnConnect;
-        public event Action OnDisconnect;
+        public event Action<bool> OnDisconnect;
         public event ConnectionStateHandler OnConnectionStateChange;
 
         private static Dictionary<string, FlightSimType> simulatorTypes = null;
@@ -119,7 +119,7 @@ namespace CsSimConnect
             OnOpen += SetConnectedSim;
             OnConnect += InvokeConnectionStateChanged;
             OnDisconnect += ResetErrorCallbacks;
-            OnDisconnect += InvokeConnectionStateChanged;
+            OnDisconnect += _ => InvokeConnectionStateChanged();
         }
 
         public void InitDispatcher()
@@ -185,13 +185,13 @@ namespace CsSimConnect
             ConnectedSim = simulatorTypes.GetValueOrDefault(info.Name, FlightSimType.Unknown);
         }
 
-        public void Disconnect()
+        public void Disconnect(bool connectionLost =false)
         {
             IntPtr oldHandle = handle;
             handle = IntPtr.Zero;
             if (CsDisconnect(oldHandle))
             {
-                OnDisconnect?.Invoke();
+                OnDisconnect?.Invoke(connectionLost);
             }
             else
             {
@@ -199,7 +199,7 @@ namespace CsSimConnect
             }
         }
 
-        private void ResetErrorCallbacks()
+        private void ResetErrorCallbacks(bool connectionLost)
         {
             log.Info("Clearing Error callbacks");
             lock (this)

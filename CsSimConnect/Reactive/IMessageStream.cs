@@ -14,16 +14,13 @@
  * limitations under the License.
  */
 
-namespace CsSimConnect.AI
+using System;
+using System.Collections.Generic;
+
+namespace CsSimConnect.Reactive
 {
-    public class SimulatedAircraft : SimulatedObject
+    public interface IMessageStream<T> : IMessageObserver<T>, IAsyncEnumerator<T>
+        where T : class
     {
-        public string Title { get; set; }
-        public string TailNumber { get; set; }
-
-        public SimulatedAircraft() : base(ObjectType.Aircraft)
-        {
-
-        }
     }
 }

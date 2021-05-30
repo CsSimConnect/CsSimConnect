@@ -19,7 +19,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace CsSimConnect
+namespace CsSimConnect.Reactive
 {
     public class MessageStream<T> : MessageObserver<T>, IMessageStream<T>
         where T : class
@@ -30,7 +30,7 @@ namespace CsSimConnect
         public uint MaxSize { get; set; }
 
         private ConcurrentQueue<T> queue = new();
-        private T current = null;
+        private T current;
         private bool disposedValue;
 
         public MessageStream(uint queueSize) : base(true)

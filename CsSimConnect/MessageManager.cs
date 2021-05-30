@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+using CsSimConnect.Reactive;
 using System;
 using System.Threading;
 
@@ -36,9 +37,9 @@ namespace CsSimConnect
             simConnect.OnDisconnect += ClearDispatcher;
         }
 
-        protected void ClearDispatcher()
+        protected void ClearDispatcher(bool connectionLost)
         {
-            dispatcher.Clear();
+            dispatcher.Clear(connectionLost);
         }
 
         public uint NextId()
@@ -61,8 +62,9 @@ namespace CsSimConnect
             if (sendId > 0)
             {
                 result = new MessageStream<T>(1);
+                result.OnComplete(() => NormalCleanup(api, id));
                 dispatcher.AddObserver(id, result);
-                simConnect.AddCleanup((uint)sendId, (SimConnectException exc) => DefaultCleanup(api, id, exc));
+                simConnect.AddCleanup((uint)sendId, (SimConnectException exc) => ErrorCleanup(api, id, exc));
             }
             else
             {
@@ -80,8 +82,9 @@ namespace CsSimConnect
             if (sendId > 0)
             {
                 result = new MessageResult<T>();
+                result.OnComplete(() => NormalCleanup(api, id));
                 dispatcher.AddObserver(id, result);
-                simConnect.AddCleanup((uint)sendId, (SimConnectException exc) => DefaultCleanup(api, id, exc));
+                simConnect.AddCleanup((uint)sendId, (SimConnectException exc) => ErrorCleanup(api, id, exc));
             }
             else
             {
@@ -104,7 +107,13 @@ namespace CsSimConnect
             }
         }
 
-        private void DefaultCleanup(string api, uint id, SimConnectException exc)
+        private void NormalCleanup(string api, uint id)
+        {
+            dispatcher.Remove(id);
+            log.Error("Handling of {0} {1} after calling '{2}' completed", dispatcher.Name, id, api);
+        }
+
+        private void ErrorCleanup(string api, uint id, SimConnectException exc)
         {
             dispatcher.Remove(id);
             log.Error("Exception returned for {0} {1} after calling '{2}': {3}", dispatcher.Name, id, api, exc.Message);

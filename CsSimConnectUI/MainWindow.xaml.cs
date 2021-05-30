@@ -15,7 +15,9 @@
  */
 
 using CsSimConnect;
+using CsSimConnect.AI;
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -41,6 +43,8 @@ namespace CsSimConnectUI
         private bool isPaused = false;
         private bool isRunning = false;
 
+        public readonly List<SimulatedObject> AIList = new();
+
         public MainWindow()
         {
             Logger.Configure();
@@ -49,6 +53,8 @@ namespace CsSimConnectUI
 
             simConnect.OnOpen += OnOpen;
             simConnect.OnClose += OnClose;
+
+            BuildDemoList();
 
             InitializeComponent();
             SetButtons();
@@ -62,21 +68,55 @@ namespace CsSimConnectUI
             };
         }
 
+        private void BuildDemoList()
+        {
+            AIList.Add(new(ObjectType.Boat));
+            AIList.Add(new(ObjectType.Helicopter));
+            AIList.Add(new(ObjectType.Aircraft));
+            AIList.Add(new(ObjectType.GroundVehicle));
+            DataContext = AIList;
+        }
+
+
+        private void NewAI(object sender, RoutedEventArgs e)
+        {
+            log.Info("NewAI requested");
+            CreateAIDialog dlg = new();
+            dlg.ShowDialog();
+        }
+
         private void OnOpen(AppInfo info)
         {
             log.Info("Connected");
-            if (Interlocked.Exchange(ref isConnected, 1) == 0)
-            {
-                // Haven't registered these yet
-                CsSimConnect.EventManager.Instance.SubscribeToSystemEventBool(SystemEvent.Pause, OnPause) ;
-                CsSimConnect.EventManager.Instance.SubscribeToSystemEventBool(SystemEvent.Sim, OnStop);
-                RequestManager.Instance.RequestSystemStateBool(SystemState.Sim, OnStop);
-            }
             if (simConnect.Info.Name.Length != 0)
             {
                 Run(() => status.MessageQueue.Enqueue(String.Format("Connected to {0}, SimConnect version {1}", info.Name, info.SimConnectVersion())));
             }
-            new Task(TestGetSimState).Start();
+            new Task(Subscribe).Start();
+        }
+
+        private void Subscribe()
+        {
+            if (Interlocked.Exchange(ref isConnected, 1) == 0)
+            {
+                CsSimConnect.EventManager evtMgr = CsSimConnect.EventManager.Instance;
+                evtMgr.SubscribeToSystemEventBool(SystemEvent.Pause, OnPause);
+                evtMgr.SubscribeToSystemEventBool(SystemEvent.Sim, OnStop);
+                evtMgr.SubscribeToObjectAddedEvent().Subscribe(OnObjectAdded);
+                evtMgr.SubscribeToObjectRemovedEvent().Subscribe(OnObjectRemoved);
+
+                RequestManager.Instance.RequestSystemStateBool(SystemState.Sim, OnStop);
+            }
+        }
+
+        private void OnObjectAdded(SimulatedObject obj)
+        {
+            log.Info("A '{0}' was added with id '{1}.", obj.ObjectType.ToString(), obj.ObjectId);
+        }
+
+        private void OnObjectRemoved(SimulatedObject obj)
+        {
+            log.Info("A '{0}' was removed with id '{1}.", obj.ObjectType.ToString(), obj.ObjectId);
         }
 
         private void UpdateStatus()
@@ -141,9 +181,21 @@ namespace CsSimConnectUI
         private void Connect(object sender, RoutedEventArgs e)
         {
             if (simConnect.IsConnected())
+            {
                 simConnect.Disconnect();
+                if (simConnect.IsConnected())
+                {
+                    Run(() => status.MessageQueue.Enqueue("Disconnect failed."));
+                }
+            }
             else
+            {
                 simConnect.Connect();
+                if (!simConnect.IsConnected())
+                {
+                    Run(() => status.MessageQueue.Enqueue("Connection failed."));
+                }
+            }
             Run(SetButtons);
         }
 
@@ -153,17 +205,6 @@ namespace CsSimConnectUI
             simConnect.UseAutoConnect = !simConnect.UseAutoConnect;
             log.Debug("Autoconnect is now {0}.", simConnect.UseAutoConnect ? "ON" : "OFF");
             Run(SetButtons);
-        }
-
-        private void TestGetSimState()
-        {
-            log.Info("The simulator is {0}.", RequestManager.Instance.RequestSystemState(SystemState.Sim).Get().AsBoolean() ? "Running" : "Stopped");
-            AircraftData data = DataManager.Instance.RequestData<AircraftData>().Get();
-            log.Info("Currently selected aircraft is '{0}'.", data.Title);
-
-            log.Info("Starting stream");
-            DataManager.Instance.RequestData<AircraftData>(ObjectDataPeriod.PerSecond, onlyWhenChanged: true)
-                                .Subscribe((AircraftData data) => log.Info("[stream] Currently selected aircraft is '{0}'.", data.Title));
         }
 
     }

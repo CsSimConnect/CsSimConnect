@@ -62,7 +62,7 @@ namespace CsSimConnect
             {
                 return (LogLevel)Enum.Parse(typeof(LogLevel), level);
             }
-            catch (Exception e)
+            catch (Exception _)
             {
                 return LogLevel.INFO;
             }

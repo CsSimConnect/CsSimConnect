@@ -17,7 +17,7 @@
 using System;
 using System.Threading.Tasks;
 
-namespace CsSimConnect
+namespace CsSimConnect.Reactive
 {
     public class DoubleResultException : Exception
     {
@@ -31,6 +31,8 @@ namespace CsSimConnect
         where T : class
     {
 
+        private static readonly Logger log = Logger.GetLogger(typeof(MessageResult<T>));
+
         private readonly TaskCompletionSource<T> future = new();
 
         public MessageResult() : base(false)
@@ -43,20 +45,24 @@ namespace CsSimConnect
 
         override public void OnNext(T value)
         {
-            try
+            if (future.TrySetResult(value))
             {
-                future.SetResult(value);
                 base.OnNext(value);
+                base.OnCompleted();
             }
-            catch (Exception e) {
-                OnError(e);
+            else
+            {
+                OnError(new DoubleResultException());
             }
-            OnCompleted();
         }
 
         override public void OnError(Exception error)
         {
-            future.SetException(error);
+            if (!future.TrySetException(error))
+            {
+                log.Error("Ignoring Exception '{0}', because we are already in an exceptional state.", error.Message);
+            }
+            OnCompleted();
         }
 
         public T Get()

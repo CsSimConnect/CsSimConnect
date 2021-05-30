@@ -46,6 +46,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="..\.editorconfig" Link=".editorconfig" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="MaterialDesignThemes" Version="4.1.0" />
     <PackageReference Include="System.Reactive" Version="5.0.0" />
   </ItemGroup>

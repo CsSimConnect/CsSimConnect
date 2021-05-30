@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+using CsSimConnect.AI;
+using CsSimConnect.Reactive;
 using System;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -124,15 +126,36 @@ namespace CsSimConnect
             uint eventId = NextId();
             log.Debug("Event ID {0}: Subscribing to '{1}'", eventId, systemEvent.ToString());
 
-            lock (simConnect)
-            {
-                return RegisterStreamObserver<T>(eventId, CsSubscribeToSystemEvent(simConnect.handle, eventId, systemEvent.ToString()), "SubscribeToSystemEvent");
-            }
+            return RegisterStreamObserver<T>(eventId, CsSubscribeToSystemEvent(simConnect.handle, eventId, systemEvent.ToString()), "SubscribeToSystemEvent");
         }
 
         public void SubscribeToSystemEventBool(SystemEvent systemEvent, Action<bool> callback)
         {
             SubscribeToSystemEvent<SimEvent>(systemEvent).Subscribe((SimEvent evt) => callback(evt.Data != 0));
+        }
+
+        public MessageStream<SimulatedObject> SubscribeToObjectAddedEvent()
+        {
+            uint eventId = NextId();
+            log.Debug("Event ID {0}: Subscribing to ObjectAdded events", eventId);
+
+            MessageStream<SimulatedObject> result = new(1);
+
+            RegisterStreamObserver<ObjectAddedRemoved>(eventId, CsSubscribeToSystemEvent(simConnect.handle, eventId, SystemEvent.ObjectAdded.ToString()), "SubscribeToObjectAddedEvent")
+                .Subscribe(objMsg => result.OnNext(new(objMsg.Type, objMsg.ObjectId)), e => result.OnError(e));
+            return result;
+        }
+
+        public MessageStream<SimulatedObject> SubscribeToObjectRemovedEvent()
+        {
+            uint eventId = NextId();
+            log.Debug("Event ID {0}: Subscribing to ObjectRemoved events", eventId);
+
+            MessageStream<SimulatedObject> result = new(1);
+
+            RegisterStreamObserver<ObjectAddedRemoved>(eventId, CsSubscribeToSystemEvent(simConnect.handle, eventId, SystemEvent.ObjectRemoved.ToString()), "SubscribeToObjectRemovedEvent")
+                .Subscribe(objMsg => result.OnNext(new(objMsg.Type, objMsg.ObjectId)), e => result.OnError(e));
+            return result;
         }
     }
 }

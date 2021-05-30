@@ -14,10 +14,13 @@
  * limitations under the License.
  */
 
+using CsSimConnect.Exc;
+using CsSimConnect.Reactive;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 
 namespace CsSimConnect
 {
@@ -38,12 +41,16 @@ namespace CsSimConnect
             Name = name;
         }
 
-        internal void Clear()
+        internal void Clear(bool connectionLost)
         {
             log.Info("Clearing Dispatcher '{0}'", Name);
+            SimulatorDisconnectedException e = connectionLost ? new SimulatorConnectionLostException() : new SimulatorDisconnectedException();
             lock (observerLock)
             {
+                MessageObservers.Values.ToList().ForEach(obs => obs.OnError(e));
                 MessageObservers.Clear();
+
+                MessageObserverLobby.Values.SelectMany<ArrayList, object>(x => (IEnumerable<object>)x.GetEnumerator()).ToList().ForEach(obj => (obj as IMessageObserver)?.OnError(e));
                 MessageObserverLobby.Clear();
             }
         }
@@ -76,18 +83,8 @@ namespace CsSimConnect
                 bool found = MessageObservers.TryGetValue(id, out IMessageObserver observer);
                 if (found)
                 {
-                    if (!observer.IsStreamable())
-                    {
-                        MessageObservers.Remove(id, out _);
-                    }
-
                     log.Trace("Dispatching {0} {1} to observer", Name, id);
                     observer.OnNext(msg);
-
-                    if (!observer.IsStreamable())
-                    {
-                        observer.OnCompleted();
-                    }
                 }
                 else
                 {
@@ -106,7 +103,15 @@ namespace CsSimConnect
         public void AddObserver<T>(UInt32 id, MessageObserver<T> observer)
             where T : SimConnectMessage
         {
-            log.Debug("Adding observer for {0} {1}.", Name, id);
+            if (log.IsDebugEnabled())
+            {
+                log.Debug("Adding observer for {0} {1}.", Name, id);
+            }
+            if (log.IsTraceEnabled())
+            {
+                observer.OnComplete(() => log.Trace("{0} {1} completed.", Name, id));
+                observer.OnError(e => log.Trace("{0} {1} aborted: {2}", Name, id, e.Message));
+            }
 
             lock (observerLock)
             {

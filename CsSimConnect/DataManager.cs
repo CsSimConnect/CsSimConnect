@@ -15,6 +15,7 @@
  */
 
 using CsSimConnect.DataDefs;
+using CsSimConnect.Reactive;
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
@@ -38,7 +39,7 @@ namespace CsSimConnect
 
         private DataManager(SimConnect simConnect) : base("DefinitionID", 1, simConnect)
         {
-            simConnect.OnDisconnect += ResetObjectDefinitions;
+            simConnect.OnDisconnect += _ => ResetObjectDefinitions();
         }
 
         private readonly Dictionary<Type, UInt32> registeredTypes = new();

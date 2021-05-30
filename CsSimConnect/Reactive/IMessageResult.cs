@@ -14,25 +14,11 @@
  * limitations under the License.
  */
 
-using System;
-using System.Collections.Generic;
-
-namespace CsSimConnect
+namespace CsSimConnect.Reactive
 {
-
-    public interface IMessageObserver
-    {
-        public bool IsStreamable();
-        public bool IsCompleted();
-        public void OnNext(object msg);
-        public void OnCompleted();
-        public void OnError(Exception error);
-    }
-
-    public interface IMessageObserver<T> : IMessageObserver, IObserver<T>, IEnumerable<T>, IDisposable
+    public interface IMessageResult<T> : IMessageObserver<T>
         where T : class
     {
-        public void Subscribe(Action<T> callback, Action<Exception> onError = null, Action onComplete = null);
+        T Get();
     }
-
 }

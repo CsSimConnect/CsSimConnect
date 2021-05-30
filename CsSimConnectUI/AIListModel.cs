@@ -14,11 +14,24 @@
  * limitations under the License.
  */
 
-namespace CsSimConnect
+using CsSimConnect;
+using CsSimConnect.AI;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+
+namespace CsSimConnectUI
 {
-    public interface IMessageResult<T> : IMessageObserver<T>
-        where T : class
+    internal class AIListModel
     {
-        T Get();
+
+        public readonly ObservableCollection<SimulatedObject> AIList = new();
+
+        public AIListModel()
+        {
+            AIList.Add(new(ObjectType.Boat));
+            AIList.Add(new(ObjectType.Helicopter));
+            AIList.Add(new(ObjectType.Aircraft));
+            AIList.Add(new(ObjectType.GroundVehicle));
+        }
     }
 }

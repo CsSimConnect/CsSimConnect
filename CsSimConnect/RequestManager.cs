@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+using CsSimConnect.Reactive;
 using System;
 using System.Runtime.InteropServices;
 
@@ -81,10 +82,7 @@ namespace CsSimConnect
             uint requestId = NextId();
             log.Debug("Request ID {0}: Requesting '{1}'", requestId, systemState.ToString());
 
-            lock (simConnect)
-            {
-                return RegisterResultObserver<SimState>(requestId, CsRequestSystemState(simConnect.handle, requestId, systemState.ToString()), "RequestSystemState");
-            }
+            return RegisterResultObserver<SimState>(requestId, CsRequestSystemState(simConnect.handle, requestId, systemState.ToString()), "RequestSystemState");
         }
 
         public void RequestSystemStateBool(SystemState systemState, Action<bool> callback)

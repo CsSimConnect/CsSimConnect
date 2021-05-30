@@ -14,29 +14,20 @@
  * limitations under the License.
  */
 
+using CsSimConnect;
+using CsSimConnect.AI;
 using System.Collections.Generic;
-using CsSimConnect.DataDefs;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
 
-namespace CsSimConnect.AI
+namespace CsSimConnectUI
 {
-    public class SimulatedObject
+    public class ObjectTypeSelector
     {
-        public ObjectType ObjectType { get; init; }
-        public uint ObjectId { get; set; }
-        public InitPosition InitPosition { get; set; }
-
-        public SimulatedObject(ObjectType objectType)
+        public ObjectType ObjectType { get; set; }
+        public string Name { get; set; }
+        private static readonly Dictionary<ObjectType, string> iconNames = new()
         {
-            ObjectType = objectType;
-        }
-
-        public SimulatedObject(ObjectType objectType, uint objectId)
-        {
-            ObjectType = objectType;
-            ObjectId = objectId;
-        }
-
-        private static readonly Dictionary<ObjectType, string> iconNames = new(){
             [ObjectType.User] = "Account",
             [ObjectType.Aircraft] = "Airplane",
             [ObjectType.Helicopter] = "Helicopter",
@@ -50,5 +41,29 @@ namespace CsSimConnect.AI
             [ObjectType.Viewer] = "AccountEye",
         };
         public string IconName => iconNames.GetValueOrDefault(ObjectType, "Help");
+
+        public ObjectTypeSelector(ObjectType type)
+        {
+            ObjectType = type;
+            Name = type.ToString();
+        }
+    }
+
+    public class CreateAIViewModel : INotifyPropertyChanged
+    {
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        public string Title { get; set; }
+        public ObjectType ObjectType;
+        public ObservableCollection<ObjectTypeSelector> ObjectTypes { get; init; }
+
+        public CreateAIViewModel()
+        {
+            ObjectTypes = new();
+            ObjectTypes.Add(new(ObjectType.Boat));
+            ObjectTypes.Add(new(ObjectType.Helicopter));
+            ObjectTypes.Add(new(ObjectType.Aircraft));
+            ObjectTypes.Add(new(ObjectType.GroundVehicle));
+        }
     }
 }

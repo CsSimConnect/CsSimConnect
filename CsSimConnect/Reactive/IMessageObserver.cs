@@ -17,10 +17,22 @@
 using System;
 using System.Collections.Generic;
 
-namespace CsSimConnect
+namespace CsSimConnect.Reactive
 {
-    public interface IMessageStream<T> : IMessageObserver<T>, IAsyncEnumerator<T>
+
+    public interface IMessageObserver
+    {
+        public bool IsStreamable();
+        public bool IsCompleted { get; }
+        public void OnNext(object msg);
+        public void OnCompleted();
+        public void OnError(Exception error);
+    }
+
+    public interface IMessageObserver<T> : IMessageObserver, IObserver<T>, IEnumerable<T>, IDisposable
         where T : class
     {
+        public void Subscribe(Action<T> callback, Action<Exception> onError = null, Action onComplete = null);
     }
+
 }

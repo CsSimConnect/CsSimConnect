@@ -14,16 +14,27 @@
  * limitations under the License.
  */
 
-namespace CsSimConnect.AI
+using System;
+
+namespace CsSimConnect.Exc
 {
-    public class SimulatedAircraft : SimulatedObject
+
+    public class SimulatorDisconnectedException : Exception
     {
-        public string Title { get; set; }
-        public string TailNumber { get; set; }
-
-        public SimulatedAircraft() : base(ObjectType.Aircraft)
+        public SimulatorDisconnectedException() : base("Simulator disconnected")
         {
+        }
 
+        internal SimulatorDisconnectedException(string msg) : base(msg)
+        {
         }
     }
+
+    public class SimulatorConnectionLostException : SimulatorDisconnectedException
+    {
+        public SimulatorConnectionLostException() : base("Connection to Simulator lost")
+        {
+        }
+    }
+
 }

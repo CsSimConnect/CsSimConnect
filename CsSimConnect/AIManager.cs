@@ -25,7 +25,7 @@ namespace CsSimConnect
         Aircraft,
         Helicopter,
         Boat,
-        Ground,
+        GroundVehicle,
         Weapon,
         Countermeasure,
         Animal,

@@ -267,7 +267,7 @@ namespace CsSimConnect
                 case RecvId.Open: return new AppInfo(ref msg);
                 case RecvId.Quit: break;
                 case RecvId.Event: return new SimEvent(ref msg);
-                case RecvId.ObjectAddRemove: break;
+                case RecvId.ObjectAddRemove: return new ObjectAddedRemoved(ref msg);
                 case RecvId.EventFilename: break;
                 case RecvId.EventFrame: break;
                 case RecvId.SimObjectData: return new ObjectData(ref msg, structLen);
