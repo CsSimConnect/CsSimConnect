@@ -14,26 +14,54 @@
         TextOptions.TextRenderingMode="Auto"        
         Background="{DynamicResource MaterialDesignPaper}"
         FontFamily="{DynamicResource MaterialDesignFont}"
-        Title="CreateAIDialog" Height="450" Width="400">
-    <StackPanel Orientation="Vertical" Margin="20,20,20,20">
-        <TextBox x:Name="TitleTextBox" materialDesign:HintAssist.Hint="Title">
-            <TextBox.Text>
-                <Binding Path="Title" UpdateSourceTrigger="PropertyChanged">
-                    <Binding.ValidationRules>
-                        <domain:NotEmptyValidationRule ValidatesOnTargetUpdated="True" />
-                    </Binding.ValidationRules>
-                </Binding>
-            </TextBox.Text>
-        </TextBox>
-        <ComboBox materialDesign:HintAssist.Hint="Type" ItemsSource="{Binding ObjectTypes}">
-            <ComboBox.ItemTemplate>
-                <DataTemplate>
-                    <StackPanel Orientation="Horizontal">
-                        <materialDesign:PackIcon Kind="{Binding IconName}" Margin="5,0,5,0"/>
-                        <TextBlock Text="{Binding Name}"/>
-                    </StackPanel>
-                </DataTemplate>
-            </ComboBox.ItemTemplate>
-        </ComboBox>
-    </StackPanel>
+        Title="CreateAIDialog" Height="360" Width="400">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="32" />
+        </Grid.RowDefinitions>
+        <StackPanel Grid.Row="0" Orientation="Vertical" Margin="10,10,10,10">
+            <ComboBox materialDesign:HintAssist.Hint="Type" ItemsSource="{Binding ObjectTypes}" Margin="10,10,10,10">
+                <ComboBox.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="{Binding IconName}" Margin="5,0,5,0"/>
+                            <TextBlock Text="{Binding Name}"/>
+                        </StackPanel>
+                    </DataTemplate>
+                </ComboBox.ItemTemplate>
+            </ComboBox>
+            <TextBox x:Name="TitleTextBox" materialDesign:HintAssist.Hint="Title" Margin="10,10,10,10">
+                <TextBox.Text>
+                    <Binding Path="Title" UpdateSourceTrigger="PropertyChanged">
+                        <Binding.ValidationRules>
+                            <domain:NotEmptyValidationRule ValidatesOnTargetUpdated="True" />
+                        </Binding.ValidationRules>
+                    </Binding>
+                </TextBox.Text>
+            </TextBox>
+            <TextBox x:Name="TailNumberTextBox" materialDesign:HintAssist.Hint="TailNumber" Margin="10,10,10,10">
+                <TextBox.Text>
+                    <Binding Path="TailNumber" UpdateSourceTrigger="PropertyChanged">
+                        <Binding.ValidationRules>
+                            <domain:NotEmptyValidationRule ValidatesOnTargetUpdated="True" />
+                        </Binding.ValidationRules>
+                    </Binding>
+                </TextBox.Text>
+            </TextBox>
+            <TextBox x:Name="AirportTextBox" materialDesign:HintAssist.Hint="Airport ICAO code" Margin="10,10,10,10">
+                <TextBox.Text>
+                    <Binding Path="AirportId" UpdateSourceTrigger="PropertyChanged">
+                        <Binding.ValidationRules>
+                            <domain:NotEmptyValidationRule ValidatesOnTargetUpdated="True" />
+                        </Binding.ValidationRules>
+                    </Binding>
+                </TextBox.Text>
+            </TextBox>
+        </StackPanel>
+        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Bottom">
+            <Button Style="{StaticResource MaterialDesignFlatButton}" Content="CANCEL" Margin="5,0,5,0" Click="DoCancel" />
+            <Button Style="{StaticResource MaterialDesignFlatButton}" Content="OK" Margin="5,0,5,0" Click="DoCreate" />
+        </StackPanel>
+    </Grid>
 </Window>

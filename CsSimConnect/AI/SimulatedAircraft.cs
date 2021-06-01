@@ -18,12 +18,12 @@ namespace CsSimConnect.AI
 {
     public class SimulatedAircraft : SimulatedObject
     {
-        public string Title { get; set; }
         public string TailNumber { get; set; }
 
-        public SimulatedAircraft() : base(ObjectType.Aircraft)
+        public SimulatedAircraft(string tailNumber = null, string title = null, uint objectId = RequestManager.SimObjectUser)
+            : base(ObjectType.Aircraft, title : title, objectId : objectId)
         {
-
+            TailNumber = tailNumber;
         }
     }
 }

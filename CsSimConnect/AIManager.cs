@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
+using CsSimConnect.AI;
 using System;
+using System.Runtime.InteropServices;
 
 namespace CsSimConnect
 {
@@ -49,6 +51,12 @@ namespace CsSimConnect
 
         private AIManager(SimConnect simConnect) : base("ObjectID", 0, simConnect)
         {
+        }
+
+        public void Create(ParkedAircraft aircraft)
+        {
+            log.Info?.Log("Creating a '{0}' at {1}.", aircraft.Title, aircraft.AirportId);
+            RequestManager.Instance.CreateParkedAircraft(aircraft).Subscribe(obj => aircraft.ObjectId = obj.ObjectId);
         }
     }
 }

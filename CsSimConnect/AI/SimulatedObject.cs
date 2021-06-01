@@ -22,17 +22,15 @@ namespace CsSimConnect.AI
     public class SimulatedObject
     {
         public ObjectType ObjectType { get; init; }
+        public string Title { get; set; }
+        public string Details { get; set; }
         public uint ObjectId { get; set; }
         public InitPosition InitPosition { get; set; }
 
-        public SimulatedObject(ObjectType objectType)
+        public SimulatedObject(ObjectType objectType, string title = null, uint objectId = RequestManager.SimObjectUser)
         {
             ObjectType = objectType;
-        }
-
-        public SimulatedObject(ObjectType objectType, uint objectId)
-        {
-            ObjectType = objectType;
+            Title = title;
             ObjectId = objectId;
         }
 

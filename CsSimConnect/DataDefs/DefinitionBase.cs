@@ -14,16 +14,23 @@
  * limitations under the License.
  */
 
-namespace CsSimConnect.AI
-{
-    public class ParkedAircraft : SimulatedAircraft
-    {
-        public string AirportId { get; set; }
+using System;
+using System.Reflection;
 
-        public ParkedAircraft(string airportId = null, string tailNumber = null, string title = null, uint objectId = RequestManager.SimObjectUser)
-            : base(tailNumber: tailNumber, title: title, objectId: objectId)
-        {
-            AirportId = airportId;
-        }
+namespace CsSimConnect.DataDefs
+{
+    [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property, Inherited = true)]
+    public abstract class DefinitionBase : Attribute
+    {
+
+        public delegate void ValueSetter(object obj, ObjectData data);
+
+        public string MemberName { get { return prop?.Name ?? field?.Name; } }
+        protected PropertyInfo prop;
+        protected FieldInfo field;
+        public ValueSetter SetValue;
+
+        public string Name { get; set; }
+
     }
 }

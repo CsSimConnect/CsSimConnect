@@ -57,11 +57,11 @@ namespace CsSimConnect
                 var hExe = LoadLibrary(path);
                 if (hExe == IntPtr.Zero)
                 {
-                    log.Fatal("Unable to load '{0}'", path);
+                    log.Fatal?.Log("Unable to load '{0}'", path);
                 }
             }
             catch (Exception e) {
-                log.Error("Exception caught in LoadInterOpLibrary('{0}'): {1}", path, e.Message);
+                log.Error?.Log("Exception caught in LoadInterOpLibrary('{0}'): {1}", path, e.Message);
             }
         }
 
@@ -92,10 +92,10 @@ namespace CsSimConnect
 
         private SimConnect()
         {
-            log.Info("Loading InterOp DLL for '{0}'.", InterOpType.ToString());
+            log.Info?.Log("Loading InterOp DLL for '{0}'.", InterOpType.ToString());
             if (InterOpType == FlightSimType.Unknown)
             {
-                log.Fatal("Target InterOp type not set!");
+                log.Fatal?.Log("Target InterOp type not set!");
             }
             else if (InterOpType == FlightSimType.Prepar3Dv4)
             {
@@ -111,7 +111,7 @@ namespace CsSimConnect
             }
             else
             {
-                log.Fatal("Unknown FlightSimType '{0}'", InterOpType.ToString());
+                log.Fatal?.Log("Unknown FlightSimType '{0}'", InterOpType.ToString());
             }
 
             UseAutoConnect = false;
@@ -131,7 +131,7 @@ namespace CsSimConnect
                 {
                     while (CsGetNextDispatch(handle, HandleMessage))
                     {
-                        log.Trace("Trying for another message");
+                        log.Trace?.Log("Trying for another message");
                     }
                     Task.Delay(100);
                 }
@@ -159,7 +159,7 @@ namespace CsSimConnect
             }
             else
             {
-                log.Error("Failed to connect.");
+                log.Error?.Log("Failed to connect.");
             }
         }
 
@@ -180,7 +180,7 @@ namespace CsSimConnect
             }
             if (!simulatorTypes.ContainsKey(info.Name))
             {
-                log.Error("Connected to unknown simulator type '{0}'", info.Name);
+                log.Error?.Log("Connected to unknown simulator type '{0}'", info.Name);
             }
             ConnectedSim = simulatorTypes.GetValueOrDefault(info.Name, FlightSimType.Unknown);
         }
@@ -195,13 +195,13 @@ namespace CsSimConnect
             }
             else
             {
-                log.Error("Failed to disconnect from simulator");
+                log.Error?.Log("Failed to disconnect from simulator");
             }
         }
 
         private void ResetErrorCallbacks(bool connectionLost)
         {
-            log.Info("Clearing Error callbacks");
+            log.Info?.Log("Clearing Error callbacks");
             lock (this)
             {
                 onError.Clear();
@@ -212,17 +212,17 @@ namespace CsSimConnect
         {
             if (onError.Remove(sendId))
             {
-                log.Trace("Removed SendID {0}.");
+                log.Trace?.Log("Removed SendID {0}.");
             }
             else
             {
-                log.Trace("SendID {0} already removed.");
+                log.Trace?.Log("SendID {0} already removed.");
             }
         }
 
         internal void AddCleanup(uint sendId, Action<SimConnectException> cleanup)
         {
-            log.Trace("Adding cleanup for SendId {0}", sendId);
+            log.Trace?.Log("Adding cleanup for SendId {0}", sendId);
             onError.Add(sendId, cleanup);
         }
 
@@ -230,10 +230,10 @@ namespace CsSimConnect
         {
             if (structData.Id > (int)RecvId.EventFilenameW)
             {
-                log.Error("Received message with Message ID {0}", structData.Id);
+                log.Error?.Log("Received message with Message ID {0}", structData.Id);
                 return;
             }
-            log.Debug("Received message with ID {0}", structData.Id);
+            log.Debug?.Log("Received message with ID {0}", structData.Id);
             try
             {
                 Action followup = null;
@@ -243,14 +243,14 @@ namespace CsSimConnect
                     case RecvId.Exception:           // 1
                         SimConnectException exc = new(structData.Exception.ExceptionId, structData.Exception.SendId, structData.Exception.Index);
                         followup = () => {
-                            log.Trace("Exception returned: {0} (SendID={1}, Index={2})", exc.Message, exc.SendID, exc.Index);
+                            log.Trace?.Log("Exception returned: {0} (SendID={1}, Index={2})", exc.Message, exc.SendID, exc.Index);
                             if (onError.Remove(exc.SendID.Value, out Action<SimConnectException> cleanup))
                             {
                                 cleanup(exc);
                             }
                             else
                             {
-                                log.Warn("Ignoring exception for unknown SendID {0}: {1} (index={2})", exc.SendID, exc.Message, exc.Index);
+                                log.Warn?.Log("Ignoring exception for unknown SendID {0}: {1} (index={2})", exc.SendID, exc.Message, exc.Index);
                             }
                         };
                         break;
@@ -260,38 +260,43 @@ namespace CsSimConnect
                         break;
 
                     case RecvId.Quit:                    // 3
-                        log.Info("We are disconnected from '{0}'.", Info.Name);
+                        log.Info?.Log("We are disconnected from '{0}'.", Info.Name);
                         OnClose?.Invoke();
                         Disconnect();
                         break;
 
                     case RecvId.Event:                   // 4
-                        log.Debug("Received event {0}.", structData.Event.Id);
+                        log.Debug?.Log("Received event {0}.", structData.Event.Id);
                         EventManager.Instance.DispatchResult(structData.Event.Id, SimConnectMessage.FromMessage(ref structData, structLen));
                         break;
 
                     case RecvId.ObjectAddRemove:       // 5
-                        log.Trace("Received event {0} for add/remove of simulation object of type {1}", structData.Event.Id, ((ObjectType)structData.Event.ObjectType).ToString());
+                        log.Trace?.Log("Received event {0} for add/remove of simulation object of type {1}", structData.Event.Id, ((ObjectType)structData.Event.ObjectType).ToString());
                         EventManager.Instance.DispatchResult(structData.Event.Id, SimConnectMessage.FromMessage(ref structData, structLen));
                         break;
 
                     case RecvId.SimObjectData:          // 8
-                        log.Trace("Received SimObjectData for request {0}", structData.ObjectData.Id);
+                        log.Trace?.Log("Received SimObjectData for request {0}", structData.ObjectData.Id);
+                        RequestManager.Instance.DispatchResult(structData.ObjectData.Id, SimConnectMessage.FromMessage(ref structData, structLen));
+                        break;
+
+                    case RecvId.SimObjectDataByType:          // 9
+                        log.Trace?.Log("Received SimObjectDataByType for request {0}", structData.ObjectData.Id);
                         RequestManager.Instance.DispatchResult(structData.ObjectData.Id, SimConnectMessage.FromMessage(ref structData, structLen));
                         break;
 
                     case RecvId.AssignedObjectId:       // 12
-                        log.Trace("Received ObjectID {0} for AI creation request {1}", structData.AssignedObjectId.ObjectId, structData.AssignedObjectId.RequestId);
+                        log.Trace?.Log("Received ObjectID {0} for AI creation request {1}", structData.AssignedObjectId.ObjectId, structData.AssignedObjectId.RequestId);
                         RequestManager.Instance.DispatchResult(structData.AssignedObjectId.RequestId, SimConnectMessage.FromMessage(ref structData, structLen));
                         break;
 
                     case RecvId.Event64:                // 67
-                        log.Debug("Received 64-bit event {0}.", structData.Event.Id);
+                        log.Debug?.Log("Received 64-bit event {0}.", structData.Event.Id);
                         EventManager.Instance.DispatchResult(structData.Event.Id, SimConnectMessage.FromMessage(ref structData, structLen));
                         break;
 
                     case RecvId.SystemState:            // 15
-                        log.Debug("Received systemState for request {0}.", structData.SystemState.Id);
+                        log.Debug?.Log("Received systemState for request {0}.", structData.SystemState.Id);
                         RequestManager.Instance.DispatchResult(structData.SystemState.Id, SimConnectMessage.FromMessage(ref structData, structLen));
                         break;
 
@@ -305,7 +310,7 @@ namespace CsSimConnect
             }
             catch (Exception e)
             {
-                log.Error("Exception caught while processing message: {0}\n{1}", e.Message, e.StackTrace);
+                log.Error?.Log("Exception caught while processing message: {0}\n{1}", e.Message, e.StackTrace);
             }
         }
 

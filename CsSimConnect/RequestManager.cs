@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+using CsSimConnect.AI;
+using CsSimConnect.DataDefs;
 using CsSimConnect.Reactive;
 using System;
 using System.Runtime.InteropServices;
@@ -53,6 +55,11 @@ namespace CsSimConnect
         private static extern long CsRequestSystemState(IntPtr handle, UInt32 requestId, [MarshalAs(UnmanagedType.LPStr)] string state);
         [DllImport("CsSimConnectInterOp.dll")]
         private static extern long CsRequestDataOnSimObject(IntPtr handle, UInt32 requestId, UInt32 defId, UInt32 objectId, UInt32 period, UInt32 dataRequestFlags, UInt32 origin, UInt32 interval, UInt32 limit);
+        [DllImport("CsSimConnectInterOp.dll")]
+        private static extern long CsRequestDataOnSimObjectType(IntPtr handle, UInt32 requestId, UInt32 defId, UInt32 radius, UInt32 objectType);
+
+        [DllImport("CsSimConnectInterOp.dll")]
+        private static extern long CsAICreateParkedATCAircraft(IntPtr handle, [MarshalAs(UnmanagedType.LPStr)] string title, [MarshalAs(UnmanagedType.LPStr)] string tailNumber, [MarshalAs(UnmanagedType.LPStr)] string airportId, UInt32 requestId);
 
         private static readonly Logger log = Logger.GetLogger(typeof(RequestManager));
 
@@ -80,7 +87,7 @@ namespace CsSimConnect
         public MessageResult<SimState> RequestSystemState(SystemState systemState)
         {
             uint requestId = NextId();
-            log.Debug("Request ID {0}: Requesting '{1}'", requestId, systemState.ToString());
+            log.Debug?.Log("Request ID {0}: Requesting '{1}'", requestId, systemState.ToString());
 
             return RegisterResultObserver<SimState>(requestId, CsRequestSystemState(simConnect.handle, requestId, systemState.ToString()), "RequestSystemState");
         }
@@ -119,35 +126,53 @@ namespace CsSimConnect
             RequestSystemStateString(SystemState.FlightPlan, callback);
         }
 
-        private static readonly uint simObjectUser = 0;
-        private static readonly uint whenChanged = 0x00000001;
-        private static readonly uint taggedFormat = 0x00000002;
-        private static readonly uint blockingDispatch = 0x00000004;
+        public const uint SimObjectUser = 0;
+        private const uint whenChanged = 0x00000001;
+        private const uint taggedFormat = 0x00000002;
+        private const uint blockingDispatch = 0x00000004;
 
-        public MessageResult<T> RequestObjectData<T>(ObjectDefinition objectDefinition, bool useBlockingDispatch = false)
+        public MessageResult<T> RequestObjectData<T>(ObjectDefinition objectDefinition, uint objectId =SimObjectUser, bool useBlockingDispatch = false)
             where T : SimConnectMessage
         {
             uint requestId = NextId();
-            log.Debug("RequestObjectData<{0}>(): RequestId {1}, target object type {2}", typeof(T).FullName, requestId, objectDefinition.Type.FullName);
+            log.Debug?.Log("RequestObjectData<{0}>(): RequestId {1}, target object type {2}", typeof(T).FullName, requestId, objectDefinition.Type.FullName);
             uint flags = 0;
             if (useBlockingDispatch) flags |= blockingDispatch;
 
-            return RegisterResultObserver<T>(requestId, CsRequestDataOnSimObject(simConnect.handle, requestId, objectDefinition.DefinitionId, simObjectUser, (uint)ObjectDataPeriod.Once, flags, 0, 0, 0), "RequestObjectData");
+            return RegisterResultObserver<T>(requestId, CsRequestDataOnSimObject(simConnect.handle, requestId, objectDefinition.DefinitionId, objectId, (uint)ObjectDataPeriod.Once, flags, 0, 0, 0), "RequestObjectData");
         }
 
-        public MessageStream<T> RequestObjectData<T>(ObjectDefinition objectDefinition, ObjectDataPeriod period,
+        public MessageStream<T> RequestObjectData<T>(ObjectDefinition objectDefinition, ObjectDataPeriod period, uint objectId = SimObjectUser,
                                                      uint origin = 0, uint interval = 0, uint limit = 0,
                                                      bool onlyWhenChanged = false, bool useBlockingDispatch = false)
             where T : SimConnectMessage
         {
             uint requestId = NextId();
-            log.Debug("RequestObjectData<{0}>(): RequestId {1}, target object type {2}, period = {3}, onlyWhenChanged = {4}, useBlockingDispatch = {5}", 
+            log.Debug?.Log("RequestObjectData<{0}>(): RequestId {1}, target object type {2}, period = {3}, onlyWhenChanged = {4}, useBlockingDispatch = {5}", 
                 typeof(T).FullName, requestId, objectDefinition.Type.FullName, period.ToString(), onlyWhenChanged, useBlockingDispatch);
             uint flags = 0;
             if (onlyWhenChanged) flags |= whenChanged;
             if (useBlockingDispatch) flags |= blockingDispatch;
 
-            return RegisterStreamObserver<T>(requestId, CsRequestDataOnSimObject(simConnect.handle, requestId, objectDefinition.DefinitionId, simObjectUser, (uint)period, flags, origin, interval, limit), "RequestObjectData");
+            return RegisterStreamObserver<T>(requestId, CsRequestDataOnSimObject(simConnect.handle, requestId, objectDefinition.DefinitionId, objectId, (uint)period, flags, origin, interval, limit), "RequestObjectData");
+        }
+
+        public MessageStream<T> RequestDataOnSimObjectType<T>(ObjectDefinition objectDefinition, ObjectType objectType, uint radiusInMeters)
+            where T : SimConnectMessage
+        {
+            uint requestId = NextId();
+            log.Debug?.Log("RequestDataOnSimObjectType<{0}>(): RequestId {1}, radius {2}, target object type = {3}",
+                typeof(T).FullName, requestId, radiusInMeters, objectType.ToString());
+
+            return RegisterStreamObserver<T>(requestId, CsRequestDataOnSimObjectType(simConnect.handle, requestId, objectDefinition.DefinitionId, radiusInMeters, (uint)objectType), "RequestDataOnSimObjectType");
+        }
+
+        public MessageResult<AssignedObjectId> CreateParkedAircraft(ParkedAircraft aircraft)
+        {
+            uint requestId = NextId();
+            log.Debug?.Log("CreateParkedAircraft(): RequestId {0}", requestId);
+
+            return RegisterResultObserver<AssignedObjectId>(requestId, CsAICreateParkedATCAircraft(simConnect.handle, aircraft.Title, aircraft.TailNumber, aircraft.AirportId, requestId), "CreateParkedAircraft");
         }
     }
 }

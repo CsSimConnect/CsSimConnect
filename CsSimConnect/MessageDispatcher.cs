@@ -43,7 +43,7 @@ namespace CsSimConnect
 
         internal void Clear(bool connectionLost)
         {
-            log.Info("Clearing Dispatcher '{0}'", Name);
+            log.Info?.Log("Clearing Dispatcher '{0}'", Name);
             SimulatorDisconnectedException e = connectionLost ? new SimulatorConnectionLostException() : new SimulatorDisconnectedException();
             lock (observerLock)
             {
@@ -58,7 +58,7 @@ namespace CsSimConnect
         public bool TryGetObserver<T>(UInt32 id, [MaybeNullWhen(false)] out MessageObserver<T> observer, bool removeIfFound =false)
             where T : SimConnectMessage
         {
-            log.Debug("Trying to find observer for {0} {1}.", Name, id);
+            log.Debug?.Log("Trying to find observer for {0} {1}.", Name, id);
 
             lock (observerLock)
             {
@@ -76,19 +76,19 @@ namespace CsSimConnect
         public bool DispatchToObserver<T>(UInt32 id, T msg)
             where T : SimConnectMessage
         {
-            log.Debug("Dispatching {0} with {1} {2}.", ((RecvId)msg.Id).ToString(), Name, id);
+            log.Debug?.Log("Dispatching {0} with {1} {2}.", ((RecvId)msg.Id).ToString(), Name, id);
 
             lock (observerLock)
             {
                 bool found = MessageObservers.TryGetValue(id, out IMessageObserver observer);
                 if (found)
                 {
-                    log.Trace("Dispatching {0} {1} to observer", Name, id);
+                    log.Trace?.Log("Dispatching {0} {1} to observer", Name, id);
                     observer.OnNext(msg);
                 }
                 else
                 {
-                    log.Trace("No observer yet for {0} {1}", Name, id);
+                    log.Trace?.Log("No observer yet for {0} {1}", Name, id);
                     if (!MessageObserverLobby.TryGetValue(id, out ArrayList waitingValues))
                     {
                         waitingValues = new();
@@ -103,35 +103,35 @@ namespace CsSimConnect
         public void AddObserver<T>(UInt32 id, MessageObserver<T> observer)
             where T : SimConnectMessage
         {
-            if (log.IsDebugEnabled())
+            if (log.IsDebugEnabled)
             {
-                log.Debug("Adding observer for {0} {1}.", Name, id);
+                log.Debug?.Log("Adding observer for {0} {1}.", Name, id);
             }
-            if (log.IsTraceEnabled())
+            if (log.IsTraceEnabled)
             {
-                observer.OnComplete(() => log.Trace("{0} {1} completed.", Name, id));
-                observer.OnError(e => log.Trace("{0} {1} aborted: {2}", Name, id, e.Message));
+                observer.OnComplete(() => log.Trace?.Log("{0} {1} completed.", Name, id));
+                observer.OnError(e => log.Trace?.Log("{0} {1} aborted: {2}", Name, id, e.Message));
             }
 
             lock (observerLock)
             {
                 if (MessageObservers.ContainsKey(id))
                 {
-                    log.Error("Attempted to add second observer for {0} {1}", Name, id);
+                    log.Error?.Log("Attempted to add second observer for {0} {1}", Name, id);
                     return;
                 }
                 MessageObservers.Add(id, observer);
                 if (MessageObserverLobby.Remove(id, out ArrayList waitingList) && (waitingList.Count != 0))
                 {
                     foreach (SimConnectMessage msg in waitingList) {
-                        log.Trace("Dispatching {0} {1} from lobby to observer", Name, id);
+                        log.Trace?.Log("Dispatching {0} {1} from lobby to observer", Name, id);
                         observer.OnNext(msg);
                         if (!observer.IsStreamable())
                         {
                             MessageObservers.Remove(id);
                             if (waitingList.Count > 1)
                             {
-                                log.Error("Received multiple messages for {0} {1}", Name, id);
+                                log.Error?.Log("Received multiple messages for {0} {1}", Name, id);
                             }
                             break;
                         }

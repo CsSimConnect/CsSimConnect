@@ -15,11 +15,12 @@
  */
 
 using CsSimConnect.DataDefs;
+using CsSimConnect.Exc;
 using CsSimConnect.Reactive;
+using CsSimConnect.Reflection;
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using System.Threading;
 
 namespace CsSimConnect
 {
@@ -70,7 +71,7 @@ namespace CsSimConnect
 
         private void ResetObjectDefinitions()
         {
-            log.Info("Clearing ObjectDefinition registration");
+            log.Info?.Log("Clearing ObjectDefinition registration");
             lock (this)
             {
                 registeredTypes.Clear();
@@ -78,19 +79,19 @@ namespace CsSimConnect
             }
         }
 
-        public IMessageResult<T> RequestData<T>()
+        public IMessageResult<T> RequestData<T>(uint objectId =RequestManager.SimObjectUser)
             where T : class
         {
             Type t = typeof(T);
-            log.Debug("RequestData<{0}>()", t.FullName);
+            log.Debug?.Log("RequestData<{0}>()", t.FullName);
 
             ObjectDefinition def = GetObjectDefinition(t);
             def.DefineObject();
-            MessageResult<ObjectData> simData =  RequestManager.Instance.RequestObjectData<ObjectData>(def);
+            MessageResult<ObjectData> simData =  RequestManager.Instance.RequestObjectData<ObjectData>(def, objectId: objectId);
 
             MessageResult<T> result = new();
             simData.Subscribe((ObjectData msg) => {
-                log.Trace("RequestData<{0}> callback called", t.FullName);
+                log.Trace?.Log("RequestData<{0}> callback called", t.FullName);
                 try
                 {
                     result.OnNext(def.GetData<T>(msg));
@@ -103,22 +104,19 @@ namespace CsSimConnect
             return result;
         }
 
-        public IMessageStream<T> RequestData<T>(ObjectDataPeriod period, bool onlyWhenChanged = false)
+        public IMessageStream<T> RequestData<T>(ObjectDataPeriod period, uint objectId = RequestManager.SimObjectUser, bool onlyWhenChanged = false)
             where T : class
         {
             Type t = typeof(T);
-            log.Debug("RequestData<{0}>()", t.FullName);
+            log.Debug?.Log("RequestData<{0}>()", t.FullName);
 
             ObjectDefinition def = GetObjectDefinition(t);
             def.DefineObject();
-            MessageStream<ObjectData> simData = RequestManager.Instance.RequestObjectData<ObjectData>(def, period, onlyWhenChanged: onlyWhenChanged);
+            MessageStream<ObjectData> simData = RequestManager.Instance.RequestObjectData<ObjectData>(def, period, objectId: objectId, onlyWhenChanged: onlyWhenChanged);
 
             MessageStream<T> result = new(1);
             simData.Subscribe((ObjectData msg) => {
-                if (log.IsTraceEnabled())
-                {
-                    log.Trace("RequestData<{0}> callback called", t.FullName);
-                }
+                log.Trace?.Log("RequestData<{0}> callback called", t.FullName);
                 try
                 {
                     result.OnNext(def.GetData<T>(msg));
@@ -131,21 +129,18 @@ namespace CsSimConnect
             return result;
         }
 
-        public void RequestData<T>(T data, ObjectDataPeriod period = ObjectDataPeriod.Once, bool onlyWhenChanged = false)
+        public void RequestData<T>(T data, ObjectDataPeriod period = ObjectDataPeriod.Once, uint objectId = RequestManager.SimObjectUser, bool onlyWhenChanged = false)
             where T : class, IUpdatableData
         {
             Type t = typeof(T);
-            log.Debug("RequestData<{0}>()", t.FullName);
+            log.Debug?.Log("RequestData<{0}>()", t.FullName);
 
             ObjectDefinition def = GetObjectDefinition(t);
             def.DefineObject();
 
-            MessageStream<ObjectData> result = RequestManager.Instance.RequestObjectData<ObjectData>(def, period, onlyWhenChanged: onlyWhenChanged);
+            MessageStream<ObjectData> result = RequestManager.Instance.RequestObjectData<ObjectData>(def, period, objectId: objectId, onlyWhenChanged: onlyWhenChanged);
             result.Subscribe((ObjectData msg) => {
-                if (log.IsTraceEnabled())
-                {
-                    log.Trace("RequestData<{0}> callback called", t.FullName);
-                }
+                log.Trace?.Log("RequestData<{0}> callback called", t.FullName);
                 try
                 {
                     def.CopyData(msg, data);
@@ -158,21 +153,18 @@ namespace CsSimConnect
             }, onError: result.OnError, onCompleted: result.OnCompleted);
         }
 
-        public void RequestData<T>(T data, Action onNext = null, Action<Exception> onError = null, Action onComplete = null, ObjectDataPeriod period = ObjectDataPeriod.Once, bool onlyWhenChanged = false)
+        public void RequestData<T>(T data, Action onNext = null, Action<Exception> onError = null, Action onComplete = null, ObjectDataPeriod period = ObjectDataPeriod.Once, uint objectId = RequestManager.SimObjectUser, bool onlyWhenChanged = false)
             where T : class
         {
             Type t = typeof(T);
-            log.Debug("RequestData<{0}>()", t.FullName);
+            log.Debug?.Log("RequestData<{0}>()", t.FullName);
 
             ObjectDefinition def = GetObjectDefinition(t);
             def.DefineObject();
-            MessageStream<ObjectData> simData = RequestManager.Instance.RequestObjectData<ObjectData>(def, period, onlyWhenChanged: onlyWhenChanged);
+            MessageStream<ObjectData> simData = RequestManager.Instance.RequestObjectData<ObjectData>(def, period, objectId: objectId, onlyWhenChanged: onlyWhenChanged);
 
             simData.Subscribe((ObjectData msg) => {
-                if (log.IsTraceEnabled())
-                {
-                    log.Trace("RequestData<{0}> callback called", t.FullName);
-                }
+                log.Trace?.Log("RequestData<{0}> callback called", t.FullName);
                 try
                 {
                     def.CopyData(msg, data);
@@ -185,10 +177,37 @@ namespace CsSimConnect
             }, onError, onComplete);
         }
 
+        public const uint UserRadius = 0;
+        public const uint MaxRadius = 200000;
+
+        public MessageStream<T> RequestDataOnObjectType<T>(ObjectType objectType, uint radiusInMeters =MaxRadius)
+            where T : class
+        {
+            Type t = typeof(T);
+            log.Debug?.Log("RequestDataOnObjectType<{0}>({1}, {2})", t.FullName, objectType.ToString(), radiusInMeters);
+
+            ObjectDefinition def = GetObjectDefinition(t);
+            def.DefineObject();
+            MessageStream<ObjectData> simData = RequestManager.Instance.RequestDataOnSimObjectType<ObjectData>(def, objectType: objectType, radiusInMeters: radiusInMeters);
+
+            MessageStream<T> result = new(1);
+            simData.Subscribe((ObjectData msg) => {
+                log.Trace?.Log("RequestDataOnObjectType<{0}> callback called", t.FullName);
+                try
+                {
+                    result.OnNext(def.GetData<T>(msg));
+                }
+                catch (Exception e)
+                {
+                    result.OnError(e);
+                }
+            }, onError: result.OnError, onCompleted: result.OnCompleted);
+            return result;
+        }
         public void SetData<T>(T data)
         {
             Type t = typeof(T);
-            log.Debug("SetData<{0}>()", t.FullName);
+            log.Debug?.Log("SetData<{0}>()", t.FullName);
 
             ObjectDefinition def = GetObjectDefinition(t);
             def.DefineObject();
@@ -197,17 +216,28 @@ namespace CsSimConnect
             RegisterCleanup(
                 CsSetDataOnSimObject(simConnect.handle, def.DefinitionId, 0, 0, 0, defBlock.Length, defBlock),
                 "SetData",
-                error => log.Error("Failed to set data on SimObject: {0}", error.Message));
+                error => log.Error?.Log("Failed to set data on SimObject: {0}", error.Message));
         }
 
         internal void AddToDefinition(UInt32 defId, ObjectDefinition.DataDefInfo info)
         {
-            log.Debug("AddToDataDefinition(..., {0}, '{1}', '{2}', {3}, {4}, {5})", defId, info.Definition.Name, info.Definition.Units, info.Definition.Type.ToString(), info.Definition.Epsilon, info.Definition.Tag);
+            if (info.Definition is DataDefinition def)
+            {
+                log.Debug?.Log("AddToDataDefinition(..., {0}, '{1}', '{2}', {3}, {4}, {5})", defId, def.Name, def.Units, def.Type.ToString(), def.Epsilon, def.Tag);
 
-            RegisterCleanup(
-                CsAddToDataDefinition(simConnect.handle, defId, info.Definition.Name, info.Definition.Units, (uint)info.Definition.Type, info.Definition.Epsilon, info.Definition.Tag),
-                "RequestObjectData",
-                error => log.Error("AddToDataDefinition() failed for DefinitionID {0} var '{1}': {2}", defId, info.Definition.Name, error.Message));
+                RegisterCleanup(
+                    CsAddToDataDefinition(simConnect.handle, defId, def.Name, def.Units, (uint)def.Type, def.Epsilon, def.Tag),
+                    "RequestObjectData",
+                    error => log.Error?.Log("AddToDataDefinition() failed for DefinitionID {0} var '{1}': {2}", defId, def.Name, error.Message));
+            }
+            else if (info.Definition is MetaDataDefinition meta)
+            {
+                log.Warn?.Log("Cannot add MetaDataDefinition '{0}' to definition block {1}.", meta.Name, defId);
+            }
+            else
+            {
+                throw new DataDefinitionException(info.Definition, "Don't know how to add this to a definition block.");
+            }
         }
 
     }

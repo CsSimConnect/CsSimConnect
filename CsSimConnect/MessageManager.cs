@@ -51,7 +51,7 @@ namespace CsSimConnect
         {
             if (!dispatcher.DispatchToObserver(id, msg))
             {
-                log.Error("Received a message with unknown {0} {1}.", dispatcher.Name, id);
+                log.Error?.Log("Received a message with unknown {0} {1}.", dispatcher.Name, id);
             }
         }
 
@@ -69,7 +69,7 @@ namespace CsSimConnect
             else
             {
                 var msg = String.Format("Call to {0} failed. (HRETURN=0x{1:X8})", api, sendId);
-                log.Error(msg);
+                log.Error?.Log(msg);
                 result = MessageStream<T>.ErrorResult(0, new SimConnectException(msg));
             }
             return result;
@@ -89,7 +89,7 @@ namespace CsSimConnect
             else
             {
                 var msg = String.Format("Call to {0} failed. (HRETURN=0x{1:X8})", api, sendId);
-                log.Error(msg);
+                log.Error?.Log(msg);
                 result = MessageResult<T>.ErrorResult(0, new SimConnectException(msg));
             }
             return result;
@@ -103,20 +103,20 @@ namespace CsSimConnect
             }
             else
             {
-                log.Error("Call to {0} failed. (HRETURN=0x{1,X8})", api, sendId);
+                log.Error?.Log("Call to {0} failed. (HRETURN=0x{1,X8})", api, sendId);
             }
         }
 
         private void NormalCleanup(string api, uint id)
         {
             dispatcher.Remove(id);
-            log.Error("Handling of {0} {1} after calling '{2}' completed", dispatcher.Name, id, api);
+            log.Debug?.Log("Handling of {0} {1} after calling '{2}' completed", dispatcher.Name, id, api);
         }
 
         private void ErrorCleanup(string api, uint id, SimConnectException exc)
         {
             dispatcher.Remove(id);
-            log.Error("Exception returned for {0} {1} after calling '{2}': {3}", dispatcher.Name, id, api, exc.Message);
+            log.Error?.Log("Exception returned for {0} {1} after calling '{2}': {3}", dispatcher.Name, id, api, exc.Message);
         }
     }
 }

@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+using CsSimConnect.DataDefs;
 using CsSimConnect.Reflection;
 using System;
 using System.Reflection;
@@ -25,20 +26,20 @@ namespace CsSimConnect.Exc
         public DataType SourceType { get; init; }
         public Type TargetType { get; init; }
 
-        public NoConversionAvailableException(DataDefinition def, DataType source, Type target)
+        public NoConversionAvailableException(DefinitionBase def, DataType source, Type target)
             : base(def, String.Format("No conversion available from {0} to {1}", source.ToString(), target.FullName))
         {
             SourceType = source;
             TargetType = target;
         }
 
-        public NoConversionAvailableException(DataDefinition def, DataType source)
+        public NoConversionAvailableException(DefinitionBase def, DataType source)
             : base(def, String.Format("DataType {0} not implemented", source.ToString()))
         {
             SourceType = source;
         }
 
-        public NoConversionAvailableException(DataDefinition def, MemberInfo target)
+        public NoConversionAvailableException(DefinitionBase def, MemberInfo target)
             : base(def, String.Format("Member type {0} not implemented", target.Name))
         {
             if (target is PropertyInfo prop)

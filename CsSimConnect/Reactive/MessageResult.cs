@@ -60,7 +60,7 @@ namespace CsSimConnect.Reactive
         {
             if (!future.TrySetException(error))
             {
-                log.Error("Ignoring Exception '{0}', because we are already in an exceptional state.", error.Message);
+                log.Error?.Log("Ignoring Exception '{0}', because we are already in an exceptional state.", error.Message);
             }
             OnCompleted();
         }

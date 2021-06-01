@@ -124,7 +124,7 @@ namespace CsSimConnect
             where T : SimConnectMessage
         {
             uint eventId = NextId();
-            log.Debug("Event ID {0}: Subscribing to '{1}'", eventId, systemEvent.ToString());
+            log.Debug?.Log("Event ID {0}: Subscribing to '{1}'", eventId, systemEvent.ToString());
 
             return RegisterStreamObserver<T>(eventId, CsSubscribeToSystemEvent(simConnect.handle, eventId, systemEvent.ToString()), "SubscribeToSystemEvent");
         }
@@ -137,24 +137,26 @@ namespace CsSimConnect
         public MessageStream<SimulatedObject> SubscribeToObjectAddedEvent()
         {
             uint eventId = NextId();
-            log.Debug("Event ID {0}: Subscribing to ObjectAdded events", eventId);
+            log.Debug?.Log("Event ID {0}: Subscribing to ObjectAdded events", eventId);
 
             MessageStream<SimulatedObject> result = new(1);
 
             RegisterStreamObserver<ObjectAddedRemoved>(eventId, CsSubscribeToSystemEvent(simConnect.handle, eventId, SystemEvent.ObjectAdded.ToString()), "SubscribeToObjectAddedEvent")
-                .Subscribe(objMsg => result.OnNext(new(objMsg.Type, objMsg.ObjectId)), e => result.OnError(e));
+                .Subscribe(objMsg => result.OnNext(objMsg.Type == ObjectType.Aircraft ? new SimulatedAircraft(objectId: objMsg.ObjectId) : new SimulatedObject(objMsg.Type, objectId: objMsg.ObjectId)),
+                           e => result.OnError(e));
             return result;
         }
 
         public MessageStream<SimulatedObject> SubscribeToObjectRemovedEvent()
         {
             uint eventId = NextId();
-            log.Debug("Event ID {0}: Subscribing to ObjectRemoved events", eventId);
+            log.Debug?.Log("Event ID {0}: Subscribing to ObjectRemoved events", eventId);
 
             MessageStream<SimulatedObject> result = new(1);
 
             RegisterStreamObserver<ObjectAddedRemoved>(eventId, CsSubscribeToSystemEvent(simConnect.handle, eventId, SystemEvent.ObjectRemoved.ToString()), "SubscribeToObjectRemovedEvent")
-                .Subscribe(objMsg => result.OnNext(new(objMsg.Type, objMsg.ObjectId)), e => result.OnError(e));
+                .Subscribe(objMsg => result.OnNext(objMsg.Type == ObjectType.Aircraft ? new SimulatedAircraft(objectId: objMsg.ObjectId) : new SimulatedObject(objMsg.Type, objectId: objMsg.ObjectId)),
+                           e => result.OnError(e));
             return result;
         }
     }

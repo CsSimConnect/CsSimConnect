@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
+using CsSimConnect.DataDefs;
 using CsSimConnect.Exc;
 using System;
 using System.Reflection;
 
 namespace CsSimConnect.Reflection
 {
-
 
     public enum DataType
     {
@@ -60,25 +60,18 @@ namespace CsSimConnect.Reflection
     }
 
     [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property, Inherited = true)]
-    public class DataDefinition : Attribute
+    public class DataDefinition : DefinitionBase
     {
 
         private static readonly Logger log = Logger.GetLogger(typeof(DataDefinition));
 
         public delegate T ValueGetter<T>();
-        public delegate void ValueSetter(object obj, DataBlock data);
 
-        public string Name { get; set; }
         public string Units { get; set; }
         public DataType Type { get; set; }
         public float Epsilon { get; set; }
         public uint Tag { get; set; }
         public uint Size { get; set; }
-
-        public string MemberName { get { return prop?.Name ?? field?.Name; }  }
-        private PropertyInfo prop;
-        private FieldInfo field;
-        public ValueSetter SetValue;
 
         public Type GetTargetType()
         {
@@ -116,7 +109,7 @@ namespace CsSimConnect.Reflection
                 }
                 else
                 {
-                    log.Error("Cannot assign a {0} to a {1}.", Type.ToString(), prop.PropertyType.FullName);
+                    log.Error?.Log("Cannot assign a {0} to a {1}.", Type.ToString(), prop.PropertyType.FullName);
                     throw new NoConversionAvailableException(this, Type, prop.PropertyType);
                 }
             }
@@ -128,13 +121,13 @@ namespace CsSimConnect.Reflection
                 }
                 else
                 {
-                    log.Error("Cannot assign a {0} to a {1}.", Type.ToString(), prop.PropertyType.FullName);
-                    throw new NoConversionAvailableException(this, Type, prop.PropertyType);
+                    log.Error?.Log("Cannot assign a {0} to a {1}.", Type.ToString(), field.FieldType.FullName);
+                    throw new NoConversionAvailableException(this, Type, field.FieldType);
                 }
             }
             else
             {
-                log.Error("No field or property to assign to.");
+                log.Error?.Log("No field or property to assign to.");
                 throw new DataDefinitionException(this, "No field or property to assign to.");
             }
         }
@@ -149,19 +142,19 @@ namespace CsSimConnect.Reflection
             switch (Type)
             {
                 case DataType.Int32:
-                    SetValue = (object obj, DataBlock data) => Set(obj, () => data.Int32());
+                    SetValue = (obj, data) => Set(obj, () => data.Data.Int32());
                     break;
 
                 case DataType.Int64:
-                    SetValue = (object obj, DataBlock data) => Set(obj, () => data.Int64());
+                    SetValue = (obj, data) => Set(obj, () => data.Data.Int64());
                     break;
 
                 case DataType.Float32:
-                    SetValue = (object obj, DataBlock data) => Set(obj, () => data.Float32());
+                    SetValue = (obj, data) => Set(obj, () => data.Data.Float32());
                     break;
 
                 case DataType.Float64:
-                    SetValue = (object obj, DataBlock data) => Set(obj, () => data.Float64());
+                    SetValue = (obj, data) => Set(obj, () => data.Data.Float64());
                     break;
 
                 case DataType.String8:
@@ -170,11 +163,11 @@ namespace CsSimConnect.Reflection
                 case DataType.String128:
                 case DataType.String256:
                 case DataType.String260:
-                    SetValue = (object obj, DataBlock data) => Set(obj, () => data.FixedString(Size));
+                    SetValue = (obj, data) => Set(obj, () => data.Data.FixedString(Size));
                     break;
 
                 case DataType.StringV:
-                    SetValue = (object obj, DataBlock data) => Set(obj, () => data.VariableString(Size));
+                    SetValue = (obj, data) => Set(obj, () => data.Data.VariableString(Size));
                     break;
 
                 case DataType.WString8:
@@ -183,11 +176,11 @@ namespace CsSimConnect.Reflection
                 case DataType.WString128:
                 case DataType.WString256:
                 case DataType.WString260:
-                    SetValue = (object obj, DataBlock data) => Set(obj, () => data.FixedWString(Size));
+                    SetValue = (obj, data) => Set(obj, () => data.Data.FixedWString(Size));
                     break;
 
                 case DataType.WStringV:
-                    SetValue = (object obj, DataBlock data) => Set(obj, () => data.VariableWString(Size));
+                    SetValue = (obj, data) => Set(obj, () => data.Data.VariableWString(Size));
                     break;
 
 
@@ -201,7 +194,7 @@ namespace CsSimConnect.Reflection
                 case DataType.VideoStreamInfo:
 
                 default:
-                    log.Error("Don't know how to decode a {0}.", Type.ToString());
+                    log.Error?.Log("Don't know how to decode a {0}.", Type.ToString());
                     throw new NoConversionAvailableException(this, Type, GetTargetType());
             }
         }
@@ -211,21 +204,21 @@ namespace CsSimConnect.Reflection
             switch (Type)
             {
                 case DataType.Int32:
-                    SetValue = (object obj, DataBlock data) => Set(obj, () => (data.Int32() != 0));
+                    SetValue = (obj, data) => Set(obj, () => data.Data.Int32() != 0);
                     break;
 
                 case DataType.Int64:
-                    SetValue = (object obj, DataBlock data) => Set(obj, () => (data.Int64() != 0));
+                    SetValue = (obj, data) => Set(obj, () => data.Data.Int64() != 0);
                     break;
 
                 case DataType.Float32:
-                    log.Warn("Converting a Float32 to a bool.");
-                    SetValue = (object obj, DataBlock data) => Set(obj, () => (data.Float32() != 0));
+                    log.Warn?.Log("Converting a Float32 to a bool.");
+                    SetValue = (obj, data) => Set(obj, () => data.Data.Float32() != 0);
                     break;
 
                 case DataType.Float64:
-                    log.Warn("Converting a Float64 to a bool.");
-                    SetValue = (object obj, DataBlock data) => Set(obj, () => (data.Float64() != 0));
+                    log.Warn?.Log("Converting a Float64 to a bool.");
+                    SetValue = (obj, data) => Set(obj, () => data.Data.Float64() != 0);
                     break;
 
                 case DataType.String8:
@@ -253,7 +246,7 @@ namespace CsSimConnect.Reflection
                 case DataType.WStringV:
 
                 default:
-                    log.Error("Don't know how to convert a {0} to a bool.", Type.ToString());
+                    log.Error?.Log("Don't know how to convert a {0} to a bool.", Type.ToString());
                     throw new NoConversionAvailableException(this, Type, GetTargetType());
             }
         }
@@ -263,21 +256,21 @@ namespace CsSimConnect.Reflection
             switch (Type)
             {
                 case DataType.Int32:
-                    SetValue = (object obj, DataBlock data) => Set(obj, () => Enum.ToObject(enumType, data.Int32()));
+                    SetValue = (obj, data) => Set(obj, () => Enum.ToObject(enumType, data.Data.Int32()));
                     break;
 
                 case DataType.Int64:
-                    SetValue = (object obj, DataBlock data) => Set(obj, () => Enum.ToObject(enumType, data.Int64()));
+                    SetValue = (obj, data) => Set(obj, () => Enum.ToObject(enumType, data.Data.Int64()));
                     break;
 
                 case DataType.Float32:
-                    log.Warn("Converting a Float32 to an enum.");
-                    SetValue = (object obj, DataBlock data) => Set(obj, () => Enum.ToObject(enumType, (int)data.Float32()));
+                    log.Warn?.Log("Converting a Float32 to an enum.");
+                    SetValue = (obj, data) => Set(obj, () => Enum.ToObject(enumType, (int)data.Data.Float32()));
                     break;
 
                 case DataType.Float64:
-                    log.Warn("Converting a Float64 to an enum.");
-                    SetValue = (object obj, DataBlock data) => Set(obj, () => Enum.ToObject(enumType, (int)data.Float64()));
+                    log.Warn?.Log("Converting a Float64 to an enum.");
+                    SetValue = (obj, data) => Set(obj, () => Enum.ToObject(enumType, (int)data.Data.Float64()));
                     break;
 
                 case DataType.String8:
@@ -305,7 +298,7 @@ namespace CsSimConnect.Reflection
                 case DataType.WStringV:
 
                 default:
-                    log.Error("Don't know how to convert a {0} to an enum.", Type.ToString());
+                    log.Error?.Log("Don't know how to convert a {0} to an enum.", Type.ToString());
                     throw new NoConversionAvailableException(this, Type, GetTargetType());
             }
         }

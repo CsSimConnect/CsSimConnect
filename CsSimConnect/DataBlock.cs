@@ -41,7 +41,7 @@ namespace CsSimConnect
             {
                 Buffer.MemoryCopy(src, dst, Data.Length, size);
             }
-            log.Trace("Copied {0} bytes of data into ObjectData.Data", size);
+            log.Trace?.Log("Copied {0} bytes of data into ObjectData.Data", size);
         }
 
         public void Reset()
@@ -196,12 +196,12 @@ namespace CsSimConnect
 
         public string VariableString(uint maxLen)
         {
-            log.Trace("VariableString({0}, {1}), {2} bytes in Data", Pos, maxLen, Data.Length);
+            log.Trace?.Log("VariableString({0}, {1}), {2} bytes in Data", Pos, maxLen, Data.Length);
             int strLen = 0;//Array.IndexOf<byte>(Data, 0, (int)Pos, (int)maxLen) - (int)Pos;
             if (maxLen == 0)
             {
                 maxLen = (uint)Data.Length - Pos;
-                log.Warn("VariableString called with maxLen 0, setting to {} instead.", maxLen);
+                log.Warn?.Log("VariableString called with maxLen 0, setting to {} instead.", maxLen);
             }
             while ((strLen <= maxLen) && (Data[Pos + strLen] != 0)) strLen++;
             unsafe
@@ -211,7 +211,7 @@ namespace CsSimConnect
                     string result = Encoding.Latin1.GetString(p, strLen).Trim();
                     Pos += (uint)result.Length;
                     Pos += 4 - (Pos & 0x03);
-                    log.Trace("String extracted = '{0}'", result);
+                    log.Trace?.Log("String extracted = '{0}'", result);
                     return result;
                 }
             }
@@ -228,12 +228,12 @@ namespace CsSimConnect
 
         public string VariableWString(uint maxLen)
         {
-            log.Trace("VariableString({0}, {1}), {2} bytes in Data", Pos, maxLen, Data.Length);
+            log.Trace?.Log("VariableString({0}, {1}), {2} bytes in Data", Pos, maxLen, Data.Length);
             int strLen = 0;//Array.IndexOf<byte>(Data, 0, (int)Pos, (int)maxLen) - (int)Pos;
             if (maxLen == 0)
             {
                 maxLen = (uint)Data.Length - Pos;
-                log.Warn("VariableString called with maxLen 0, setting to {} instead.", maxLen);
+                log.Warn?.Log("VariableString called with maxLen 0, setting to {} instead.", maxLen);
             }
             while ((strLen <= maxLen) && (Data[Pos + strLen] != 0)) strLen++;
             unsafe
@@ -243,7 +243,7 @@ namespace CsSimConnect
                     string result = Encoding.Unicode.GetString(p, strLen).Trim();
                     Pos += (uint)result.Length;
                     Pos += 4 - (Pos & 0x03);
-                    log.Trace("String extracted = '{0}'", result);
+                    log.Trace?.Log("String extracted = '{0}'", result);
                     return result;
                 }
             }

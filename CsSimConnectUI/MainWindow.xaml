@@ -20,37 +20,49 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
+        <StackPanel Grid.Row="0" Orientation="Horizontal">
+            <CheckBox Style="{StaticResource MaterialDesignFilterChipPrimaryCheckBox}" Margin="5,0,5,0" IsChecked="{Binding ShowAircraft.IsSelected}" Content="{Binding ShowAircraft.Name}" />
+            <CheckBox Style="{StaticResource MaterialDesignFilterChipPrimaryCheckBox}" Margin="5,0,5,0" IsChecked="{Binding ShowHelicopters.IsSelected}" Content="{Binding ShowHelicopters.Name}" />
+            <CheckBox Style="{StaticResource MaterialDesignFilterChipPrimaryCheckBox}" Margin="5,0,5,0" IsChecked="{Binding ShowBoats.IsSelected}" Content="{Binding ShowBoats.Name}" />
+            <CheckBox Style="{StaticResource MaterialDesignFilterChipPrimaryCheckBox}" Margin="5,0,5,0" IsChecked="{Binding ShowGroundVehicles.IsSelected}" Content="{Binding ShowGroundVehicles.Name}" />
+            <CheckBox Style="{StaticResource MaterialDesignFilterChipPrimaryCheckBox}" Margin="5,0,5,0" IsChecked="{Binding ShowAnimals.IsSelected}" Content="{Binding ShowAnimals.Name}" />
+            <CheckBox Style="{StaticResource MaterialDesignFilterChipPrimaryCheckBox}" Margin="5,0,5,0" IsChecked="{Binding ShowAvatars.IsSelected}" Content="{Binding ShowAvatars.Name}" />
+            <CheckBox Style="{StaticResource MaterialDesignFilterChipPrimaryCheckBox}" Margin="5,0,5,0" IsChecked="{Binding ShowBlimps.IsSelected}" Content="{Binding ShowBlimps.Name}" />
+            <CheckBox Style="{StaticResource MaterialDesignFilterChipPrimaryCheckBox}" Margin="5,0,5,0" IsChecked="{Binding ShowViewers.IsSelected}" Content="{Binding ShowViewers.Name}" />
+
+            <Button Style="{StaticResource MaterialDesignFloatingActionMiniLightButton}" ToolTip="Refresh list" IsEnabled="{Binding SelectionChanged}" Click="RefreshList" Margin="10,0,10,0" Height="32" Width="32">
+                <materialDesign:PackIcon Kind="Refresh" Height="24" Width="24" />
+            </Button>
+        </StackPanel>
+
         <Grid Grid.Row="1">
-            <ItemsControl ItemsSource="{Binding}" Grid.IsSharedSizeScope="True">
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                        <Border x:Name="Border" Padding="8" BorderThickness="0 0 0 1" BorderBrush="{DynamicResource MaterialDesignDivider}">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition SharedSizeGroup="Checkerz" />
-                                    <ColumnDefinition />
-                                </Grid.ColumnDefinitions>
-                                <ToggleButton VerticalAlignment="Center" IsChecked="False" Style="{StaticResource MaterialDesignActionLightToggleButton}">
-                                    <materialDesign:PackIcon Kind="{Binding IconName}" />
-                                </ToggleButton>
-                                <StackPanel Margin="8 0 0 0" Grid.Column="1">
-                                    <TextBlock Text="{Binding ObjectType}" FontWeight="Bold" />
-                                    <TextBlock Text="{Binding ObjectId}" />
-                                </StackPanel>
-                            </Grid>
-                        </Border>
-                        <DataTemplate.Triggers>
-                            <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                                <Setter TargetName="Border" Property="Background" Value="{DynamicResource MaterialDesignSelection}" />
-                            </DataTrigger>
-                        </DataTemplate.Triggers>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
+            <ScrollViewer>
+                <ItemsControl ItemsSource="{Binding AIList}" Grid.IsSharedSizeScope="True" ScrollViewer.CanContentScroll="True" ScrollViewer.VerticalScrollBarVisibility="Auto">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border x:Name="Border" Padding="8" BorderThickness="0 0 0 1" BorderBrush="{DynamicResource MaterialDesignDivider}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition SharedSizeGroup="Checkerz" />
+                                        <ColumnDefinition />
+                                    </Grid.ColumnDefinitions>
+                                    <ToggleButton VerticalAlignment="Center" IsChecked="False" Style="{StaticResource MaterialDesignActionLightToggleButton}">
+                                        <materialDesign:PackIcon Kind="{Binding Value.IconName}" />
+                                    </ToggleButton>
+                                    <StackPanel Margin="8 0 0 0" Grid.Column="1">
+                                        <TextBlock Text="{Binding Value.Title}" FontWeight="Bold" />
+                                        <TextBlock Text="{Binding Value.Details}" />
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
 
             <Button Style="{StaticResource MaterialDesignFloatingActionMiniAccentButton}" 
                     VerticalAlignment="Bottom" HorizontalAlignment="Right" Grid.Row="0" Margin="0 0 28 20"
-                    Content="{materialDesign:PackIcon Kind=Plus, Size=22}" Click="NewAI" />
+                    Content="{materialDesign:PackIcon Kind=Plus, Size=22}" Click="NewAI" IsEnabled="{Binding SimConnected}" />
         </Grid>
 
         <Grid Grid.Row="2" Margin="0,10,0,10">

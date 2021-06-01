@@ -14,19 +14,48 @@
  * limitations under the License.
  */
 
-using System;
+using CsSimConnect.DataDefs;
+using static CsSimConnect.Util.StringUtil;
 
 namespace CsSimConnect.AI
 {
     public class AircraftBuilder
     {
 
-        private static readonly Logger log = Logger.GetLogger(typeof(AIManager));
+        public static AircraftBuilder Builder(string title)
+        {
+            return new(title);
+        }
 
+        public string Title { get; set; }
+        public string TailNumber { get; set; }
+        public InitPosition InitPosition { get; set; }
+        public string AirportId { get; set; }
+
+        private AircraftBuilder(string title)
+        {
+            Title = title;
+        }
+
+        public AircraftBuilder WithTailNumber(string tailNumber)
+        {
+            TailNumber = tailNumber;
+            return this;
+        }
+
+        public AircraftBuilder AtAirport(string airportId)
+        {
+            AirportId = airportId;
+            return this;
+        }
 
         public SimulatedAircraft Build()
         {
-            throw new NotImplementedException();
+            if (!IsEmpty(AirportId))
+            {
+                return new ParkedAircraft(airportId: AirportId, title: Title, tailNumber: TailNumber);
+            }
+            return new SimulatedAircraft(title: Title);
         }
 
     }

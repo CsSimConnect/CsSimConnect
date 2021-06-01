@@ -15,7 +15,8 @@
  */
 
 using CsSimConnect;
-using System.Collections.Generic;
+using CsSimConnect.AI;
+using CsSimConnectUI.Domain;
 using System.Windows;
 
 namespace CsSimConnectUI
@@ -27,11 +28,31 @@ namespace CsSimConnectUI
     public partial class CreateAIDialog : Window
     {
 
+        private CreateAIViewModel model = new();
+
         public CreateAIDialog()
         {
-            DataContext = new CreateAIViewModel();
+            DataContext = model;
 
             InitializeComponent();
+        }
+
+        private void DoCreate(object sender, RoutedEventArgs e)
+        {
+            if (model.Validated)
+            {
+                AircraftBuilder bld = AircraftBuilder.Builder(model.Title)
+                    .WithTailNumber(model.TailNumber)
+                    .AtAirport(model.AirportId);
+                AIManager.Instance.Create((ParkedAircraft)bld.Build());
+
+                Close();
+            }
+        }
+
+        private void DoCancel(object sender, RoutedEventArgs e)
+        {
+            Close();
         }
     }
 }

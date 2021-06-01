@@ -16,6 +16,7 @@
 
 using CsSimConnect;
 using CsSimConnect.AI;
+using CsSimConnectUI.Domain;
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -25,6 +26,7 @@ using System.Windows.Media;
 
 namespace CsSimConnectUI
 {
+
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
@@ -36,14 +38,14 @@ namespace CsSimConnectUI
         private int isConnected = 0; // Because we don't van `Interlocked.Exchange()` for `bool`s.
 
         private void Run(Action action) {
-            this.Dispatcher.Invoke(action);
+            Dispatcher.Invoke(action);
         }
 
         private readonly SimConnect simConnect;
-        private bool isPaused = false;
-        private bool isRunning = false;
+        private bool isPaused;
+        private bool isRunning;
 
-        public readonly List<SimulatedObject> AIList = new();
+        private readonly AIListViewModel aiList;
 
         public MainWindow()
         {
@@ -54,12 +56,14 @@ namespace CsSimConnectUI
             simConnect.OnOpen += OnOpen;
             simConnect.OnClose += OnClose;
 
-            BuildDemoList();
+            aiList = new(Run);
+
+            DataContext = aiList;
 
             InitializeComponent();
             SetButtons();
 
-            log.Info("Registering connectionstate listener");
+            log.Info?.Log("Registering connectionstate listener");
             simConnect.OnConnectionStateChange += (bool useAutoConnect, bool connected) => {
                 if (!connected)
                 {
@@ -68,26 +72,17 @@ namespace CsSimConnectUI
             };
         }
 
-        private void BuildDemoList()
-        {
-            AIList.Add(new(ObjectType.Boat));
-            AIList.Add(new(ObjectType.Helicopter));
-            AIList.Add(new(ObjectType.Aircraft));
-            AIList.Add(new(ObjectType.GroundVehicle));
-            DataContext = AIList;
-        }
-
 
         private void NewAI(object sender, RoutedEventArgs e)
         {
-            log.Info("NewAI requested");
+            log.Info?.Log("NewAI requested");
             CreateAIDialog dlg = new();
             dlg.ShowDialog();
         }
 
         private void OnOpen(AppInfo info)
         {
-            log.Info("Connected");
+            log.Info?.Log("Connected");
             if (simConnect.Info.Name.Length != 0)
             {
                 Run(() => status.MessageQueue.Enqueue(String.Format("Connected to {0}, SimConnect version {1}", info.Name, info.SimConnectVersion())));
@@ -111,12 +106,14 @@ namespace CsSimConnectUI
 
         private void OnObjectAdded(SimulatedObject obj)
         {
-            log.Info("A '{0}' was added with id '{1}.", obj.ObjectType.ToString(), obj.ObjectId);
+            log.Info?.Log("A {0} was added with id {1}.", obj.GetType().Name, obj.ObjectId);
+            aiList.Add(obj);
         }
 
         private void OnObjectRemoved(SimulatedObject obj)
         {
-            log.Info("A '{0}' was removed with id '{1}.", obj.ObjectType.ToString(), obj.ObjectId);
+            log.Info?.Log("A {0} was removed with id {1}.", obj.GetType().Name, obj.ObjectId);
+            aiList.Remove(obj);
         }
 
         private void UpdateStatus()
@@ -126,7 +123,7 @@ namespace CsSimConnectUI
 
         private void OnClose()
         {
-            log.Info("Not connected");
+            log.Info?.Log("Not connected");
 
             isConnected = 0;
             Run(() => status.MessageQueue.Enqueue("Disconnected."));
@@ -201,11 +198,15 @@ namespace CsSimConnectUI
 
         private void AutoConnect(object sender, RoutedEventArgs e)
         {
-            log.Debug("Togggle autoconnect.");
+            log.Debug?.Log("Togggle autoconnect.");
             simConnect.UseAutoConnect = !simConnect.UseAutoConnect;
-            log.Debug("Autoconnect is now {0}.", simConnect.UseAutoConnect ? "ON" : "OFF");
+            log.Debug?.Log("Autoconnect is now {0}.", simConnect.UseAutoConnect ? "ON" : "OFF");
             Run(SetButtons);
         }
 
+        private void RefreshList(object sender, RoutedEventArgs e)
+        {
+            aiList.RefreshList();
+        }
     }
 }

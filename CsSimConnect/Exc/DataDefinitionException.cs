@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-using CsSimConnect.Reflection;
+using CsSimConnect.DataDefs;
 using System;
 
 namespace CsSimConnect.Exc
@@ -22,14 +22,14 @@ namespace CsSimConnect.Exc
     public class DataDefinitionException : Exception
     {
 
-        public DataDefinition Definition { get; init; }
+        public DefinitionBase Definition { get; init; }
 
-        public DataDefinitionException(DataDefinition def, string msg) : base(msg)
+        public DataDefinitionException(DefinitionBase def, string msg) : base(msg)
         {
             Definition = def;
         }
 
-        public DataDefinitionException(DataDefinition def) : base("Error in a DataDefinition")
+        public DataDefinitionException(DefinitionBase def) : base("Error in a DataDefinition")
         {
             Definition = def;
         }

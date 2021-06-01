@@ -271,10 +271,10 @@ namespace CsSimConnect
                 case RecvId.EventFilename: break;
                 case RecvId.EventFrame: break;
                 case RecvId.SimObjectData: return new ObjectData(ref msg, structLen);
-                case RecvId.SimObjectDataByType: break;
+                case RecvId.SimObjectDataByType: return new ObjectData(ref msg, structLen); // Structure is same as previous!
                 case RecvId.WeatherObservation: break;
                 case RecvId.CloudState: break;
-                case RecvId.AssignedObjectId: break;
+                case RecvId.AssignedObjectId: return new AssignedObjectId(ref msg);
                 case RecvId.ReservedKey: break;
                 case RecvId.CustomAction: break;
                 case RecvId.SystemState: return new SimState(ref msg);
@@ -338,7 +338,7 @@ namespace CsSimConnect
                 case RecvId.SystemStateW: break;
                 case RecvId.EventFilenameW: break;
             }
-            log.Error("Unknown message type {0}", msg.Id);
+            log.Error?.Log("Unknown message type {0}", msg.Id);
             return null;
         }
     }

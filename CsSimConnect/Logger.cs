@@ -17,9 +17,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace CsSimConnect
 {
@@ -35,7 +32,9 @@ namespace CsSimConnect
 
     public class Logger
     {
-        private readonly string name;
+        public string Name { get; init; }
+        public string FullName { get; init; }
+        public LogLevel Threshold { get; init; }
 
         public static Logger GetLogger(string name)
         {
@@ -44,16 +43,56 @@ namespace CsSimConnect
 
         public static Logger GetLogger(Type type)
         {
-            return new(type.Name);
+            return new(type.FullName);
         }
 
+        private static Dictionary<string, LogLevel> thresholds = new();
+
         private static string logPath = "cssimconnect.log";
-        private static bool configDone = false;
+        private static bool configDone;
         private static LogLevel rootLevel = LogLevel.INFO;
 
-        private Logger(string name)
+        public bool IsTraceEnabled => Threshold <= LogLevel.TRACE;
+        public bool IsDebugEnabled => Threshold <= LogLevel.DEBUG;
+        public bool IsInfoEnabled => Threshold <= LogLevel.INFO;
+        public bool IsWarnEnabled => Threshold <= LogLevel.WARN;
+        public bool IsErrorEnabled => Threshold <= LogLevel.ERROR;
+        public bool IsFatalEnabled => Threshold <= LogLevel.FATAL;
+
+        public LeveledLogger Trace { get; init; }
+        public LeveledLogger Debug { get; init; }
+        public LeveledLogger Info { get; init; }
+        public LeveledLogger Warn { get; init; }
+        public LeveledLogger Error { get; init; }
+        public LeveledLogger Fatal { get; init; }
+
+        private Logger(string fullName)
         {
-            this.name = name;
+            FullName = fullName;
+            int index = fullName.LastIndexOf('.');
+            Name = (index <= 1) || ((fullName.Length - index) <= 1) ? fullName : fullName[(index + 1)..];
+            Threshold = FindThreshold(fullName);
+
+            Trace = IsTraceEnabled ? new LeveledLogger(this, LogLevel.TRACE) : null;
+            Debug = IsDebugEnabled ? new LeveledLogger(this, LogLevel.DEBUG) : null;
+            Info = IsInfoEnabled ? new LeveledLogger(this, LogLevel.INFO) : null;
+            Warn = IsWarnEnabled ? new LeveledLogger(this, LogLevel.WARN) : null;
+            Error = IsErrorEnabled ? new LeveledLogger(this, LogLevel.ERROR) : null;
+            Fatal = IsFatalEnabled ? new LeveledLogger(this, LogLevel.FATAL) : null;
+        }
+
+        private LogLevel FindThreshold(string key)
+        {
+            if ((key == null) || key.Length == 0)
+            {
+                return rootLevel;
+            }
+            if (thresholds.TryGetValue(key, out LogLevel result))
+            {
+                return result;
+            }
+            int index = key.LastIndexOf('.');
+            return (index <= 0) ? rootLevel : FindThreshold(key.Substring(0, index));
         }
 
         private static LogLevel toLevel(string level)
@@ -62,7 +101,7 @@ namespace CsSimConnect
             {
                 return (LogLevel)Enum.Parse(typeof(LogLevel), level);
             }
-            catch (Exception _)
+            catch (Exception)
             {
                 return LogLevel.INFO;
             }
@@ -87,7 +126,7 @@ namespace CsSimConnect
             return true;
         }
 
-        public static void Configure(string configPath ="rakisLog.properties")
+        public static void Configure(string configPath = "rakisLog.properties")
         {
             if (configDone)
             {
@@ -103,7 +142,7 @@ namespace CsSimConnect
                     {
                         string[] elems = path.Split(".");
                         string[] values = value.Split(",");
-                        if (elems[0].Equals("rootLogger"))
+                        if (elems[0] == "rootLogger")
                         {
                             if (values.Length == 1)
                             {
@@ -115,7 +154,10 @@ namespace CsSimConnect
                                 logPath = values[1].Trim();
                             }
                         }
-                        // TODO
+                        else
+                        {
+                            thresholds.Add(path, toLevel(value));
+                        }
                     }
                 }
             }
@@ -126,78 +168,37 @@ namespace CsSimConnect
             configDone = true;
         }
 
-        public LogLevel GetThreshold()
-        {
-            return rootLevel; // TODO
-        }
-
-        public bool IsTraceEnabled()
-        {
-            return GetThreshold() <= LogLevel.TRACE;
-        }
-
-        public bool IsDebugEnabled()
-        {
-            return GetThreshold() <= LogLevel.DEBUG;
-        }
-
-        public bool IsInfoEnabled()
-        {
-            return GetThreshold() <= LogLevel.INFO;
-        }
-
-        public bool IsWarnEnabled()
-        {
-            return GetThreshold() <= LogLevel.WARN;
-        }
-
-        public bool IsErrorEnabled()
-        {
-            return GetThreshold() <= LogLevel.ERROR;
-        }
-
-        public bool IsFatalEnabled()
-        {
-            return GetThreshold() <= LogLevel.FATAL;
-        }
-
         public void Log(LogLevel level, string fmt, params object[] msg)
         {
-            if (GetThreshold() <= level)
+            if (Threshold <= level)
             {
                 lock (this)
                 {
                     using FileStream fs = new(logPath, FileMode.Append, FileAccess.Write, FileShare.ReadWrite);
                     using StreamWriter f = new(fs);
-                    f.Write(String.Format("{0,19} {1,7} {2} ", DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss"), "[" + level.ToString() + "]", name));
+                    f.Write(String.Format("{0,19} {1,7} {2} ", DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss"), "[" + level.ToString() + "]", Name));
                     f.WriteLine(String.Format(fmt, msg));
                 }
             }
         }
 
-        public void Trace(string fmt, params object[] msg)
+    }
+
+    public class LeveledLogger
+    {
+
+        private readonly Logger logger;
+        public LogLevel Level { get; init; }
+
+        public LeveledLogger(Logger logger, LogLevel level)
         {
-            Log(LogLevel.TRACE, fmt, msg);
+            this.logger = logger;
+            Level = level;
         }
-        public void Debug(string fmt, params object[] msg)
+
+        public void Log(string fmt, params object[] msg)
         {
-            Log(LogLevel.DEBUG, fmt, msg);
-        }
-        public void Info(string fmt, params object[] msg)
-        {
-            Log(LogLevel.INFO, fmt, msg);
-        }
-        public void Warn(string fmt, params object[] msg)
-        {
-            Log(LogLevel.WARN, fmt, msg);
-        }
-        public void Error(string fmt, params object[] msg)
-        {
-            Log(LogLevel.ERROR, fmt, msg);
-        }
-        public void Fatal(string fmt, params object[] msg)
-        {
-            Log(LogLevel.FATAL, fmt, msg);
+            logger.Log(Level, fmt, msg);
         }
     }
 }

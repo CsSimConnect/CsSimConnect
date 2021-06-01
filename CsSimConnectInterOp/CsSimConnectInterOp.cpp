@@ -341,6 +341,19 @@ CS_SIMCONNECT_DLL_EXPORT_LONG CsRequestDataOnSimObject(HANDLE handle, uint32_t r
 	return fetchSendId(handle, SimConnect_RequestDataOnSimObject(handle, requestId, defId, objectId, SIMCONNECT_PERIOD(period), dataRequestFlags, origin, interval, limit), "RequestDataOnSimObject");
 }
 
+CS_SIMCONNECT_DLL_EXPORT_LONG CsRequestDataOnSimObjectType(HANDLE handle, uint32_t requestId, uint32_t defineId, uint32_t radius, uint32_t objectType) {
+	initLog();
+
+	logger.trace("CsRequestDataOnSimObjectType(..., {}, {}, {}, {})", requestId, defineId, radius, objectType);
+	if (handle == nullptr) {
+		logger.error("Handle passed to CsRequestDataOnSimObjectType is null!");
+		return FALSE;
+	}
+
+	std::unique_lock<std::mutex> scLock(scMutex);
+	return fetchSendId(handle, SimConnect_RequestDataOnSimObjectType(handle, requestId, defineId, radius, SIMCONNECT_SIMOBJECT_TYPE(objectType)), "RequestDataOnSimObjectType");
+}
+
 CS_SIMCONNECT_DLL_EXPORT_LONG CsSetDataOnSimObject(HANDLE handle, uint32_t defId, uint32_t objectId, uint32_t flags, uint32_t count, uint32_t unitSize, void* data)
 {
 	initLog();
@@ -370,4 +383,22 @@ CS_SIMCONNECT_DLL_EXPORT_LONG CsAddToDataDefinition(HANDLE handle, uint32_t defI
 	}
 	std::unique_lock<std::mutex> scLock(scMutex);
 	return fetchSendId(handle, SimConnect_AddToDataDefinition(handle, defId, datumName, unitsName, SIMCONNECT_DATATYPE(datumType), epsilon, datumId), "AddToDataDefinition");
+}
+
+/*
+ * AI
+ */
+
+CS_SIMCONNECT_DLL_EXPORT_LONG CsAICreateParkedATCAircraft(HANDLE handle, const char* title, const char* tailNumber, const char* airportId, uint32_t requestId)
+{
+	initLog();
+
+	logger.info("CsAICreateParkedATCAircraft(..., '{}', '{}', '{}', {})", title, tailNumber, airportId, requestId);
+	if (handle == nullptr) {
+		logger.error("Handle passed to CsAICreateParkedATCAircraft is null!");
+		return FALSE;
+	}
+
+	std::unique_lock<std::mutex> scLock(scMutex);
+	return fetchSendId(handle, SimConnect_AICreateParkedATCAircraft(handle, title, tailNumber, airportId, requestId), "AICreateParkedATCAircraft");
 }

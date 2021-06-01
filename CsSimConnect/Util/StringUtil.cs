@@ -14,16 +14,12 @@
  * limitations under the License.
  */
 
-namespace CsSimConnect.AI
+namespace CsSimConnect.Util
 {
-    public class ParkedAircraft : SimulatedAircraft
+    public static class StringUtil
     {
-        public string AirportId { get; set; }
 
-        public ParkedAircraft(string airportId = null, string tailNumber = null, string title = null, uint objectId = RequestManager.SimObjectUser)
-            : base(tailNumber: tailNumber, title: title, objectId: objectId)
-        {
-            AirportId = airportId;
-        }
+        public static bool IsEmpty(string s) => (s == null) || (s.Trim().Length == 0);
+
     }
 }

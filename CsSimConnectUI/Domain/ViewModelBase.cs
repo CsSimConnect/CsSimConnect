@@ -14,24 +14,23 @@
  * limitations under the License.
  */
 
-using CsSimConnect;
-using CsSimConnect.AI;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 
-namespace CsSimConnectUI
+namespace CsSimConnectUI.Domain
 {
-    internal class AIListModel
+    public class ViewModelBase : INotifyPropertyChanged
     {
+        public event PropertyChangedEventHandler PropertyChanged;
 
-        public readonly ObservableCollection<SimulatedObject> AIList = new();
-
-        public AIListModel()
+        protected void NotifyPropertyChanged([CallerMemberName] string propertyName = "")
         {
-            AIList.Add(new(ObjectType.Boat));
-            AIList.Add(new(ObjectType.Helicopter));
-            AIList.Add(new(ObjectType.Aircraft));
-            AIList.Add(new(ObjectType.GroundVehicle));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        protected void NotifyPropertyChanged(object sender, [CallerMemberName] string propertyName = "")
+        {
+            PropertyChanged?.Invoke(sender, new PropertyChangedEventArgs(propertyName));
         }
     }
 }

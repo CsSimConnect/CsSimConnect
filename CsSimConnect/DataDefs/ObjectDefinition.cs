@@ -19,7 +19,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 
-namespace CsSimConnect
+namespace CsSimConnect.DataDefs
 {
 
     public class ObjectDefinition
@@ -40,7 +40,7 @@ namespace CsSimConnect
             DefinitionId = DataManager.Instance.NextId();
             Type = type;
 
-            if (log.IsDebugEnabled())
+            if (log.IsDebugEnabled)
             {
                 LogDefinition();
             }
@@ -49,9 +49,9 @@ namespace CsSimConnect
         public class DataDefInfo
         {
             public MemberInfo Member { get; init; }
-            public DataDefinition Definition { get; init; }
+            public DefinitionBase Definition { get; init; }
 
-            public DataDefInfo(MemberInfo member, DataDefinition definition)
+            public DataDefInfo(MemberInfo member, DefinitionBase definition)
             {
                 Member = member;
                 Definition = definition;
@@ -106,8 +106,7 @@ namespace CsSimConnect
 
             foreach (FieldInfo field in Type.GetFields())
             {
-                DataDefinition def = (DataDefinition)Attribute.GetCustomAttribute(field, typeof(DataDefinition));
-                if (def != null)
+                if (Attribute.GetCustomAttribute(field, typeof(DataDefinition)) is DataDefinition def)
                 {
                     def.Tag = tag++;
                     if (def.Size == 0)
@@ -118,11 +117,15 @@ namespace CsSimConnect
                     fields.Add(new(field, def));
                     def.Setup(field);
                 }
+                else if (Attribute.GetCustomAttribute(field, typeof(MetaDataDefinition)) is MetaDataDefinition metaDef)
+                {
+                    fields.Add(new(field, metaDef));
+                    metaDef.Setup(field);
+                }
             }
             foreach (PropertyInfo prop in Type.GetProperties())
             {
-                DataDefinition def = (DataDefinition)Attribute.GetCustomAttribute(prop, typeof(DataDefinition));
-                if (def != null)
+                if (Attribute.GetCustomAttribute(prop, typeof(DataDefinition)) is DataDefinition def)
                 {
                     def.Tag = tag++;
                     if (def.Size == 0)
@@ -132,6 +135,11 @@ namespace CsSimConnect
                     TotalDataSize += def.Size;
                     fields.Add(new(prop, def));
                     def.Setup(prop);
+                }
+                else if (Attribute.GetCustomAttribute(prop, typeof(MetaDataDefinition)) is MetaDataDefinition metaDef)
+                {
+                    fields.Add(new(prop, metaDef));
+                    metaDef.Setup(prop);
                 }
             }
 
@@ -152,7 +160,10 @@ namespace CsSimConnect
                 CopyFields();
                 foreach (DataDefInfo info in fields)
                 {
-                    dataMgr.AddToDefinition(DefinitionId, info);
+                    if (info.Definition is DataDefinition)
+                    {
+                        dataMgr.AddToDefinition(DefinitionId, info);
+                    }
                 }
                 Defined = true;
             }
@@ -160,29 +171,27 @@ namespace CsSimConnect
 
         private void LogDefinition()
         {
-            log.Debug("ObjectDefinition '{0}'", Type.FullName);
+            log.Debug?.Log("ObjectDefinition '{0}'", Type.FullName);
             foreach (PropertyInfo prop in Type.GetProperties())
             {
-                DataDefinition def = (DataDefinition)Attribute.GetCustomAttribute(prop, typeof(DataDefinition));
-                if (def == null)
+                if (Attribute.GetCustomAttribute(prop, typeof(DataDefinition)) is DataDefinition def)
                 {
-                    log.Debug("  Property '{0}': No DataDefinition found", prop.Name);
+                    log.Debug?.Log("  Property '{0}': Name = '{1}', Units = '{2}', Type = {3}, Epsilon = {4}", prop.Name, def.Name, def.Units, def.Type.ToString(), def.Epsilon);
                 }
-                else
+                else if (Attribute.GetCustomAttribute(prop, typeof(DataDefinition)) is MetaDataDefinition meta)
                 {
-                    log.Debug("  Property '{0}': Name = '{1}', Units = '{2}', Type = {3}, Epsilon = {4}", prop.Name, def.Name, def.Units, def.Type.ToString(), def.Epsilon);
+                    log.Debug?.Log("  Property '{0}': Name = '{1}'", prop.Name);
                 }
             }
             foreach (FieldInfo field in Type.GetFields())
             {
-                DataDefinition def = (DataDefinition)Attribute.GetCustomAttribute(field, typeof(DataDefinition));
-                if (def == null)
+                if (Attribute.GetCustomAttribute(field, typeof(DataDefinition)) is DataDefinition def)
                 {
-                    log.Debug("  Field '{0}'   : No DataDefinition found", field.Name);
+                    log.Debug?.Log("  Field '{0}'   : Name = '{1}', Units = '{2}', Type = {3}, Epsilon = {4}", field.Name, def.Name, def.Units, def.Type.ToString(), def.Epsilon);
                 }
-                else
+                else if (Attribute.GetCustomAttribute(field, typeof(DataDefinition)) is MetaDataDefinition meta)
                 {
-                    log.Debug("  Field '{0}'   : Name = '{1}', Units = '{2}', Type = {3}, Epsilon = {4}", field.Name, def.Name, def.Units, def.Type.ToString(), def.Epsilon);
+                    log.Debug?.Log("  Field '{0}': Name = '{1}'", field.Name);
                 }
             }
 
@@ -191,19 +200,19 @@ namespace CsSimConnect
         internal void CopyData<T>(ObjectData msg, T data)
             where T : class
         {
-            log.Trace("Creating an instance of {0}.", typeof(T).FullName);
+            log.Trace?.Log("Filling an instance of {0}.", typeof(T).FullName);
 
             foreach (DataDefInfo info in fields)
             {
-                log.Trace("Copying value of '{0}' into member '{1}'", info.Definition.Name, info.Definition.MemberName);
-                info.Definition?.SetValue(data, msg.Data);
+                log.Trace?.Log("Copying value of '{0}' into member '{1}'", info.Definition.Name, info.Definition.MemberName);
+                info.Definition?.SetValue(data, msg);
             }
         }
 
         internal T GetData<T>(ObjectData msg)
             where T : class
         {
-            log.Trace("Creating an instance of {0}.", typeof(T).FullName);
+            log.Trace?.Log("Creating an instance of {0}.", typeof(T).FullName);
             T data = (T)Activator.CreateInstance(typeof(T));
             CopyData(msg, data);
 
