@@ -18,7 +18,6 @@ using CsSimConnect;
 using CsSimConnect.AI;
 using CsSimConnectUI.Domain;
 using System;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -49,8 +48,6 @@ namespace CsSimConnectUI
 
         public MainWindow()
         {
-            Logger.Configure();
-            SimConnect.InterOpType = FlightSimType.Prepar3Dv5;
             simConnect = SimConnect.Instance;
 
             simConnect.OnOpen += OnOpen;

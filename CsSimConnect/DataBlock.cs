@@ -26,9 +26,11 @@ namespace CsSimConnect
 
         public uint Pos { get; set; }
         public byte[] Data { get; }
+        public uint Size { get; private set; }
 
         public DataBlock(uint size)
         {
+            Size = size;
             Data = new byte[size];
             Pos = 0;
         }

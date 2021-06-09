@@ -24,6 +24,8 @@ namespace CsSimConnect.AI
             : base(tailNumber: tailNumber, title: title, objectId: objectId)
         {
             AirportId = airportId;
+            OnGround = true;
+            AirSpeed = 0;
         }
     }
 }

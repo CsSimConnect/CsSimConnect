@@ -38,8 +38,6 @@ namespace CsSimConnect
 
         private static readonly Logger log = Logger.GetLogger(typeof(SimConnect));
 
-        public static FlightSimType InterOpType { get; set; }
-
         private static readonly Lazy<SimConnect> lazyInstance = new (() => new SimConnect());
 
         public static SimConnect Instance {  get { return lazyInstance.Value; } }
@@ -50,6 +48,10 @@ namespace CsSimConnect
         [DllImport("kernel32", SetLastError = true, CharSet = CharSet.Ansi)]
         private static extern IntPtr LoadLibrary([MarshalAs(UnmanagedType.LPStr)] string lpFileName);
 
+        private static FlightSimType interOpType;
+        public static FlightSimType InterOpType => interOpType;
+        public static FlightSimType ConnectedSim { get; private set; }
+ 
         private static void LoadInterOpLibrary(string path)
         {
             try
@@ -62,6 +64,33 @@ namespace CsSimConnect
             }
             catch (Exception e) {
                 log.Error?.Log("Exception caught in LoadInterOpLibrary('{0}'): {1}", path, e.Message);
+            }
+        }
+
+        public static void SetFlightSimType(FlightSimType type)
+        {
+            interOpType = type;
+
+            log.Info?.Log("Loading InterOp DLL for '{0}'.", type.ToString());
+            if (type == FlightSimType.Unknown)
+            {
+                log.Fatal?.Log("Target InterOp type not set!");
+            }
+            else if (type == FlightSimType.Prepar3Dv4)
+            {
+                LoadInterOpLibrary("P3Dv4\\CsSimConnectInterOp.dll");
+            }
+            else if (type == FlightSimType.Prepar3Dv5)
+            {
+                LoadInterOpLibrary("P3Dv5\\CsSimConnectInterOp.dll");
+            }
+            else if (type == FlightSimType.MSFS2020)
+            {
+                LoadInterOpLibrary("MSFS\\CsSimConnectInterOp.dll");
+            }
+            else
+            {
+                log.Fatal?.Log("Unknown FlightSimType '{0}'", type.ToString());
             }
         }
 
@@ -86,34 +115,11 @@ namespace CsSimConnect
 
         private static Dictionary<string, FlightSimType> simulatorTypes = null;
         public AppInfo Info { get; private set; }
-        public FlightSimType ConnectedSim { get; private set; }
         public event Action<AppInfo> OnOpen;
         public event Action OnClose;
 
         private SimConnect()
         {
-            log.Info?.Log("Loading InterOp DLL for '{0}'.", InterOpType.ToString());
-            if (InterOpType == FlightSimType.Unknown)
-            {
-                log.Fatal?.Log("Target InterOp type not set!");
-            }
-            else if (InterOpType == FlightSimType.Prepar3Dv4)
-            {
-                LoadInterOpLibrary("P3Dv4\\CsSimConnectInterOp.dll");
-            }
-            else if (InterOpType == FlightSimType.Prepar3Dv5)
-            {
-                LoadInterOpLibrary("P3Dv5\\CsSimConnectInterOp.dll");
-            }
-            else if (InterOpType == FlightSimType.MSFS2020)
-            {
-                LoadInterOpLibrary("MSFS\\CsSimConnectInterOp.dll");
-            }
-            else
-            {
-                log.Fatal?.Log("Unknown FlightSimType '{0}'", InterOpType.ToString());
-            }
-
             UseAutoConnect = false;
             Info = new("CsSimConnect");
             OnOpen += SetConnectedSim;
@@ -246,6 +252,7 @@ namespace CsSimConnect
                             log.Trace?.Log("Exception returned: {0} (SendID={1}, Index={2})", exc.Message, exc.SendID, exc.Index);
                             if (onError.Remove(exc.SendID.Value, out Action<SimConnectException> cleanup))
                             {
+                                log.Trace?.Log("Calling cleanup for SendID {0}.", exc.SendID.Value);
                                 cleanup(exc);
                             }
                             else

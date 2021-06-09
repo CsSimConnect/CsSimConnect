@@ -22,23 +22,37 @@ using System.Reflection;
 namespace CsSimConnect.DataDefs
 {
 
-    public class ObjectDefinition
+    public class DataDefInfo
+    {
+        public MemberInfo Member { get; init; }
+        public DefinitionBase Definition { get; init; }
+        public uint Tag { get; init; }
+
+        public DataDefInfo(MemberInfo member, DefinitionBase definition, uint tag = 0)
+        {
+            Member = member;
+            Definition = definition;
+            Tag = tag;
+        }
+    }
+
+    public abstract class ObjectDefinition
     {
 
         private static readonly Logger log = Logger.GetLogger(typeof(ObjectDefinition));
 
-        public uint DefinitionId { get; init; }
+        public uint DefinitionId { get; private set; }
 
         public bool Defined { private get; set; }
         public bool IsDefined => Defined;
 
         public Type Type { get; init; }
-        public uint TotalDataSize { get; set; }
+        public uint TotalSize { get; set; }
 
         public ObjectDefinition(Type type)
         {
-            DefinitionId = DataManager.Instance.NextId();
             Type = type;
+            DefinitionId = DataManager.Instance.NextId();
 
             if (log.IsDebugEnabled)
             {
@@ -46,21 +60,9 @@ namespace CsSimConnect.DataDefs
             }
         }
 
-        public class DataDefInfo
-        {
-            public MemberInfo Member { get; init; }
-            public DefinitionBase Definition { get; init; }
+        protected readonly List<DataDefInfo> fields = new();
 
-            public DataDefInfo(MemberInfo member, DefinitionBase definition)
-            {
-                Member = member;
-                Definition = definition;
-            }
-        }
-
-        private readonly List<DataDefInfo> fields = new();
-
-        private static readonly uint[] DataSize =
+        protected static readonly uint[] DataSize =
         {
             0, // Invalid,
 
@@ -98,52 +100,7 @@ namespace CsSimConnect.DataDefs
 
         };
 
-        private void CopyFields()
-        {
-            uint tag = 0;
-            TotalDataSize = 0;
-            fields.Clear();
-
-            foreach (FieldInfo field in Type.GetFields())
-            {
-                if (Attribute.GetCustomAttribute(field, typeof(DataDefinition)) is DataDefinition def)
-                {
-                    def.Tag = tag++;
-                    if (def.Size == 0)
-                    {
-                        def.Size = DataSize[(uint)def.Type];
-                    }
-                    TotalDataSize += def.Size;
-                    fields.Add(new(field, def));
-                    def.Setup(field);
-                }
-                else if (Attribute.GetCustomAttribute(field, typeof(MetaDataDefinition)) is MetaDataDefinition metaDef)
-                {
-                    fields.Add(new(field, metaDef));
-                    metaDef.Setup(field);
-                }
-            }
-            foreach (PropertyInfo prop in Type.GetProperties())
-            {
-                if (Attribute.GetCustomAttribute(prop, typeof(DataDefinition)) is DataDefinition def)
-                {
-                    def.Tag = tag++;
-                    if (def.Size == 0)
-                    {
-                        def.Size = DataSize[(uint)def.Type];
-                    }
-                    TotalDataSize += def.Size;
-                    fields.Add(new(prop, def));
-                    def.Setup(prop);
-                }
-                else if (Attribute.GetCustomAttribute(prop, typeof(MetaDataDefinition)) is MetaDataDefinition metaDef)
-                {
-                    fields.Add(new(prop, metaDef));
-                    metaDef.Setup(prop);
-                }
-            }
-
-        }
+        protected abstract void CopyFields();
 
         public void DefineObject()
         {
@@ -156,7 +113,6 @@ namespace CsSimConnect.DataDefs
                 var simConnect = SimConnect.Instance;
                 var dataMgr = DataManager.Instance;
 
-                fields.Clear();
                 CopyFields();
                 foreach (DataDefInfo info in fields)
                 {
@@ -197,33 +153,5 @@ namespace CsSimConnect.DataDefs
 
         }
 
-        internal void CopyData<T>(ObjectData msg, T data)
-            where T : class
-        {
-            log.Trace?.Log("Filling an instance of {0}.", typeof(T).FullName);
-
-            foreach (DataDefInfo info in fields)
-            {
-                log.Trace?.Log("Copying value of '{0}' into member '{1}'", info.Definition.Name, info.Definition.MemberName);
-                info.Definition?.SetValue(data, msg);
-            }
-        }
-
-        internal T GetData<T>(ObjectData msg)
-            where T : class
-        {
-            log.Trace?.Log("Creating an instance of {0}.", typeof(T).FullName);
-            T data = (T)Activator.CreateInstance(typeof(T));
-            CopyData(msg, data);
-
-            return data;
-        }
-
-        internal byte[] SetData<T>(T data)
-        {
-            byte[] result = new byte[TotalDataSize];
-
-            return result;
-        }
     }
 }

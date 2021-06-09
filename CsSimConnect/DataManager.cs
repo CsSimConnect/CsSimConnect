@@ -43,28 +43,44 @@ namespace CsSimConnect
             simConnect.OnDisconnect += _ => ResetObjectDefinitions();
         }
 
-        private readonly Dictionary<Type, UInt32> registeredTypes = new();
+        private readonly Dictionary<Type, GettableObjectDefinition> registeredGettableTypes = new();
+        private readonly Dictionary<Type, SettableObjectDefinition> registeredSettableTypes = new();
         private readonly Dictionary<UInt32, ObjectDefinition> definedTypes = new();
 
-        internal ObjectDefinition GetObjectDefinition(uint defineId)
-        {
-            lock (this)
-            {
-                return definedTypes.GetValueOrDefault(defineId);
-            }
-        }
+        //internal ObjectDefinition GetObjectDefinition(uint defineId)
+        //{
+        //    lock (this)
+        //    {
+        //        return definedTypes.GetValueOrDefault(defineId);
+        //    }
+        //}
 
-        internal ObjectDefinition GetObjectDefinition(Type type)
+        private GettableObjectDefinition GetObjectDefinitionForGet(Type type)
         {
             lock (this)
             {
-                if (registeredTypes.TryGetValue(type, out UInt32 defId) && definedTypes.TryGetValue(defId, out ObjectDefinition def))
+                if (registeredGettableTypes.TryGetValue(type, out GettableObjectDefinition def))
                 {
                     return def;
                 }
                 def = new(type);
                 definedTypes.Add(def.DefinitionId, def);
-                registeredTypes.Add(type, def.DefinitionId);
+                registeredGettableTypes.Add(type, def);
+                return def;
+            }
+        }
+
+        private SettableObjectDefinition GetObjectDefinitionForSet(Type type)
+        {
+            lock (this)
+            {
+                if (registeredSettableTypes.TryGetValue(type, out SettableObjectDefinition def))
+                {
+                    return def;
+                }
+                def = new(type);
+                definedTypes.Add(def.DefinitionId, def);
+                registeredSettableTypes.Add(type, def);
                 return def;
             }
         }
@@ -74,7 +90,8 @@ namespace CsSimConnect
             log.Info?.Log("Clearing ObjectDefinition registration");
             lock (this)
             {
-                registeredTypes.Clear();
+                registeredGettableTypes.Clear();
+                registeredSettableTypes.Clear();
                 definedTypes.Clear();
             }
         }
@@ -85,7 +102,7 @@ namespace CsSimConnect
             Type t = typeof(T);
             log.Debug?.Log("RequestData<{0}>()", t.FullName);
 
-            ObjectDefinition def = GetObjectDefinition(t);
+            GettableObjectDefinition def = GetObjectDefinitionForGet(t);
             def.DefineObject();
             MessageResult<ObjectData> simData =  RequestManager.Instance.RequestObjectData<ObjectData>(def, objectId: objectId);
 
@@ -110,7 +127,7 @@ namespace CsSimConnect
             Type t = typeof(T);
             log.Debug?.Log("RequestData<{0}>()", t.FullName);
 
-            ObjectDefinition def = GetObjectDefinition(t);
+            GettableObjectDefinition def = GetObjectDefinitionForGet(t);
             def.DefineObject();
             MessageStream<ObjectData> simData = RequestManager.Instance.RequestObjectData<ObjectData>(def, period, objectId: objectId, onlyWhenChanged: onlyWhenChanged);
 
@@ -135,7 +152,7 @@ namespace CsSimConnect
             Type t = typeof(T);
             log.Debug?.Log("RequestData<{0}>()", t.FullName);
 
-            ObjectDefinition def = GetObjectDefinition(t);
+            GettableObjectDefinition def = GetObjectDefinitionForGet(t);
             def.DefineObject();
 
             MessageStream<ObjectData> result = RequestManager.Instance.RequestObjectData<ObjectData>(def, period, objectId: objectId, onlyWhenChanged: onlyWhenChanged);
@@ -159,7 +176,7 @@ namespace CsSimConnect
             Type t = typeof(T);
             log.Debug?.Log("RequestData<{0}>()", t.FullName);
 
-            ObjectDefinition def = GetObjectDefinition(t);
+            GettableObjectDefinition def = GetObjectDefinitionForGet(t);
             def.DefineObject();
             MessageStream<ObjectData> simData = RequestManager.Instance.RequestObjectData<ObjectData>(def, period, objectId: objectId, onlyWhenChanged: onlyWhenChanged);
 
@@ -186,7 +203,7 @@ namespace CsSimConnect
             Type t = typeof(T);
             log.Debug?.Log("RequestDataOnObjectType<{0}>({1}, {2})", t.FullName, objectType.ToString(), radiusInMeters);
 
-            ObjectDefinition def = GetObjectDefinition(t);
+            GettableObjectDefinition def = GetObjectDefinitionForGet(t);
             def.DefineObject();
             MessageStream<ObjectData> simData = RequestManager.Instance.RequestDataOnSimObjectType<ObjectData>(def, objectType: objectType, radiusInMeters: radiusInMeters);
 
@@ -204,33 +221,35 @@ namespace CsSimConnect
             }, onError: result.OnError, onCompleted: result.OnCompleted);
             return result;
         }
-        public void SetData<T>(T data)
+
+        public void SetData<T>(uint objectId, T data)
+            where T : class
         {
             Type t = typeof(T);
             log.Debug?.Log("SetData<{0}>()", t.FullName);
 
-            ObjectDefinition def = GetObjectDefinition(t);
+            SettableObjectDefinition def = GetObjectDefinitionForSet(t);
             def.DefineObject();
 
-            byte[] defBlock = def.SetData(data);
+            DataBlock defBlock = def.SetData(data);
             RegisterCleanup(
-                CsSetDataOnSimObject(simConnect.handle, def.DefinitionId, 0, 0, 0, defBlock.Length, defBlock),
+                CsSetDataOnSimObject(simConnect.handle, def.DefinitionId, objectId, 0, 0, (int)defBlock.Size, defBlock.Data),
                 "SetData",
                 error => log.Error?.Log("Failed to set data on SimObject: {0}", error.Message));
         }
 
-        internal void AddToDefinition(UInt32 defId, ObjectDefinition.DataDefInfo info)
+        internal void AddToDefinition(UInt32 defId, DataDefInfo info, bool forSet = false)
         {
-            if (info.Definition is DataDefinition def)
+            if ((info.Definition is DataDefinition def) && def.CanBeUsed(forSet))
             {
-                log.Debug?.Log("AddToDataDefinition(..., {0}, '{1}', '{2}', {3}, {4}, {5})", defId, def.Name, def.Units, def.Type.ToString(), def.Epsilon, def.Tag);
+                log.Debug?.Log("AddToDataDefinition(..., {0}, '{1}', '{2}', {3}, {4}, {5})", defId, def.Name, def.Units, def.Type.ToString(), def.Epsilon, info.Tag);
 
                 RegisterCleanup(
-                    CsAddToDataDefinition(simConnect.handle, defId, def.Name, def.Units, (uint)def.Type, def.Epsilon, def.Tag),
+                    CsAddToDataDefinition(simConnect.handle, defId, def.Name, def.Units, (uint)def.Type, def.Epsilon, info.Tag),
                     "RequestObjectData",
                     error => log.Error?.Log("AddToDataDefinition() failed for DefinitionID {0} var '{1}': {2}", defId, def.Name, error.Message));
             }
-            else if (info.Definition is MetaDataDefinition meta)
+            else if (!forSet && (info.Definition is MetaDataDefinition meta))
             {
                 log.Warn?.Log("Cannot add MetaDataDefinition '{0}' to definition block {1}.", meta.Name, defId);
             }

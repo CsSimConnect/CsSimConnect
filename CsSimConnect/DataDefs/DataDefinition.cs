@@ -65,12 +65,12 @@ namespace CsSimConnect.Reflection
 
         private static readonly Logger log = Logger.GetLogger(typeof(DataDefinition));
 
-        public delegate T ValueGetter<T>();
+        public delegate T FieldGetter<T>();
+        public delegate void FieldSetter<T>(T value);
 
         public string Units { get; set; }
         public DataType Type { get; set; }
         public float Epsilon { get; set; }
-        public uint Tag { get; set; }
         public uint Size { get; set; }
 
         public Type GetTargetType()
@@ -92,10 +92,9 @@ namespace CsSimConnect.Reflection
             Units = "NULL"; // Default for strings and structs
             Type = DataType.Float64;
             Epsilon = 0.0f;
-            Tag = 0xffffffff;
         }
 
-        private void Set<T>(object obj, ValueGetter<T> get)
+        private void ToObject<T>(object obj, FieldGetter<T> get)
         {
             if ((prop != null))
             {
@@ -132,7 +131,40 @@ namespace CsSimConnect.Reflection
             }
         }
 
-        private void SetBoolean(object obj, ValueGetter<bool> get, ref uint pos)
+        private void FromObject<T>(object obj, FieldSetter<T> set)
+        {
+            if (prop != null)
+            {
+                if (typeof(T).IsAssignableFrom(prop.PropertyType))
+                {
+                    set.Invoke((T)prop.GetValue(obj));
+                }
+                else
+                {
+                    log.Error?.Log("Cannot assign a {0} to a {1}.", prop.PropertyType.FullName, Type.ToString());
+                    throw new NoConversionAvailableException(this, Type, prop.PropertyType);
+                }
+            }
+            else if (field != null)
+            {
+                if (typeof(T).IsAssignableFrom(field.FieldType))
+                {
+                    set.Invoke((T)field.GetValue(obj));
+                }
+                else
+                {
+                    log.Error?.Log("Cannot assign a {0} to a {1}.", field.FieldType.FullName, Type.ToString());
+                    throw new NoConversionAvailableException(this, Type, field.FieldType);
+                }
+            }
+            else
+            {
+                log.Error?.Log("No field or property to assign to.");
+                throw new DataDefinitionException(this, "No field or property to assign to.");
+            }
+        }
+
+        private void SetBoolean(object obj, FieldGetter<bool> get, ref uint pos)
         {
             prop.SetValue(obj, get);
         }
@@ -142,19 +174,23 @@ namespace CsSimConnect.Reflection
             switch (Type)
             {
                 case DataType.Int32:
-                    SetValue = (obj, data) => Set(obj, () => data.Data.Int32());
+                    GetValue = (obj, data) => ToObject(obj, () => data.Data.Int32());
+                    SetValue = (data, obj) => FromObject<Int32>(obj, i => data.Int32(i));
                     break;
 
                 case DataType.Int64:
-                    SetValue = (obj, data) => Set(obj, () => data.Data.Int64());
+                    GetValue = (obj, data) => ToObject(obj, () => data.Data.Int64());
+                    SetValue = (data, obj) => FromObject<Int64>(obj, l => data.Int64(l));
                     break;
 
                 case DataType.Float32:
-                    SetValue = (obj, data) => Set(obj, () => data.Data.Float32());
+                    GetValue = (obj, data) => ToObject(obj, () => data.Data.Float32());
+                    SetValue = (data, obj) => FromObject<float>(obj, f => data.Float32(f));
                     break;
 
                 case DataType.Float64:
-                    SetValue = (obj, data) => Set(obj, () => data.Data.Float64());
+                    GetValue = (obj, data) => ToObject(obj, () => data.Data.Float64());
+                    SetValue = (data, obj) => FromObject<double>(obj, d => data.Float64(d));
                     break;
 
                 case DataType.String8:
@@ -163,11 +199,13 @@ namespace CsSimConnect.Reflection
                 case DataType.String128:
                 case DataType.String256:
                 case DataType.String260:
-                    SetValue = (obj, data) => Set(obj, () => data.Data.FixedString(Size));
+                    GetValue = (obj, data) => ToObject(obj, () => data.Data.FixedString(Size));
+                    SetValue = (data, obj) => FromObject<string>(obj, s => data.FixedString(s, Size));
                     break;
 
                 case DataType.StringV:
-                    SetValue = (obj, data) => Set(obj, () => data.Data.VariableString(Size));
+                    GetValue = (obj, data) => ToObject(obj, () => data.Data.VariableString(Size));
+                    SetValue = (data, obj) => FromObject<string>(obj, s => data.VariableString(s));
                     break;
 
                 case DataType.WString8:
@@ -176,11 +214,13 @@ namespace CsSimConnect.Reflection
                 case DataType.WString128:
                 case DataType.WString256:
                 case DataType.WString260:
-                    SetValue = (obj, data) => Set(obj, () => data.Data.FixedWString(Size));
+                    GetValue = (obj, data) => ToObject(obj, () => data.Data.FixedWString(Size));
+                    SetValue = (data, obj) => FromObject<string>(obj, s => data.FixedWString(s, Size));
                     break;
 
                 case DataType.WStringV:
-                    SetValue = (obj, data) => Set(obj, () => data.Data.VariableWString(Size));
+                    GetValue = (obj, data) => ToObject(obj, () => data.Data.VariableWString(Size));
+                    SetValue = (data, obj) => FromObject<string>(obj, i => data.VariableWString(i));
                     break;
 
 
@@ -204,21 +244,21 @@ namespace CsSimConnect.Reflection
             switch (Type)
             {
                 case DataType.Int32:
-                    SetValue = (obj, data) => Set(obj, () => data.Data.Int32() != 0);
+                    GetValue = (obj, data) => ToObject(obj, () => data.Data.Int32() != 0);
                     break;
 
                 case DataType.Int64:
-                    SetValue = (obj, data) => Set(obj, () => data.Data.Int64() != 0);
+                    GetValue = (obj, data) => ToObject(obj, () => data.Data.Int64() != 0);
                     break;
 
                 case DataType.Float32:
                     log.Warn?.Log("Converting a Float32 to a bool.");
-                    SetValue = (obj, data) => Set(obj, () => data.Data.Float32() != 0);
+                    GetValue = (obj, data) => ToObject(obj, () => data.Data.Float32() != 0);
                     break;
 
                 case DataType.Float64:
                     log.Warn?.Log("Converting a Float64 to a bool.");
-                    SetValue = (obj, data) => Set(obj, () => data.Data.Float64() != 0);
+                    GetValue = (obj, data) => ToObject(obj, () => data.Data.Float64() != 0);
                     break;
 
                 case DataType.String8:
@@ -256,21 +296,21 @@ namespace CsSimConnect.Reflection
             switch (Type)
             {
                 case DataType.Int32:
-                    SetValue = (obj, data) => Set(obj, () => Enum.ToObject(enumType, data.Data.Int32()));
+                    GetValue = (obj, data) => ToObject(obj, () => Enum.ToObject(enumType, data.Data.Int32()));
                     break;
 
                 case DataType.Int64:
-                    SetValue = (obj, data) => Set(obj, () => Enum.ToObject(enumType, data.Data.Int64()));
+                    GetValue = (obj, data) => ToObject(obj, () => Enum.ToObject(enumType, data.Data.Int64()));
                     break;
 
                 case DataType.Float32:
                     log.Warn?.Log("Converting a Float32 to an enum.");
-                    SetValue = (obj, data) => Set(obj, () => Enum.ToObject(enumType, (int)data.Data.Float32()));
+                    GetValue = (obj, data) => ToObject(obj, () => Enum.ToObject(enumType, (int)data.Data.Float32()));
                     break;
 
                 case DataType.Float64:
                     log.Warn?.Log("Converting a Float64 to an enum.");
-                    SetValue = (obj, data) => Set(obj, () => Enum.ToObject(enumType, (int)data.Data.Float64()));
+                    GetValue = (obj, data) => ToObject(obj, () => Enum.ToObject(enumType, (int)data.Data.Float64()));
                     break;
 
                 case DataType.String8:

@@ -27,13 +27,13 @@ namespace CsSimConnect
         public UnSupportedException(string msg) : base(msg)
         {
             RequiredSim = FlightSimType.Unknown;
-            ConnectedSim = SimConnect.Instance.ConnectedSim;
+            ConnectedSim = SimConnect.InterOpType;
         }
 
         public UnSupportedException(FlightSimType required, string msg) : base(msg)
         {
             RequiredSim = required;
-            ConnectedSim = SimConnect.Instance.ConnectedSim;
+            ConnectedSim = SimConnect.InterOpType;
         }
 
     }

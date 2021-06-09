@@ -25,7 +25,11 @@ namespace CsSimConnect.AI
         public string Title { get; set; }
         public string Details { get; set; }
         public uint ObjectId { get; set; }
-        public InitPosition InitPosition { get; set; }
+
+        public LatLonAlt Position { get; set; }
+        public PBH Rotation { get; set; }
+        public bool OnGround { get; set; }
+        public int AirSpeed { get; set; }
 
         public SimulatedObject(ObjectType objectType, string title = null, uint objectId = RequestManager.SimObjectUser)
         {

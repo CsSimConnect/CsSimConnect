@@ -84,11 +84,11 @@ namespace CsSimConnect
                 result = new MessageResult<T>();
                 result.OnComplete(() => NormalCleanup(api, id));
                 dispatcher.AddObserver(id, result);
-                simConnect.AddCleanup((uint)sendId, (SimConnectException exc) => ErrorCleanup(api, id, exc));
+                simConnect.AddCleanup((uint)sendId, (SimConnectException exc) => { ErrorCleanup(api, id, exc); result.OnError(exc); });
             }
             else
             {
-                var msg = String.Format("Call to {0} failed. (HRETURN=0x{1:X8})", api, sendId);
+                string msg = String.Format("Call to {0} failed. (HRETURN=0x{1:X8})", api, sendId);
                 log.Error?.Log(msg);
                 result = MessageResult<T>.ErrorResult(0, new SimConnectException(msg));
             }

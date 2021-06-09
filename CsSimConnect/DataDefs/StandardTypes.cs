@@ -23,11 +23,11 @@ namespace CsSimConnect.DataDefs
         public const int AirSpeedKeep = -2;
 
         [EmbeddedField]
-        public LatLonAlt Position;
+        public LatLonAlt Position { get; set; }
         [EmbeddedField]
-        public PBH Rotation;
-        public bool OnGround;
-        public int AirSpeed;
+        public PBH Rotation { get; set; }
+        public bool OnGround { get; set; }
+        public int AirSpeed { get; set; }
     }
 
     public enum ModelMarker
@@ -56,86 +56,86 @@ namespace CsSimConnect.DataDefs
 
     public struct MarkerState
     {
-        public ModelMarker Marker;
-        public bool State;
+        public ModelMarker Marker { get; set; }
+        public bool State { get; set; }
     }
 
     public struct WayPoint
     {
-        public const uint FlagSpeedRequested       = 0x00000004;
-        public const uint FlagThrottleRequested    = 0x00000008;
+        public const uint FlagSpeedRequested = 0x00000004;
+        public const uint FlagThrottleRequested = 0x00000008;
         public const uint FlagComputeVerticalSpeed = 0x00000010;
-        public const uint FlagAltitudeIsAGL        = 0x00000020;
-        public const uint FlagOnGround             = 0x00100000;
-        public const uint FlagReverse              = 0x00200000;
-        public const uint FlagWrapToFirst          = 0x00400000;
+        public const uint FlagAltitudeIsAGL = 0x00000020;
+        public const uint FlagOnGround = 0x00100000;
+        public const uint FlagReverse = 0x00200000;
+        public const uint FlagWrapToFirst = 0x00400000;
 
         [EmbeddedField]
-        public LatLonAlt Position;
-        public uint flags;
-        public double KtsSpeed;
-        public double PercentThrottle;
+        public LatLonAlt Position { get; set; }
+        public uint Flags { get; set; }
+        public double KtsSpeed { get; set; }
+        public double PercentThrottle { get; set; }
     }
 
     public struct LatLonAlt
     {
-        public double Latitude;
-        public double Longitude;
-        public double Altitude;
+        public double Latitude { get; set; }
+        public double Longitude { get; set; }
+        public double Altitude { get; set; }
     }
 
     public struct XYZ
     {
-        public double X;
-        public double Y;
-        public double Z;
+        public double X { get; set; }
+        public double Y { get; set; }
+        public double Z { get; set; }
     }
 
     public struct PBH
     {
-        public double Pitch;
-        public double Bank;
-        public double Heading;
+        public double Pitch { get; set; }
+        public double Bank { get; set; }
+        public double Heading { get; set; }
     }
 
     public enum ObserverRegime
     {
-        Tellurian =0,
-        Terrestrial =1,
-        Ghost =2,
+        Tellurian = 0,
+        Terrestrial = 1,
+        Ghost = 2,
     }
 
     public struct Observer
     {
         [EmbeddedField]
-        public LatLonAlt Position;
+        public LatLonAlt Position { get; set; }
         [EmbeddedField]
-        public PBH Rotation;
+        public PBH Rotation { get; set; }
         [EmbeddedField]
-        public ObserverRegime Regime;
-        public bool RotateOnTarget;
-        public bool FocusFixed;
-        public float FocalLength;
-        public float FieldOfViewH;
-        public float FieldOfViewV;
-        public float LinearStep;
-        public float AngularStep;
+        public ObserverRegime Regime { get; set; }
+        public bool RotateOnTarget { get; set; }
+        public bool FocusFixed { get; set; }
+        public float FocalLength { get; set; }
+        public float FieldOfViewH { get; set; }
+        public float FieldOfViewV { get; set; }
+        public float LinearStep { get; set; }
+        public float AngularStep { get; set; }
     }
 
     public enum VideoFormat
     {
-        H265 =0,
+        H265 = 0,
     }
 
     public struct VideoStreamInfo
     {
-        public string SourceAddress;
-        public string DestinationAddress;
-        public uint Port;
-        public uint Width;
-        public uint Height;
-        public uint FrameRate;
-        public uint BitRate;
-        public VideoFormat Format;
+        public string SourceAddress { get; set; }
+        public string DestinationAddress { get; set; }
+        public uint Port { get; set; }
+        public uint Width { get; set; }
+        public uint Height { get; set; }
+        public uint FrameRate { get; set; }
+        public uint BitRate { get; set; }
+        public VideoFormat Format { get; set; }
     }
 }

@@ -19,18 +19,38 @@ using System.Reflection;
 
 namespace CsSimConnect.DataDefs
 {
+    public enum Usage
+    {
+        Ignore,
+        GetOnly,
+        SetOnly,
+        Always
+    }
+
     [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property, Inherited = true)]
     public abstract class DefinitionBase : Attribute
     {
 
-        public delegate void ValueSetter(object obj, ObjectData data);
-
-        public string MemberName { get { return prop?.Name ?? field?.Name; } }
+        internal string MemberName { get { return prop?.Name ?? field?.Name; } }
         protected PropertyInfo prop;
         protected FieldInfo field;
-        public ValueSetter SetValue;
+
+        internal delegate void ValueGetter(object obj, ObjectData data);
+        internal ValueGetter GetValue;
+        internal delegate void ValueSetter(DataBlock data, object obj);
+        internal ValueSetter SetValue;
 
         public string Name { get; set; }
+        public Usage Usage { get; set; }
 
+        public bool CanBeUsed(bool forSet = false)
+        {
+            return (!forSet && (Usage != Usage.SetOnly)) || (forSet && (Usage != Usage.GetOnly));
+        }
+
+        protected DefinitionBase()
+        {
+            Usage = Usage.Always;
+        }
     }
 }

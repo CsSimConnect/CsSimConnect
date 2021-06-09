@@ -14,24 +14,15 @@
  * limitations under the License.
  */
 
-using CsSimConnect;
-using System.Windows;
-
-namespace CsSimConnectUI
+namespace CsSimConnect.Sim
 {
-    /// <summary>
-    /// Interaction logic for App.xaml
-    /// </summary>
-    public partial class App : Application
+    public class Simulator
     {
-
-        private static readonly Logger log = Logger.GetLogger(typeof(MainWindow));
-
-        private void App_Startup(object sender, StartupEventArgs e)
-        {
-            Logger.Configure();
-
-            new SelectSimDialog().Show();
-        }
+        public FlightSimType Type { get; set; }
+        public string Name { get; set; }
+        public string Key { get; set; }
+        public string InstallationPath { get; set; }
+        public bool Installed { get; set; }
+        public bool DllAvailable { get; set; }
     }
 }

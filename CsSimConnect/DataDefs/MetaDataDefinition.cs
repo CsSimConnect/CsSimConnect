@@ -87,13 +87,13 @@ namespace CsSimConnect.DataDefs
         public void Setup(PropertyInfo prop)
         {
             this.prop = prop;
-            this.SetValue = (obj, data) => Set(obj, data);
+            this.GetValue = (obj, data) => Set(obj, data);
         }
 
         public void Setup(FieldInfo field)
         {
             this.field = field;
-            this.SetValue = (obj, data) => Set(obj, data);
+            this.GetValue = (obj, data) => Set(obj, data);
         }
     }
 

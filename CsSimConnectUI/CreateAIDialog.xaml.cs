@@ -17,6 +17,7 @@
 using CsSimConnect;
 using CsSimConnect.AI;
 using CsSimConnectUI.Domain;
+using System;
 using System.Windows;
 
 namespace CsSimConnectUI
@@ -44,10 +45,13 @@ namespace CsSimConnectUI
                 AircraftBuilder bld = AircraftBuilder.Builder(model.Title)
                     .WithTailNumber(model.TailNumber)
                     .AtAirport(model.AirportId);
-                AIManager.Instance.Create((ParkedAircraft)bld.Build());
-
-                Close();
+                AIManager.Instance.Create((ParkedAircraft)bld.Build()).Subscribe(_ => Dispatcher.Invoke(Close), ShowError);
             }
+        }
+
+        private void ShowError(Exception exc)
+        {
+            Dispatcher.Invoke(() => MessageBox.Show("FAILED: " + exc.Message));
         }
 
         private void DoCancel(object sender, RoutedEventArgs e)
