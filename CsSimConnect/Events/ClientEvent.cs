@@ -14,31 +14,33 @@
  * limitations under the License.
  */
 
-using SimScanner.AddOns;
-using SimScanner.Scenery;
 using System.Collections.Generic;
 
-namespace SimScanner.Sim
+namespace CsSimConnect.Events
 {
-
-    public enum FlightSimType
+    public class ClientEvent
     {
-        Unknown,
-        Prepar3Dv4,
-        Prepar3Dv5,
-        MSFS2020
-    }
 
-    public class Simulator
-    {
-        public FlightSimType Type { get; set; }
-        public string Name { get; set; }
-        public string Key { get; set; }
-        public string InstallationPath { get; set; }
-        public bool Installed { get; set; }
-        public bool DllAvailable { get; set; }
+        public class Comparer : IComparer<ClientEvent>
+        {
+            public int Compare(ClientEvent x, ClientEvent y)
+            {
+                return x.Id.CompareTo(y.Id);
+            }
+        }
 
-        public List<AddOn> AddOns { get; set; }
-        public SceneryConfiguration scenery { get; set; }
+        public uint Id { get; init; }
+        public string MappedEvent { get; init; }
+        public EventGroup Group { get; internal set; }
+
+        internal bool IsMapped { get; set; }
+
+        public ClientEvent(string mappedEvent)
+        {
+            Id = EventManager.Instance.NextId();
+            MappedEvent = mappedEvent;
+            IsMapped = false;
+        }
+
     }
 }

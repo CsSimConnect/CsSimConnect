@@ -40,7 +40,7 @@ namespace CsSimConnectUI
         {
             log.Info?.Log("Selected {0}", sim.Name);
             SimConnect.SetFlightSimType(sim.Sim.Type);
-            SimConnect.Instance.IsConnected();
+            _ = SimConnect.Instance;
 
             new MainWindow().Show();
             Close();

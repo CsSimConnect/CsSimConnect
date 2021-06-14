@@ -162,8 +162,8 @@ namespace CsSimConnectUI
 
         private void SetButtons()
         {
-            iLink.Visibility = simConnect.IsConnected() ? Visibility.Visible : Visibility.Collapsed;
-            iLinkOff.Visibility = simConnect.IsConnected() ? Visibility.Collapsed : Visibility.Visible;
+            iLink.Visibility = simConnect.IsConnected ? Visibility.Visible : Visibility.Collapsed;
+            iLinkOff.Visibility = simConnect.IsConnected ? Visibility.Collapsed : Visibility.Visible;
 
             iRenew.Foreground = simConnect.UseAutoConnect ? iNoRenew.Foreground : new SolidColorBrush(Colors.DarkGray);
             iNoRenew.Visibility = simConnect.UseAutoConnect ? Visibility.Hidden : Visibility.Visible;
@@ -174,10 +174,10 @@ namespace CsSimConnectUI
 
         private void Connect(object sender, RoutedEventArgs e)
         {
-            if (simConnect.IsConnected())
+            if (simConnect.IsConnected)
             {
                 simConnect.Disconnect();
-                if (simConnect.IsConnected())
+                if (simConnect.IsConnected)
                 {
                     Run(() => status.MessageQueue.Enqueue("Disconnect failed."));
                 }
@@ -185,7 +185,7 @@ namespace CsSimConnectUI
             else
             {
                 simConnect.Connect();
-                if (!simConnect.IsConnected())
+                if (!simConnect.IsConnected)
                 {
                     Run(() => status.MessageQueue.Enqueue("Connection failed."));
                 }

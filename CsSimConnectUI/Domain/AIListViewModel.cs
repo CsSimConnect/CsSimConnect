@@ -90,7 +90,7 @@ namespace CsSimConnectUI.Domain
 
         private Action<Action> uiUpdater;
 
-        public bool SimConnected => SimConnect.Instance.IsConnected();
+        public bool SimConnected => SimConnect.Instance.IsConnected;
 
         public AIListViewModel(Action<Action> updater)
         {
@@ -119,7 +119,7 @@ namespace CsSimConnectUI.Domain
 
         public void RefreshList()
         {
-            if (SimConnect.Instance.IsConnected())
+            if (SimConnect.Instance.IsConnected)
             {
                 AIList.Clear();
                 FillList();

@@ -16,7 +16,7 @@
 
 using System;
 
-namespace CsSimConnect
+namespace CsSimConnect.Exc
 {
     public class SimConnectException : Exception
     {

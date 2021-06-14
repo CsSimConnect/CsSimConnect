@@ -297,6 +297,49 @@ CS_SIMCONNECT_DLL_EXPORT_LONG CsClearClientDataDefinition(HANDLE handle, uint32_
 }
 
 /*
+ * Notification Group Specific
+ */
+
+CS_SIMCONNECT_DLL_EXPORT_LONG CsClearNotificationGroup(HANDLE handle, uint32_t groupId) {
+	initLog();
+
+	logger.trace("CsClearNotificationGroup(..., {})", groupId);
+	if (handle == nullptr) {
+		logger.error("Handle passed to CsClearNotificationGroup is null!");
+		return FALSE;
+	}
+
+	std::unique_lock<std::mutex> scLock(scMutex);
+	return fetchSendId(handle, SimConnect_ClearNotificationGroup(handle, groupId), "ClearNotificationGroup");
+}
+
+CS_SIMCONNECT_DLL_EXPORT_LONG CsRequestNotificationGroup(HANDLE handle, uint32_t groupId) {
+	initLog();
+
+	logger.trace("CsRequestNotificationGroup(..., {})", groupId);
+	if (handle == nullptr) {
+		logger.error("Handle passed to CsRequestNotificationGroup is null!");
+		return FALSE;
+	}
+
+	std::unique_lock<std::mutex> scLock(scMutex);
+	return fetchSendId(handle, SimConnect_RequestNotificationGroup(handle, groupId), "RequestNotificationGroup");
+}
+
+CS_SIMCONNECT_DLL_EXPORT_LONG CsSetNotificationGroupPriority(HANDLE handle, uint32_t groupId, uint32_t priority) {
+	initLog();
+
+	logger.trace("CsSetNotificationGroupPriority(..., {}, {})", groupId, priority);
+	if (handle == nullptr) {
+		logger.error("Handle passed to CsSetNotificationGroupPriority is null!");
+		return FALSE;
+	}
+
+	std::unique_lock<std::mutex> scLock(scMutex);
+	return fetchSendId(handle, SimConnect_SetNotificationGroupPriority(handle, groupId, priority), "SetNotificationGroupPriority");
+}
+
+/*
  * System state handling.
  */
 

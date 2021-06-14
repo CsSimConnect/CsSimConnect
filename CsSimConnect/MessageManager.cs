@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+using CsSimConnect.Exc;
 using CsSimConnect.Reactive;
 using System;
 using System.Threading;
@@ -103,7 +104,7 @@ namespace CsSimConnect
             }
             else
             {
-                log.Error?.Log("Call to {0} failed. (HRETURN=0x{1,X8})", api, sendId);
+                log.Error?.Log($"Call to {api} failed. (HRETURN={sendId})");
             }
         }
 

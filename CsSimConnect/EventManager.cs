@@ -15,8 +15,11 @@
  */
 
 using CsSimConnect.AI;
+using CsSimConnect.Events;
+using CsSimConnect.Exc;
 using CsSimConnect.Reactive;
 using System;
+using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
 using System.Threading;
 
@@ -99,6 +102,24 @@ namespace CsSimConnect
         [DllImport("CsSimConnectInterOp.dll")]
         private static extern long CsSubscribeToSystemEvent(IntPtr handle, UInt32 requestId, [MarshalAs(UnmanagedType.LPStr)] string eventName);
 
+        [DllImport("CsSimConnectInterOp.dll")]
+        private static extern long CsAddClientEventToNotificationGroup(IntPtr handle, UInt32 groupId, UInt32 eventId, UInt32 maskable);
+        [DllImport("CsSimConnectInterOp.dll")]
+        private static extern long CsMapClientEventToSimEvent(IntPtr handle, UInt32 eventId, [MarshalAs(UnmanagedType.LPStr)] string eventName);
+        [DllImport("CsSimConnectInterOp.dll")]
+        private static extern long CsMapInputEventToClientEvent(IntPtr handle, UInt32 groupId, [MarshalAs(UnmanagedType.LPStr)] string inputDefinition, UInt32 downEventId, UInt32 downValue, UInt32 upEventId, UInt32 upValue, UInt32 maskable);
+        [DllImport("CsSimConnectInterOp.dll")]
+        private static extern long CsRemoveClientEvent(IntPtr handle, UInt32 groupId, UInt32 eventId);
+        [DllImport("CsSimConnectInterOp.dll")]
+        private static extern long CsTransmitClientEvent(IntPtr handle, UInt32 objectId, UInt32 eventId, UInt32 data, UInt32 groupId, UInt32 flags);
+
+        [DllImport("CsSimConnectInterOp.dll")]
+        private static extern long CsClearNotificationGroup(IntPtr handle, UInt32 groupId);
+        [DllImport("CsSimConnectInterOp.dll")]
+        private static extern long CsRequestNotificationGroup(IntPtr handle, UInt32 groupId);
+        [DllImport("CsSimConnectInterOp.dll")]
+        private static extern long CsSetNotificationGroupPriority(IntPtr handle, UInt32 groupId, UInt32 priority);
+
         private static readonly Logger log = Logger.GetLogger(typeof(EventManager));
 
         private static readonly Lazy<EventManager> lazyInstance = new(() => new EventManager(SimConnect.Instance));
@@ -116,8 +137,15 @@ namespace CsSimConnect
 
         private static readonly UInt32 USREVT_FIRST = 64;
 
+        private uint nextGroupId = 1;
+
         private EventManager(SimConnect simConnect) : base("EventID", USREVT_FIRST, simConnect)
         {
+        }
+
+        public uint NextGroupId()
+        {
+            return Interlocked.Increment(ref nextGroupId);
         }
 
         public MessageStream<T> SubscribeToSystemEvent<T>(SystemEvent systemEvent)
@@ -158,6 +186,74 @@ namespace CsSimConnect
                 .Subscribe(objMsg => result.OnNext(objMsg.Type == ObjectType.Aircraft ? new SimulatedAircraft(objectId: objMsg.ObjectId) : new SimulatedObject(objMsg.Type, objectId: objMsg.ObjectId)),
                            e => result.OnError(e));
             return result;
+        }
+
+        private readonly ConcurrentDictionary<string, ClientEvent> clientEvents = new();
+
+        public ClientEvent GetEvent(string eventName)
+        {
+            return clientEvents.GetOrAdd(eventName, name => new(name));
+        }
+
+        private EventGroup defaultGroup;
+        private EventGroup GetDefaultGroup()
+        {
+            if (defaultGroup == null)
+            {
+                defaultGroup = new("Default EventGroup", EventGroup.PriorityHighest);
+            }
+            return defaultGroup;
+        }
+
+        public MessageStream<EventData> SubscribeToEvent(ClientEvent clientEvent)
+        {
+            MessageStream<EventData> result = new(1);
+            RegisterStreamObserver<SimEvent>(clientEvent.Id, 0, "SubscribeToEvent").Subscribe(
+                simEvent => result.OnNext(new EventData(clientEvent, simEvent.Data)), result.OnError, result.OnCompleted);
+
+            if (!clientEvent.IsMapped)
+            {
+                RegisterCleanup(CsMapClientEventToSimEvent(simConnect.handle, clientEvent.Id, clientEvent.MappedEvent), "MapClientEventToSimEvent", result.OnError);
+                clientEvent.IsMapped = true;
+            }
+            if (clientEvent.Group == null)
+            {
+                clientEvent.Group = defaultGroup;
+                RegisterCleanup(CsAddClientEventToNotificationGroup(simConnect.handle, defaultGroup.Id, clientEvent.Id, 0), "AddClientEventToNotificationGroup", result.OnError);
+            }
+            RegisterCleanup(CsSetNotificationGroupPriority(simConnect.handle, clientEvent.Group.Id, clientEvent.Group.Priority), "SetNotificationGroupPriority", result.OnError);
+
+            return result;
+        }
+
+        public void SendEvent(ClientEvent clientEvent, uint objectId =0, uint data =0, Action<SimConnectException> onError =null)
+        {
+            if (!clientEvent.IsMapped)
+            {
+                RegisterCleanup(CsMapClientEventToSimEvent(simConnect.handle, clientEvent.Id, clientEvent.MappedEvent), "MapClientEventToSimEvent", onError);
+                clientEvent.IsMapped = true;
+            }
+            if (clientEvent.Group == null)
+            {
+                clientEvent.Group = GetDefaultGroup();
+                RegisterCleanup(CsAddClientEventToNotificationGroup(simConnect.handle, defaultGroup.Id, clientEvent.Id, 0), "AddClientEventToNotificationGroup", onError);
+            }
+            RegisterCleanup(CsTransmitClientEvent(simConnect.handle, objectId, clientEvent.Id, data, clientEvent.Group.Id, 0), "TransmitClientEvent", onError);
+        }
+
+        public void SendEvent(ClientEvent clientEvent, SimulatedObject obj, uint data = 0, Action<SimConnectException> onError = null)
+        {
+            if (!clientEvent.IsMapped)
+            {
+                RegisterCleanup(CsMapClientEventToSimEvent(simConnect.handle, clientEvent.Id, clientEvent.MappedEvent), "MapClientEventToSimEvent", onError);
+                clientEvent.IsMapped = true;
+            }
+            if (clientEvent.Group == null)
+            {
+                clientEvent.Group = GetDefaultGroup();
+                RegisterCleanup(CsAddClientEventToNotificationGroup(simConnect.handle, defaultGroup.Id, clientEvent.Id, 0), "AddClientEventToNotificationGroup", onError);
+            }
+            RegisterCleanup(CsTransmitClientEvent(simConnect.handle, obj.ObjectId, clientEvent.Id, data, clientEvent.Group.Id, 0), "TransmitClientEvent", onError);
         }
     }
 }

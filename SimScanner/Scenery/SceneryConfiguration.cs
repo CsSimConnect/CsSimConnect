@@ -14,31 +14,17 @@
  * limitations under the License.
  */
 
-using SimScanner.AddOns;
-using SimScanner.Scenery;
 using System.Collections.Generic;
 
-namespace SimScanner.Sim
+namespace SimScanner.Scenery
 {
-
-    public enum FlightSimType
+    public class SceneryConfiguration
     {
-        Unknown,
-        Prepar3Dv4,
-        Prepar3Dv5,
-        MSFS2020
-    }
+        public string Title { get; set; }
+        public string Description { get; set; }
+        public bool CleanOnExit { get; set; }
 
-    public class Simulator
-    {
-        public FlightSimType Type { get; set; }
-        public string Name { get; set; }
-        public string Key { get; set; }
-        public string InstallationPath { get; set; }
-        public bool Installed { get; set; }
-        public bool DllAvailable { get; set; }
-
-        public List<AddOn> AddOns { get; set; }
-        public SceneryConfiguration scenery { get; set; }
+        private readonly List<SceneryEntry> entries = new();
+        public List<SceneryEntry> Entries => entries;
     }
 }

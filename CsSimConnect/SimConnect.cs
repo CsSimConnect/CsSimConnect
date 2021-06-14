@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+using CsSimConnect.Exc;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -104,8 +105,19 @@ namespace CsSimConnect
         private static extern bool CsGetNextDispatch(IntPtr handle, DispatchProc dispatchProc);
 
         internal IntPtr handle = IntPtr.Zero;
-        public bool UseAutoConnect { get; set; }
-        private Task<bool> messagePoller;
+        public bool IsConnected => (handle != IntPtr.Zero);
+
+        private Task autoConnecter;
+        private bool useAutoConnect;
+        public bool UseAutoConnect
+        {
+            get => useAutoConnect;
+            set { useAutoConnect = value; if (useAutoConnect && !IsConnected) RunAutoConnect(); }
+        }
+        public TimeSpan AutoConnectRetryPeriod { get; set; }
+
+        private Task messagePoller;
+        public TimeSpan MessagePollerRetryPeriod { get; set; }
 
         private readonly Dictionary<uint, Action<SimConnectException>> onError = new();
 
@@ -121,52 +133,72 @@ namespace CsSimConnect
         private SimConnect()
         {
             UseAutoConnect = false;
+            AutoConnectRetryPeriod = TimeSpan.FromSeconds(5);
+            MessagePollerRetryPeriod = TimeSpan.FromMilliseconds(100);
+
             Info = new("CsSimConnect");
             OnOpen += SetConnectedSim;
             OnConnect += InvokeConnectionStateChanged;
             OnDisconnect += ResetErrorCallbacks;
             OnDisconnect += _ => InvokeConnectionStateChanged();
+            OnDisconnect += _ => RunAutoConnect();
         }
 
-        public void InitDispatcher()
+        private void RunAutoConnect()
         {
+            messagePoller = null;
+            autoConnecter = new(() =>
+            {
+                while (UseAutoConnect)
+                {
+                    while (!IsConnected)
+                    {
+                        log.Debug?.Log("Trying to AutoConnect");
+                        if (!Connect())
+                        {
+                            Task.Delay(AutoConnectRetryPeriod).Wait();
+                        }
+                    }
+                }
+            });
+            autoConnecter.Start();
+        }
+
+        private void RunDispatcher()
+        {
+            autoConnecter = null;
             CsCallDispatch(handle, HandleMessage);
             messagePoller = new(() =>
             {
-                while (IsConnected())
+                while (IsConnected)
                 {
                     while (CsGetNextDispatch(handle, HandleMessage))
                     {
                         log.Trace?.Log("Trying for another message");
                     }
-                    Task.Delay(100);
+                    Task.Delay(MessagePollerRetryPeriod).Wait();
                 }
-                return true;
             });
             messagePoller.Start();
         }
 
-        public bool IsConnected()
-        {
-            return handle != IntPtr.Zero;
-        }
-
         internal void InvokeConnectionStateChanged()
         {
-            OnConnectionStateChange(UseAutoConnect, IsConnected());
+            OnConnectionStateChange?.Invoke(UseAutoConnect, IsConnected);
         }
 
-        public void Connect()
+        public bool Connect()
         {
             if (CsConnect("CsSimConnect", ref handle))
             {
-                InitDispatcher();
+                RunDispatcher();
                 OnConnect?.Invoke();
             }
             else
             {
-                log.Error?.Log("Failed to connect.");
+                log.Debug?.Log("Failed to connect.");
             }
+            return IsConnected;
         }
 
         private void SetConnectedSim(AppInfo info)

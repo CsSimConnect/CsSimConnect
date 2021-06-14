@@ -1,0 +1,9 @@
+{
+  "profiles": {
+    "CsSimConnectUI": {
+      "commandName": "Project",
+      "workingDirectory": "..",
+      "nativeDebugging": true
+    }
+  }
+}

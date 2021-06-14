@@ -39,6 +39,20 @@ CS_SIMCONNECT_DLL_EXPORT_BOOL CsDisconnect(HANDLE handle);
 CS_SIMCONNECT_DLL_EXPORT_BOOL CsCallDispatch(HANDLE handle, DispatchProc callback);
 CS_SIMCONNECT_DLL_EXPORT_BOOL CsGetNextDispatch(HANDLE handle, DispatchProc callback);
 
+CS_SIMCONNECT_DLL_EXPORT_LONG CsAddClientEventToNotificationGroup(HANDLE handle, uint32_t groupId, uint32_t eventId, uint32_t maskable);
+CS_SIMCONNECT_DLL_EXPORT_LONG CsMapClientEventToSimEvent(HANDLE handle, uint32_t eventId, const char* eventName);
+CS_SIMCONNECT_DLL_EXPORT_LONG CsMapInputEventToClientEvent(HANDLE handle, uint32_t groupId, const char* inputDefinition, uint32_t downEventId, DWORD downValue, uint32_t upEventId, DWORD upValue, uint32_t maskable);
+CS_SIMCONNECT_DLL_EXPORT_LONG CsRemoveClientEvent(HANDLE handle, uint32_t groupId, uint32_t eventId);
+CS_SIMCONNECT_DLL_EXPORT_LONG CsTransmitClientEvent(HANDLE handle, uint32_t objectId, uint32_t eventId, uint32_t data, uint32_t groupId, uint32_t flags);
+
+#if IS_PREPAR3D
+CS_SIMCONNECT_DLL_EXPORT_LONG CsTransmitClientEvent64(HANDLE handle, uint32_t objectId, uint32_t eventId, uint64_t data, uint32_t groupId, uint32_t flags);
+#endif
+
+CS_SIMCONNECT_DLL_EXPORT_LONG CsClearNotificationGroup(HANDLE handle, uint32_t groupId);
+CS_SIMCONNECT_DLL_EXPORT_LONG CsRequestNotificationGroup(HANDLE handle, uint32_t groupId);
+CS_SIMCONNECT_DLL_EXPORT_LONG CsSetNotificationGroupPriority(HANDLE handle, uint32_t groupId, uint32_t priority);
+
 CS_SIMCONNECT_DLL_EXPORT_LONG CsSubscribeToSystemEvent(HANDLE handle, int id, const char* eventName);
 CS_SIMCONNECT_DLL_EXPORT_LONG CsRequestSystemState(HANDLE handle, int id, const char* eventName);
 
