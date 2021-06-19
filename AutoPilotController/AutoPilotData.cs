@@ -20,10 +20,10 @@ namespace AutoPilotController
 {
     public class AutoPilotData
     {
-        [DataDefinition("NAV ACTIVE FREQUENCY:1", Units = "MHz", Type = DataType.Int32)]
-        public int FreqNav1 { get; set; }
-        [DataDefinition("NAV ACTIVE FREQUENCY:2", Units = "MHz", Type = DataType.Int32)]
-        public int FreqNav2 { get; set; }
+        [DataDefinition("NAV ACTIVE FREQUENCY:1", Units = "MHz", Type = DataType.Float32)]
+        public float FreqNav1 { get; set; }
+        [DataDefinition("NAV ACTIVE FREQUENCY:2", Units = "MHz", Type = DataType.Float32)]
+        public float FreqNav2 { get; set; }
         [DataDefinition("ADF ACTIVE FREQUENCY:1", Units = "Frequency ADF BCD32", Type = DataType.Int32)]
         public int FreqAdf { get; set; }
 
@@ -48,11 +48,11 @@ namespace AutoPilotController
         [DataDefinition("AUTOPILOT AIRSPEED HOLD", Units = "Bool", Type = DataType.Int32)]
         public bool SpeedHold { get; set; }
 
-        [DataDefinition("NAV OBS:1", Units = "Feet/minute", Type = DataType.Int32)]
+        [DataDefinition("NAV OBS:1", Units = "Degrees", Type = DataType.Int32)]
         public int CourseNav1 { get; set; }
         [DataDefinition("AUTOPILOT NAV1 LOCK", Units = "Bool", Type = DataType.Int32)]
         public bool Nav1Hold { get; set; }
-        [DataDefinition("NAV OBS:2", Units = "Feet/minute", Type = DataType.Int32)]
+        [DataDefinition("NAV OBS:2", Units = "Degrees", Type = DataType.Int32)]
         public int CourseNav2 { get; set; }
 
         [DataDefinition("AUTOPILOT BACKCOURSE HOLD", Units = "Bool", Type = DataType.Int32)]

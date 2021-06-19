@@ -188,11 +188,11 @@ namespace CsSimConnect
             return result;
         }
 
-        private readonly ConcurrentDictionary<string, ClientEvent> clientEvents = new();
+        private static readonly ConcurrentDictionary<string, ClientEvent> clientEvents = new();
 
-        public ClientEvent GetEvent(string eventName)
+        public static ClientEvent GetEvent(string eventName)
         {
-            return clientEvents.GetOrAdd(eventName, name => new(name));
+            return clientEvents.GetOrAdd(eventName, name => new(Instance, name));
         }
 
         private EventGroup defaultGroup;
@@ -239,6 +239,11 @@ namespace CsSimConnect
                 RegisterCleanup(CsAddClientEventToNotificationGroup(simConnect.handle, defaultGroup.Id, clientEvent.Id, 0), "AddClientEventToNotificationGroup", onError);
             }
             RegisterCleanup(CsTransmitClientEvent(simConnect.handle, objectId, clientEvent.Id, data, clientEvent.Group.Id, 0), "TransmitClientEvent", onError);
+        }
+
+        public void SendEventSigned(ClientEvent clientEvent, uint objectId = 0, int data = 0, Action<SimConnectException> onError = null)
+        {
+            SendEvent(clientEvent, objectId, (uint)data, onError);
         }
 
         public void SendEvent(ClientEvent clientEvent, SimulatedObject obj, uint data = 0, Action<SimConnectException> onError = null)

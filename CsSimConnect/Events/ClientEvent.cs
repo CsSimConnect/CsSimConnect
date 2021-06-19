@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+using CsSimConnect.Exc;
+using System;
 using System.Collections.Generic;
 
 namespace CsSimConnect.Events
@@ -29,18 +31,29 @@ namespace CsSimConnect.Events
             }
         }
 
+        private readonly EventManager mgr;
         public uint Id { get; init; }
         public string MappedEvent { get; init; }
         public EventGroup Group { get; internal set; }
 
         internal bool IsMapped { get; set; }
 
-        public ClientEvent(string mappedEvent)
+        internal ClientEvent(EventManager mgr, string mappedEvent)
         {
             Id = EventManager.Instance.NextId();
+            this.mgr = mgr;
             MappedEvent = mappedEvent;
             IsMapped = false;
         }
 
+        public void Send(uint objectId = 0, uint data = 0, Action<SimConnectException> onError = null)
+        {
+            mgr.SendEvent(this, objectId, data, onError);
+        }
+
+        public void SendSigned(uint objectId = 0, int data = 0, Action<SimConnectException> onError = null)
+        {
+            mgr.SendEventSigned(this, objectId, data, onError);
+        }
     }
 }
