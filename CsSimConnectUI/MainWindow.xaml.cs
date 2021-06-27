@@ -94,23 +94,9 @@ namespace CsSimConnectUI
                 CsSimConnect.EventManager evtMgr = CsSimConnect.EventManager.Instance;
                 evtMgr.SubscribeToSystemEventBool(SystemEvent.Pause, OnPause);
                 evtMgr.SubscribeToSystemEventBool(SystemEvent.Sim, OnStop);
-                evtMgr.SubscribeToObjectAddedEvent().Subscribe(OnObjectAdded);
-                evtMgr.SubscribeToObjectRemovedEvent().Subscribe(OnObjectRemoved);
 
                 RequestManager.Instance.RequestSystemStateBool(SystemState.Sim, OnStop);
             }
-        }
-
-        private void OnObjectAdded(SimulatedObject obj)
-        {
-            log.Info?.Log("A {0} was added with id {1}.", obj.GetType().Name, obj.ObjectId);
-            aiList.Add(obj);
-        }
-
-        private void OnObjectRemoved(SimulatedObject obj)
-        {
-            log.Info?.Log("A {0} was removed with id {1}.", obj.GetType().Name, obj.ObjectId);
-            aiList.Remove(obj);
         }
 
         private void UpdateStatus()

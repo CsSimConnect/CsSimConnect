@@ -17,13 +17,15 @@
 using System.Text;
 using System.Windows.Controls;
 
-namespace AutoPilotController
+namespace CsSimConnect.UIComponents
 {
-    public class HeadingTextBox : TextBox
+    public class FrequencyTextBox : TextBox
     {
+        public string FreqStyle { get; set; }
 
-        public HeadingTextBox()
+        public FrequencyTextBox()
         {
+            FreqStyle = "NAV";
             TextChanged += new TextChangedEventHandler(MaskedTextBox_TextChanged);
         }
 
@@ -31,13 +33,15 @@ namespace AutoPilotController
         {
             if (sender is FrequencyTextBox tbEntry && tbEntry.Text.Length > 0)
             {
-                tbEntry.Text = formatNumber(tbEntry.Text);
+                tbEntry.Text = formatNumber(tbEntry.Text, FreqStyle);
+                CaretIndex = tbEntry.Text.Length;
             }
         }
 
-        public static string formatNumber(string FieldText)
+        public static string formatNumber(string FieldText, string style)
         {
-            int maxLen = 3;
+            bool navStyle = style.ToLower().Equals("nav");
+            int maxLen = navStyle ? 6 : 5;
             StringBuilder sb = new StringBuilder();
 
             if (FieldText != null)
@@ -46,6 +50,10 @@ namespace AutoPilotController
                 {
                     if (char.IsDigit(c))
                     {
+                        if (sb.Length == 3)
+                        {
+                            sb.Append('.');
+                        }
                         sb.Append(c);
                     }
                     if (sb.Length == maxLen)
@@ -56,5 +64,6 @@ namespace AutoPilotController
             }
             return sb.ToString();
         }
+
     }
 }

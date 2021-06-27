@@ -42,6 +42,8 @@ namespace AutoPilotController
 
         [DataDefinition("AUTOPILOT VERTICAL HOLD VAR", Units = "Feet/minute", Type = DataType.Int32)]
         public int VerticalSpeed { get; set; }
+        [DataDefinition("AUTOPILOT VERTICAL HOLD", Units = "Bool", Type = DataType.Int32)]
+        public bool VerticalSpeedHold { get; set; }
 
         [DataDefinition("AUTOPILOT AIRSPEED HOLD VAR", Units = "Knots", Type = DataType.Int32)]
         public int IndicatedAirSpeed { get; set; }

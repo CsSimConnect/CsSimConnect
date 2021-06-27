@@ -17,15 +17,18 @@
 using System.Text;
 using System.Windows.Controls;
 
-namespace AutoPilotController
+namespace CsSimConnect.UIComponents
 {
-    public class FrequencyTextBox : TextBox
+    public class NumberTextBox : TextBox
     {
-        public string FreqStyle { get; set; }
 
-        public FrequencyTextBox()
+        public int NumDigits { get; set; }
+        public bool Positive { get; set; }
+        public bool AddTicks { get; set; }
+
+        public NumberTextBox()
         {
-            FreqStyle = "NAV";
+            NumDigits = 3;
             TextChanged += new TextChangedEventHandler(MaskedTextBox_TextChanged);
         }
 
@@ -33,37 +36,44 @@ namespace AutoPilotController
         {
             if (sender is FrequencyTextBox tbEntry && tbEntry.Text.Length > 0)
             {
-                tbEntry.Text = formatNumber(tbEntry.Text, FreqStyle);
-                CaretIndex = tbEntry.Text.Length;
+                tbEntry.Text = FormatNumber(tbEntry.Text);
             }
         }
 
-        public static string formatNumber(string FieldText, string style)
+        public static string Normalize(string s)
         {
-            bool navStyle = style.ToLower().Equals("nav");
-            int maxLen = navStyle ? 6 : 5;
-            StringBuilder sb = new StringBuilder();
+            return s?.Replace(",", "").Trim() ?? "0";
+        }
+
+        public string FormatNumber(string FieldText)
+        {
+            int digitCount = 0;
+            StringBuilder sb = new();
 
             if (FieldText != null)
             {
                 foreach (char c in FieldText)
                 {
-                    if (char.IsDigit(c))
+                    if (!Positive && (c == '-'))
                     {
-                        if (sb.Length == 3)
-                        {
-                            sb.Append('.');
-                        }
                         sb.Append(c);
                     }
-                    if (sb.Length == maxLen)
+                    else if (char.IsDigit(c))
                     {
-                        break;
+                        sb.Append(c);
+                        if (++digitCount == NumDigits)
+                        {
+                            break;
+                        }
                     }
                 }
             }
             return sb.ToString();
         }
+
+        public string Normalized() => Normalize(Text);
+        public int AsInt() => int.Parse(Normalize(Text));
+        public uint AsUInt() => uint.Parse(Normalize(Text));
 
     }
 }

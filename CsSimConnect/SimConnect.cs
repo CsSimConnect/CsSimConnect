@@ -48,23 +48,48 @@ namespace CsSimConnect
 
         [DllImport("kernel32", SetLastError = true, CharSet = CharSet.Ansi)]
         private static extern IntPtr LoadLibrary([MarshalAs(UnmanagedType.LPStr)] string lpFileName);
+        [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+        private static extern bool FreeLibrary(IntPtr hModule);
 
         private static FlightSimType interOpType;
         public static FlightSimType InterOpType => interOpType;
         public static FlightSimType ConnectedSim { get; private set; }
- 
+
+        private static IntPtr interOpDll;
+
         private static void LoadInterOpLibrary(string path)
         {
+            UnloadInterOpLibrary();
             try
             {
-                var hExe = LoadLibrary(path);
-                if (hExe == IntPtr.Zero)
+                interOpDll = LoadLibrary(path);
+                if (interOpDll == IntPtr.Zero)
                 {
                     log.Fatal?.Log("Unable to load '{0}'", path);
                 }
             }
             catch (Exception e) {
                 log.Error?.Log("Exception caught in LoadInterOpLibrary('{0}'): {1}", path, e.Message);
+            }
+        }
+
+        private static void UnloadInterOpLibrary()
+        {
+            if (interOpDll != IntPtr.Zero)
+            {
+                try
+                {
+                    log.Info?.Log("Unloading InterOp DLL");
+                    while (FreeLibrary(interOpDll))
+                    {
+                        log.Debug?.Log("Reduced link count of InterOp DLL by one");
+                    }
+                    interOpDll = IntPtr.Zero;
+                }
+                catch (Exception e)
+                {
+                    log.Error?.Log("Exception caught in UnloadInterOpLibrary('{0}'): {1}", e.Message);
+                }
             }
         }
 
@@ -146,6 +171,11 @@ namespace CsSimConnect
 
         private void RunAutoConnect()
         {
+            if (autoConnecter != null)
+            {
+                log.Warn?.Log("Not starting a second autoconnector.");
+                return;
+            }
             messagePoller = null;
             autoConnecter = new(() =>
             {

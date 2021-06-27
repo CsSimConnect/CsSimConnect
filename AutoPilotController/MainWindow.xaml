@@ -4,20 +4,20 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
-        xmlns:apc="clr-namespace:AutoPilotController"
+        xmlns:apc="clr-namespace:CsSimConnect.UIComponents;assembly=CsSimConnectUIComponents"
         mc:Ignorable="d"
         TextElement.Foreground="{DynamicResource MaterialDesignBody}"
         TextElement.FontWeight="Regular"
-        TextElement.FontSize="13"
+        TextElement.FontSize="12"
         TextOptions.TextFormattingMode="Ideal" 
         TextOptions.TextRenderingMode="Auto"        
         Background="{DynamicResource MaterialDesignPaper}"
         FontFamily="{DynamicResource MaterialDesignFont}"
-        Title="AutoPilotController" Height="450" Width="140" SizeToContent="WidthAndHeight">
+        Title="AutoPilotController" Height="450" Width="140" SizeToContent="Width" Topmost="True" WindowStyle="ToolWindow">
     <Grid Margin="5,5,5,5">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="60"/>
-            <ColumnDefinition Width="80"/>
+            <ColumnDefinition Width="70"/>
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -31,117 +31,151 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <apc:FrequencyTextBox Grid.Row="0" Grid.Column="0" Width="50" Height="16" Margin="0,5,0,5" Padding="0" HorizontalAlignment="Right" x:Name="Nav1Freq" Style="{StaticResource MaterialDesignTextBox}" FreqStyle="NAV" materialDesign:HintAssist.Hint="000.00" KeyDown="Nav1KeyDown" />
-        <TextBlock Grid.Row="0" Grid.Column="1" Text="NAV1" Margin="0,5,0,5" />
+        <apc:FrequencyTextBox Grid.Row="0" Grid.Column="0" Width="50" Height="14" Margin="0,5,0,0" Padding="0" HorizontalAlignment="Right" x:Name="Nav1Freq" Style="{StaticResource MaterialDesignTextBox}" FreqStyle="NAV" materialDesign:HintAssist.Hint="000.00" KeyDown="Nav1KeyDown" />
+        <TextBlock Grid.Row="0" Grid.Column="1" Text="NAV1" Margin="5,5,0,0" />
 
-        <apc:FrequencyTextBox Grid.Row="1" Grid.Column="0" Width="50" Height="16" Margin="0,5,0,5" Padding="0" HorizontalAlignment="Right" x:Name="Nav2Freq" Style="{StaticResource MaterialDesignTextBox}" FreqStyle="NAV" materialDesign:HintAssist.Hint="000.00" KeyDown="Nav2KeyDown" />
-        <TextBlock Grid.Row="1" Grid.Column="1" Text="NAV2" Margin="0,5,0,5" />
+        <apc:FrequencyTextBox Grid.Row="1" Grid.Column="0" Width="50" Height="14" Margin="0,5,0,0" Padding="0" HorizontalAlignment="Right" x:Name="Nav2Freq" Style="{StaticResource MaterialDesignTextBox}" FreqStyle="NAV" materialDesign:HintAssist.Hint="000.00" KeyDown="Nav2KeyDown" />
+        <TextBlock Grid.Row="1" Grid.Column="1" Text="NAV2" Margin="5,5,0,0" />
 
-        <apc:FrequencyTextBox Grid.Row="2" Grid.Column="0" Width="50" Height="16" Margin="0,5,0,5" Padding="0" HorizontalAlignment="Right" x:Name="AdfFreq" Style="{StaticResource MaterialDesignTextBox}" FreqStyle="ADF" materialDesign:HintAssist.Hint="000.0" KeyDown="AdfKeyDown" />
-        <TextBlock Grid.Row="2" Grid.Column="1" Text="ADF" Margin="0,5,0,5" />
+        <apc:FrequencyTextBox Grid.Row="2" Grid.Column="0" Width="50" Height="14" Margin="0,5,0,0" Padding="0" HorizontalAlignment="Right" x:Name="AdfFreq" Style="{StaticResource MaterialDesignTextBox}" FreqStyle="ADF" materialDesign:HintAssist.Hint="000.0" KeyDown="AdfKeyDown" />
+        <TextBlock Grid.Row="2" Grid.Column="1" Text="ADF" Margin="5,5,0,0" />
 
-        <Button Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" Width="130" Height="24" Margin="0,5,0,5" Padding="5,0,5,0" HorizontalAlignment="Center" HorizontalContentAlignment="Stretch" Style="{StaticResource MaterialDesignRaisedAccentButton}" Click="ToggleAutoPilot">
-            <Grid HorizontalAlignment="Stretch">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-                <TextBlock Text="Autopilot" FontSize="14" Grid.Column="1" HorizontalAlignment="Center" />
-                <materialDesign:PackIcon Kind="CheckboxBlank" Foreground="Red" Margin="5,0,0,0" Visibility="Hidden" x:Name="IndicatorAP" Grid.Column="2" />
-            </Grid>
+        <Button Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2"
+                Width="130" Height="20" Margin="0,5,0,0" Padding="5,0,5,0" HorizontalAlignment="Center" HorizontalContentAlignment="Stretch"
+                Style="{StaticResource MaterialDesignRaisedAccentButton}"
+                Click="ToggleAutoPilot">
+            <DockPanel>
+                <materialDesign:PackIcon DockPanel.Dock="Right" Kind="CheckboxBlank" Foreground="Red" Visibility="Hidden" x:Name="IndicatorAP" />
+                <TextBlock Text="Autopilot" FontWeight="Light" HorizontalAlignment="Center" />
+            </DockPanel>
         </Button>
 
-        <apc:HeadingTextBox Grid.Row="4" Grid.Column="0" Width="50" Height="16" Margin="0,5,0,5" Padding="0" HorizontalAlignment="Right" x:Name="Heading" Style="{StaticResource MaterialDesignTextBox}" materialDesign:HintAssist.Hint="000" KeyDown="HeadingKeyDown" />
-        <Button Grid.Row="4" Grid.Column="1" Height="24" Width="70" Margin="0,5,0,5" Padding="5" HorizontalContentAlignment="Stretch" Style="{StaticResource MaterialDesignRaisedAccentButton}" Click="ToggleHeading">
-            <Grid HorizontalAlignment="Stretch">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-                <TextBlock Text="HDG" FontSize="14" Grid.Column="0" />
-                <materialDesign:PackIcon Kind="CheckboxBlank" Foreground="Red" Margin="5,0,0,0" Visibility="Hidden" x:Name="IndicatorHDG" Grid.Column="2" />
-            </Grid>
+        <apc:NumberTextBox Grid.Row="4" Grid.Column="0"
+                           Width="50" Height="14" Margin="0,5,0,0" Padding="0" HorizontalAlignment="Right"
+                           x:Name="Heading" NumDigits="3" Positive="True" AddTicks="False"
+                           Style="{StaticResource MaterialDesignTextBox}" materialDesign:HintAssist.Hint="000"
+                           KeyDown="HeadingKeyDown" />
+        <Button Grid.Row="4" Grid.Column="1"
+                Height="20" Width="65" Margin="5,5,0,0" Padding="5,0,5,0" HorizontalContentAlignment="Stretch"
+                Style="{StaticResource MaterialDesignRaisedAccentButton}"
+                Click="ToggleHeading">
+            <DockPanel>
+                <materialDesign:PackIcon DockPanel.Dock="Right" Kind="CheckboxBlank" Foreground="Red" Visibility="Hidden" x:Name="IndicatorHDG" />
+                <TextBlock DockPanel.Dock="Left" Text="HDG" FontWeight="Light" />
+            </DockPanel>
         </Button>
 
-        <apc:HeadingTextBox Grid.Row="5" Grid.Column="0" Width="50" Height="16" Margin="0,5,0,5" Padding="0" HorizontalAlignment="Right" x:Name="Altitude" Style="{StaticResource MaterialDesignTextBox}" materialDesign:HintAssist.Hint="00000" KeyDown="AltKeyDown" />
-        <Button Grid.Row="5" Grid.Column="1" Height="24" Width="70" Margin="0,5,0,5" Padding="5" HorizontalContentAlignment="Stretch" Style="{StaticResource MaterialDesignRaisedAccentButton}" Click="ToggleAltitude">
-            <Grid HorizontalAlignment="Stretch">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-                <TextBlock Text="ALT" FontSize="14" Grid.Column="0" />
-                <materialDesign:PackIcon Kind="CheckboxBlank" Foreground="Red" Margin="5,0,0,0" Visibility="Hidden" x:Name="IndicatorALT" Grid.Column="2" />
-            </Grid>
+        <apc:NumberTextBox Grid.Row="5" Grid.Column="0"
+                           Width="50" Height="14" Margin="0,5,0,0" Padding="0" HorizontalAlignment="Right"
+                           x:Name="Altitude" NumDigits="5" Positive="True" AddTicks="True"
+                           Style="{StaticResource MaterialDesignTextBox}" materialDesign:HintAssist.Hint="00000"
+                           KeyDown="AltKeyDown" />
+        <Button Grid.Row="5" Grid.Column="1"
+                Height="20" Width="65" Margin="5,5,0,0" Padding="5,0,5,0" HorizontalContentAlignment="Stretch"
+                Style="{StaticResource MaterialDesignRaisedAccentButton}"
+                Click="ToggleAltitude">
+            <DockPanel>
+                <materialDesign:PackIcon DockPanel.Dock="Right" Kind="CheckboxBlank" Foreground="Red" Margin="5,0,0,0" Visibility="Hidden" x:Name="IndicatorALT" />
+                <TextBlock DockPanel.Dock="Left" Text="ALT" FontWeight="Light" />
+            </DockPanel>
         </Button>
 
-        <apc:HeadingTextBox Grid.Row="6" Grid.Column="0" Width="50" Height="16" Margin="0,5,0,5" Padding="0" HorizontalAlignment="Right" x:Name="VerticalSpeed" Style="{StaticResource MaterialDesignTextBox}" KeyDown="VSKeyDown" />
-        <TextBlock Grid.Row="6" Grid.Column="1" Height="24" Width="70" Margin="0,5,0,5" Padding="5" Text="VS" />
-
-        <apc:HeadingTextBox Grid.Row="7" Grid.Column="0" Width="50" Height="16" Margin="0,5,0,5" Padding="0" HorizontalAlignment="Right" x:Name="Speed" Style="{StaticResource MaterialDesignTextBox}" materialDesign:HintAssist.Hint="000" KeyDown="SpeedKeyDown" />
-        <Button Grid.Row="7" Grid.Column="1" Height="24" Width="70" Margin="0,5,0,5" Padding="5" HorizontalContentAlignment="Stretch" Style="{StaticResource MaterialDesignRaisedAccentButton}" Click="ToggleSpeed">
-            <Grid HorizontalAlignment="Stretch">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-                <TextBlock Text="IAS" FontSize="14" Grid.Column="0" />
-                <materialDesign:PackIcon Kind="CheckboxBlank" Foreground="Red" Margin="5,0,0,0" Visibility="Hidden" x:Name="IndicatorIAS" Grid.Column="2" />
-            </Grid>
+        <apc:NumberTextBox Grid.Row="6" Grid.Column="0"
+                           Width="50" Height="14" Margin="0,5,0,0" Padding="0" HorizontalAlignment="Right"
+                           x:Name="VerticalSpeed" NumDigits="4" Positive="False" AddTicks="False"
+                           Style="{StaticResource MaterialDesignTextBox}"
+                           KeyDown="VSKeyDown" />
+        <!--TextBlock Grid.Row="6" Grid.Column="1" Height="20" Width="65" Margin="5,5,0,0" Padding="5" Text="VS" / -->
+        <Button Grid.Row="6" Grid.Column="1"
+                Height="20" Width="65" Margin="5,5,0,0" Padding="5,0,5,0" HorizontalContentAlignment="Stretch"
+                Style="{StaticResource MaterialDesignRaisedAccentButton}"
+                Click="ToggleVerticalSpeed">
+            <DockPanel>
+                <materialDesign:PackIcon DockPanel.Dock="Right" Kind="CheckboxBlank" Foreground="Red" Margin="5,0,0,0" Visibility="Hidden" x:Name="IndicatorVS" />
+                <TextBlock DockPanel.Dock="Left" Text="VS" FontWeight="Light" />
+            </DockPanel>
         </Button>
 
-        <apc:HeadingTextBox Grid.Row="8" Grid.Column="0" Width="50" Height="16" Margin="0,5,0,5" Padding="0" HorizontalAlignment="Right" x:Name="Nav1Course" Style="{StaticResource MaterialDesignTextBox}" materialDesign:HintAssist.Hint="000" KeyDown="Nav1CourseKeyDown" />
-        <Button Grid.Row="8" Grid.Column="1" Height="24" Width="70" Margin="0,5,0,5" Padding="5" HorizontalContentAlignment="Stretch" Style="{StaticResource MaterialDesignRaisedAccentButton}" Click="ToggleNav1Hold">
-            <Grid HorizontalAlignment="Stretch">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-                <TextBlock Text="NAV1" FontSize="14" Grid.Column="0" />
-                <materialDesign:PackIcon Kind="CheckboxBlank" Foreground="Red" Margin="5,0,0,0" Visibility="Hidden" x:Name="IndicatorNAV1" Grid.Column="2" />
-            </Grid>
+        <apc:NumberTextBox Grid.Row="7" Grid.Column="0"
+                           Width="50" Height="14" Margin="0,5,0,0" Padding="0" HorizontalAlignment="Right"
+                           x:Name="Speed" NumDigits="3" Positive="True" AddTicks="False"
+                           Style="{StaticResource MaterialDesignTextBox}" materialDesign:HintAssist.Hint="000"
+                           KeyDown="SpeedKeyDown" />
+        <Button Grid.Row="7" Grid.Column="1"
+                Height="20" Width="65" Margin="5,5,0,0" Padding="5,0,5,0" HorizontalContentAlignment="Stretch"
+                Style="{StaticResource MaterialDesignRaisedAccentButton}"
+                Click="ToggleSpeed">
+            <DockPanel>
+                <materialDesign:PackIcon DockPanel.Dock="Right" Kind="CheckboxBlank" Foreground="Red" Margin="5,0,0,0" Visibility="Hidden" x:Name="IndicatorIAS" />
+                <TextBlock DockPanel.Dock="Left" Text="IAS" FontWeight="Light" />
+            </DockPanel>
         </Button>
 
-        <apc:HeadingTextBox Grid.Row="9" Grid.Column="0" Width="50" Height="16" Margin="0,5,0,5" Padding="0" HorizontalAlignment="Right" x:Name="Nav2Course" Style="{StaticResource MaterialDesignTextBox}" materialDesign:HintAssist.Hint="000" KeyDown="Nav1CourseKeyDown" />
-        <TextBlock Grid.Row="9" Grid.Column="1" Height="24" Width="70" Margin="0,5,0,5" Padding="5">
-            <TextBlock Text="NAV2" FontSize="14" />
-        </TextBlock>
+        <apc:NumberTextBox Grid.Row="8" Grid.Column="0"
+                           Width="50" Height="14" Margin="0,5,0,0" Padding="0" HorizontalAlignment="Right"
+                           x:Name="Nav1Course" NumDigits="3" Positive="True" AddTicks="False"
+                           Style="{StaticResource MaterialDesignTextBox}" materialDesign:HintAssist.Hint="000"
+                           KeyDown="Nav1CourseKeyDown" />
+        <Button Grid.Row="8" Grid.Column="1"
+                Height="20" Width="65" Margin="5,5,0,0" Padding="5,0,5,0" HorizontalContentAlignment="Stretch"
+                Style="{StaticResource MaterialDesignRaisedAccentButton}"
+                Click="ToggleNav1Hold">
+            <DockPanel>
+                <materialDesign:PackIcon DockPanel.Dock="Right" Kind="CheckboxBlank" Foreground="Red" Margin="5,0,0,0" Visibility="Hidden" x:Name="IndicatorNAV1" />
+                <TextBlock DockPanel.Dock="Left" Text="NAV1" FontWeight="Light" />
+            </DockPanel>
+        </Button>
 
-        <Grid Grid.Row="10" Grid.Column="0" Grid.ColumnSpan="2">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
-            <Button Grid.Column="0" Height="24" Width="65" Margin="0,5,0,5" Padding="5" HorizontalContentAlignment="Stretch" Style="{StaticResource MaterialDesignRaisedAccentButton}" Click="ToggleApproach">
-                <Grid HorizontalAlignment="Stretch">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Text="APPR" FontSize="14" Grid.Column="0" />
-                    <materialDesign:PackIcon Kind="CheckboxBlank" Foreground="Red" Margin="5,0,0,0" Visibility="Hidden" x:Name="IndicatorAPP" Grid.Column="2" />
-                </Grid>
+        <apc:NumberTextBox Grid.Row="9" Grid.Column="0"
+                           Width="50" Height="14" Margin="0,5,0,0" Padding="0" HorizontalAlignment="Right"
+                           x:Name="Nav2Course" NumDigits="3" Positive="True" AddTicks="False"
+                           Style="{StaticResource MaterialDesignTextBox}" materialDesign:HintAssist.Hint="000"
+                           KeyDown="Nav1CourseKeyDown" />
+        <TextBlock Grid.Row="9" Grid.Column="1" Height="20" Width="65" Margin="5,5,0,0" Padding="5" Text="NAV2" />
+
+        <DockPanel Grid.Row="10" Grid.Column="0" Grid.ColumnSpan="2">
+            <Button DockPanel.Dock="Left"
+                    Height="20" Width="65" Margin="0,5,0,0" Padding="5,0,5,0" HorizontalContentAlignment="Stretch"
+                    Style="{StaticResource MaterialDesignRaisedAccentButton}"
+                    Click="ToggleApproach">
+                <DockPanel>
+                    <materialDesign:PackIcon DockPanel.Dock="Right" Kind="CheckboxBlank" Foreground="Red" Margin="5,0,0,0" Visibility="Hidden" x:Name="IndicatorAPP" />
+                    <TextBlock DockPanel.Dock="Left" Text="APPR" FontWeight="Light" />
+                </DockPanel>
             </Button>
-            <Button Grid.Column="2" Height="24" Width="65" Margin="0,5,0,5" Padding="5" HorizontalContentAlignment="Stretch" Style="{StaticResource MaterialDesignRaisedAccentButton}" Click="ToggleBackCourseHold">
-                <Grid HorizontalAlignment="Stretch">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Text="BC" FontSize="14" Grid.Column="0" />
-                    <materialDesign:PackIcon Kind="CheckboxBlank" Foreground="Red" Margin="5,0,0,0" Visibility="Hidden" x:Name="IndicatorBC" Grid.Column="2" />
-                </Grid>
+            <Button DockPanel.Dock="Right"
+                    Height="20" Width="65" Margin="0,5,0,0" Padding="5,0,5,0" HorizontalContentAlignment="Stretch"
+                    Style="{StaticResource MaterialDesignRaisedAccentButton}"
+                    Click="ToggleBackCourseHold">
+                <DockPanel>
+                    <materialDesign:PackIcon DockPanel.Dock="Right" Kind="CheckboxBlank" Foreground="Red" Margin="5,0,0,0" Visibility="Hidden" x:Name="IndicatorBC" />
+                    <TextBlock DockPanel.Dock="Left" Text="BC" FontWeight="Light" />
+                </DockPanel>
             </Button>
-        </Grid>
+        </DockPanel>
+
+        <StackPanel Orientation="Vertical" Grid.Row="11" Grid.ColumnSpan="2" HorizontalAlignment="Stretch" Margin="0,10,0,10">
+            <materialDesign:Card Height="40" HorizontalAlignment="Stretch"
+                                 Background="{DynamicResource PrimaryHueLightBrush}" Foreground="{DynamicResource PrimaryHueLightForegroundBrush}">
+                <TextBlock FontSize="14" Text="Aircraft in Session" HorizontalAlignment="Center" VerticalAlignment="Center" />
+            </materialDesign:Card>
+            <ScrollViewer>
+                <ItemsControl ItemsSource="{Binding AIList}" ScrollViewer.CanContentScroll="True" ScrollViewer.VerticalScrollBarVisibility="Auto">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border x:Name="Border" BorderThickness="0 1 0 1" BorderBrush="{DynamicResource MaterialDesignDivider}">
+                                <StackPanel Margin="8 0 0 0" Grid.Column="1">
+                                    <TextBlock Text="{Binding Value.Title}" FontWeight="Bold" />
+                                    <TextBlock Text="{Binding Value.Details}" />
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </StackPanel>
     </Grid>
 </Window>

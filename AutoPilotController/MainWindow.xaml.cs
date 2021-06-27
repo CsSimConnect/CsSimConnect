@@ -21,6 +21,7 @@ using System.Windows.Input;
 using Window = System.Windows.Window;
 using Visibility = System.Windows.Visibility;
 using RoutedEventArgs = System.Windows.RoutedEventArgs;
+using CsSimConnect.UIComponents.Domain;
 
 namespace AutoPilotController
 {
@@ -31,14 +32,19 @@ namespace AutoPilotController
     {
         private static readonly Logger log = Logger.GetLogger(typeof(MainWindow));
 
+        private readonly AIListViewModel aiList;
+
         public MainWindow()
         {
+            aiList = new(action => Dispatcher.Invoke(action));
+            DataContext = aiList;
             InitializeComponent();
 
             if (SimConnect.Instance.IsConnected)
             {
                 log.Info?.Log("We're already connected, let's subscribe to the data.");
                 OnOpen();
+                aiList.RefreshList();
             }
             SimConnect.Instance.OnOpen += OnOpen;
         }
@@ -129,6 +135,7 @@ namespace AutoPilotController
             Altitude.Text = NormalizeAltitude(currentState?.Altitude);
             IndicatorALT.Visibility = Indicator(currentState?.AltitudeHold);
             VerticalSpeed.Text = NormalizeVerticalSpeed(currentState?.VerticalSpeed);
+            IndicatorVS.Visibility = Indicator(currentState?.VerticalSpeedHold);
             Speed.Text = NormalizeSpeed(currentState?.IndicatedAirSpeed);
             IndicatorIAS.Visibility = Indicator(currentState?.SpeedHold);
             Nav1Course.Text = NormalizeHeading(currentState?.CourseNav1);
@@ -222,6 +229,17 @@ namespace AutoPilotController
                 Altitude.Text = altitude;
                 altSet.Send(data: (uint)ParseNumber(altitude), onError: exc => log.Error?.Log($"Exception: {exc.Message}"));
             }
+        }
+
+        private readonly ClientEvent vsHoldEvent = EventManager.GetEvent("ap_vs_hold");
+        private void ToggleVerticalSpeed(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button apButton)
+            {
+                log.Info?.Log("Toggle Vertical Speed Hold");
+                vsHoldEvent.Send(onError: exc => log.Error?.Log($"Exception: {exc.Message}"));
+            }
+            UpdateUI();
         }
 
         private readonly ClientEvent vsSet = EventManager.GetEvent("ap_vs_var_set_english");
