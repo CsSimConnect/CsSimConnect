@@ -7,7 +7,7 @@
     <StartupObject>AutoPilotController.App</StartupObject>
     <Configurations>Debug;Release</Configurations>
     <SignAssembly>true</SignAssembly>
-    <AssemblyOriginatorKeyFile>CsSimConnect.pfx</AssemblyOriginatorKeyFile>
+    <AssemblyOriginatorKeyFile>AutoPilotController.pfx</AssemblyOriginatorKeyFile>
     <DelaySign>false</DelaySign>
   </PropertyGroup>
 
