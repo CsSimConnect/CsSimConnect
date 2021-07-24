@@ -22,6 +22,7 @@ namespace CsSimConnect.Events
 {
     public class ClientEvent
     {
+        private static readonly Logger log = Logger.GetLogger(typeof(ClientEvent));
 
         public class Comparer : IComparer<ClientEvent>
         {
@@ -48,12 +49,17 @@ namespace CsSimConnect.Events
 
         public void Send(uint objectId = 0, uint data = 0, Action<SimConnectException> onError = null)
         {
-            mgr.SendEvent(this, objectId, data, onError);
+            mgr.SendEvent(this, objectId, data, onError ?? LogError);
         }
 
         public void SendSigned(uint objectId = 0, int data = 0, Action<SimConnectException> onError = null)
         {
-            mgr.SendEventSigned(this, objectId, data, onError);
+            mgr.SendEventSigned(this, objectId, data, onError ?? LogError);
+        }
+
+        private void LogError(SimConnectException exc)
+        {
+            log.Error?.Log($"Exception: {exc.Message}");
         }
     }
 }

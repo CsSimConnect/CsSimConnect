@@ -162,8 +162,14 @@ namespace CsSimConnect
             MessagePollerRetryPeriod = TimeSpan.FromMilliseconds(100);
 
             Info = new("CsSimConnect");
+
             OnOpen += SetConnectedSim;
+            OnClose += LogSimulatorShutdown;
+
+            OnConnect += LogConnectedState;
             OnConnect += InvokeConnectionStateChanged;
+
+            OnDisconnect += LogDisconnectedState;
             OnDisconnect += ResetErrorCallbacks;
             OnDisconnect += _ => InvokeConnectionStateChanged();
             OnDisconnect += _ => RunAutoConnect();
@@ -212,6 +218,22 @@ namespace CsSimConnect
             messagePoller.Start();
         }
 
+        private void LogConnectedState()
+        {
+            log.Info?.Log("Connected to Simulator");
+        }
+
+        private void LogDisconnectedState(bool connectionLost)
+        {
+            string reason = connectionLost ? "Connection lost" : "Disconnect called";
+            log.Info?.Log($"Disconnected from Simulator ({reason})");
+        }
+
+        private void LogSimulatorShutdown()
+        {
+            log.Info?.Log("Simulator shutting down");
+        }
+
         internal void InvokeConnectionStateChanged()
         {
             OnConnectionStateChange?.Invoke(UseAutoConnect, IsConnected);
@@ -246,11 +268,15 @@ namespace CsSimConnect
                 };
                 simulatorTypes = JsonSerializer.Deserialize<Dictionary<string, FlightSimType>>(text, options);
             }
+            ConnectedSim = simulatorTypes.GetValueOrDefault(info.Name, FlightSimType.Unknown);
             if (!simulatorTypes.ContainsKey(info.Name))
             {
                 log.Error?.Log("Connected to unknown simulator type '{0}'", info.Name);
             }
-            ConnectedSim = simulatorTypes.GetValueOrDefault(info.Name, FlightSimType.Unknown);
+            else
+            {
+                log.Info?.Log($"Connected to {info.Name} (type {ConnectedSim})");
+            }
         }
 
         public void Disconnect(bool connectionLost =false)
@@ -329,7 +355,6 @@ namespace CsSimConnect
                         break;
 
                     case RecvId.Quit:                    // 3
-                        log.Info?.Log("We are disconnected from '{0}'.", Info.Name);
                         OnClose?.Invoke();
                         Disconnect();
                         break;
