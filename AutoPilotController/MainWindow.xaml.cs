@@ -22,6 +22,7 @@ using Window = System.Windows.Window;
 using Visibility = System.Windows.Visibility;
 using RoutedEventArgs = System.Windows.RoutedEventArgs;
 using CsSimConnect.UIComponents.Domain;
+using System.Windows.Media;
 
 namespace AutoPilotController
 {
@@ -33,6 +34,7 @@ namespace AutoPilotController
         private static readonly Logger log = Logger.GetLogger(typeof(MainWindow));
 
         private readonly AIListViewModel aiList;
+        private readonly SimConnect simConnect = SimConnect.Instance;
 
         public MainWindow()
         {
@@ -40,13 +42,16 @@ namespace AutoPilotController
             DataContext = aiList;
             InitializeComponent();
 
-            if (SimConnect.Instance.IsConnected)
+            if (simConnect.IsConnected)
             {
                 log.Info?.Log("We're already connected, let's subscribe to the data.");
                 OnOpen();
                 aiList.RefreshList();
             }
-            SimConnect.Instance.OnOpen += OnOpen;
+            Dispatcher.Invoke(SetButtons);
+
+            simConnect.OnOpen += OnOpen;
+            simConnect.OnConnectionStateChange += (_, _) => Dispatcher.Invoke(SetButtons);
         }
 
         private void OnOpen(AppInfo obj = null)
@@ -135,7 +140,7 @@ namespace AutoPilotController
             Altitude.Text = NormalizeAltitude(currentState?.Altitude);
             IndicatorALT.Visibility = Indicator(currentState?.AltitudeHold);
             VerticalSpeed.Text = NormalizeVerticalSpeed(currentState?.VerticalSpeed);
-            IndicatorVS.Visibility = Indicator(currentState?.VerticalSpeedHold);
+            //IndicatorVS.Visibility = Indicator(currentState?.VerticalSpeedHold);
             Speed.Text = NormalizeSpeed(currentState?.IndicatedAirSpeed);
             IndicatorIAS.Visibility = Indicator(currentState?.SpeedHold);
             Nav1Course.Text = NormalizeHeading(currentState?.CourseNav1);
@@ -145,91 +150,161 @@ namespace AutoPilotController
             IndicatorBC.Visibility = Indicator(currentState?.BackCourseHold);
         }
 
+        // NAV1 Frequency
+
         private readonly ClientEvent nav1RadioSet = EventManager.GetEvent("nav1_radio_set");
+
         private void Nav1KeyDown(object sender, KeyEventArgs evt)
         {
             if (evt.Key == Key.Enter)
             {
                 string freq = NormalizeFreq(Nav1Freq.Text);
                 Nav1Freq.Text = freq;
-                nav1RadioSet.Send(data: FreqToBCD(freq), onError: exc => log.Error?.Log($"Exception: {exc.Message}"));
+                nav1RadioSet.Send(data: FreqToBCD(freq));
             }
         }
 
+        // NAV2 Frequency
+
         private readonly ClientEvent nav2RadioSet = EventManager.GetEvent("nav2_radio_set");
+
         private void Nav2KeyDown(object sender, KeyEventArgs evt)
         {
             if (evt.Key == Key.Enter)
             {
                 string freq = NormalizeFreq(Nav2Freq.Text);
                 Nav2Freq.Text = freq;
-                nav2RadioSet.Send(data: FreqToBCD(freq), onError: exc => log.Error?.Log($"Exception: {exc.Message}"));
+                nav2RadioSet.Send(data: FreqToBCD(freq));
             }
         }
 
+        // ADF Frequency
+
         private readonly ClientEvent adfRadioSet = EventManager.GetEvent("adf_complete_set");
+
         private void AdfKeyDown(object sender, KeyEventArgs evt)
         {
             if (evt.Key == Key.Enter)
             {
                 string freq = NormalizeFreq(AdfFreq.Text, 1);
                 AdfFreq.Text = freq;
-                adfRadioSet.Send(data: FreqToBCD(freq+"000"), onError: exc => log.Error?.Log($"Exception: {exc.Message}"));
+                adfRadioSet.Send(data: FreqToBCD(freq+"000"));
             }
         }
 
+        // AutoPilot Master switch
+
         private readonly ClientEvent apMasterEvent = EventManager.GetEvent("ap_master");
+
         private void ToggleAutoPilot(object sender, RoutedEventArgs e)
         {
             if (sender is Button apButton)
             {
                 log.Info?.Log("Toggle AP master");
-                apMasterEvent.Send(onError: exc => log.Error?.Log($"Exception: {exc.Message}"));
+                apMasterEvent.Send();
             }
         }
 
+        // Heading Hold switch
+
         private readonly ClientEvent hdgHoldEvent = EventManager.GetEvent("ap_hdg_hold");
+
         private void ToggleHeading(object sender, RoutedEventArgs e)
         {
             if (sender is Button apButton)
             {
                 log.Info?.Log("Toggle Heading Hold");
-                hdgHoldEvent.Send(onError: exc => log.Error?.Log($"Exception: {exc.Message}"));
+                hdgHoldEvent.Send();
             }
         }
 
+        // Heading bug
+
         private readonly ClientEvent headingSet = EventManager.GetEvent("heading_bug_set");
+
         private void HeadingKeyDown(object sender, KeyEventArgs evt)
         {
             if (evt.Key == Key.Enter)
             {
                 string heading = NormalizeHeading(uint.Parse(Heading.Text));
                 Heading.Text = heading;
-                headingSet.Send(data: uint.Parse(heading), onError: exc => log.Error?.Log($"Exception: {exc.Message}"));
+                headingSet.Send(data: uint.Parse(heading));
             }
         }
 
+        private readonly ClientEvent hdgInc = EventManager.GetEvent("heading_bug_inc");
+        private readonly ClientEvent hdgDec = EventManager.GetEvent("heading_bug_dec");
+
+        private void HdgWheel(object sender, MouseWheelEventArgs e)
+        {
+            if (e.Delta > 0)
+            {
+                hdgInc.Send();
+            }
+            else if (e.Delta < 0)
+            {
+                hdgDec.Send();
+            }
+        }
+
+        // Altitude Hold Switch
+
+        private bool useAltHold;
         private readonly ClientEvent altHoldEvent = EventManager.GetEvent("ap_alt_hold");
+        private readonly ClientEvent altSelOnEvent = EventManager.GetEvent("ap_panel_altitude_on");
+        private readonly ClientEvent altSelOffEvent = EventManager.GetEvent("ap_panel_altitude_off");
+
         private void ToggleAltitude(object sender, RoutedEventArgs e)
         {
-            if (sender is Button apButton)
+            if (sender is Button altButton)
             {
-                log.Info?.Log("Toggle Altitude Hold");
-                altHoldEvent.Send(onError: exc => log.Error?.Log($"Exception: {exc.Message}"));
+                if (useAltHold || (currentState ==  null))
+                {
+                    log.Info?.Log("Toggle Altitude Hold");
+                    altHoldEvent.Send();
+                }
+                else if (currentState?.AltitudeHold ?? true)
+                {
+                    log.Info?.Log("Set Altitude Hold OFF");
+                    altSelOffEvent.Send();
+                }
+                else
+                {
+                    log.Info?.Log("Set Altitude Hold ON");
+                    altSelOnEvent.Send();
+                }
             }
             UpdateUI();
         }
 
         private readonly ClientEvent altSet = EventManager.GetEvent("ap_alt_var_set_english");
+
         private void AltKeyDown(object sender, KeyEventArgs evt)
         {
             if (evt.Key == Key.Enter)
             {
                 string altitude = NormalizeAltitude(ParseNumber(Altitude.Text));
                 Altitude.Text = altitude;
-                altSet.Send(data: (uint)ParseNumber(altitude), onError: exc => log.Error?.Log($"Exception: {exc.Message}"));
+                altSet.Send(data: (uint)ParseNumber(altitude));
             }
         }
+
+        private readonly ClientEvent altInc = EventManager.GetEvent("ap_alt_var_inc");
+        private readonly ClientEvent altDec = EventManager.GetEvent("ap_alt_var_dec");
+
+        private void AltWheel(object sender, MouseWheelEventArgs e)
+        {
+            if (e.Delta > 0)
+            {
+                altInc.Send();
+            }
+            else if (e.Delta < 0)
+            {
+                altDec.Send();
+            }
+        }
+
+        // VS Speed Hold
 
         private readonly ClientEvent vsHoldEvent = EventManager.GetEvent("ap_vs_hold");
         private void ToggleVerticalSpeed(object sender, RoutedEventArgs e)
@@ -237,7 +312,7 @@ namespace AutoPilotController
             if (sender is Button apButton)
             {
                 log.Info?.Log("Toggle Vertical Speed Hold");
-                vsHoldEvent.Send(onError: exc => log.Error?.Log($"Exception: {exc.Message}"));
+                vsHoldEvent.Send();
             }
             UpdateUI();
         }
@@ -249,9 +324,26 @@ namespace AutoPilotController
             {
                 string vs = NormalizeVerticalSpeed(ParseNumber(VerticalSpeed.Text));
                 VerticalSpeed.Text = vs;
-                vsSet.SendSigned(data: ParseNumber(vs), onError: exc => log.Error?.Log($"Exception: {exc.Message}"));
+                vsSet.SendSigned(data: ParseNumber(vs));
             }
         }
+
+        private readonly ClientEvent vsInc = EventManager.GetEvent("ap_vs_var_inc");
+        private readonly ClientEvent vsDec = EventManager.GetEvent("ap_vs_var_dec");
+
+        private void VSWheel(object sender, MouseWheelEventArgs e)
+        {
+            if (e.Delta > 0)
+            {
+                vsInc.Send();
+            }
+            else if (e.Delta < 0)
+            {
+                vsDec.Send();
+            }
+        }
+
+        // SPEED Hold
 
         private readonly ClientEvent speedHoldEvent = EventManager.GetEvent("ap_panel_speed_hold_toggle");
         private void ToggleSpeed(object sender, RoutedEventArgs e)
@@ -259,7 +351,7 @@ namespace AutoPilotController
             if (sender is Button apButton)
             {
                 log.Info?.Log("Toggle Speed/IAS Hold");
-                speedHoldEvent.Send(onError: exc => log.Error?.Log($"Exception: {exc.Message}"));
+                speedHoldEvent.Send();
             }
             UpdateUI();
         }
@@ -271,9 +363,26 @@ namespace AutoPilotController
             {
                 string speed = NormalizeSpeed(ParseNumber(Speed.Text));
                 Speed.Text = speed;
-                speedSet.SendSigned(data: ParseNumber(speed), onError: exc => log.Error?.Log($"Exception: {exc.Message}"));
+                speedSet.SendSigned(data: ParseNumber(speed));
             }
         }
+
+        private readonly ClientEvent speedInc = EventManager.GetEvent("ap_spd_var_inc");
+        private readonly ClientEvent speedDec = EventManager.GetEvent("ap_spd_var_dec");
+
+        private void SpeedWheel(object sender, MouseWheelEventArgs e)
+        {
+            if (e.Delta > 0)
+            {
+                speedInc.Send();
+            }
+            else if (e.Delta < 0)
+            {
+                speedDec.Send();
+            }
+        }
+
+        // NAV1 Hold
 
         private readonly ClientEvent nav1HoldEvent = EventManager.GetEvent("ap_nav1_hold");
         private void ToggleNav1Hold(object sender, RoutedEventArgs e)
@@ -281,10 +390,12 @@ namespace AutoPilotController
             if (sender is Button apButton)
             {
                 log.Info?.Log("Toggle NAV1 Hold");
-                nav1HoldEvent.Send(onError: exc => log.Error?.Log($"Exception: {exc.Message}"));
+                nav1HoldEvent.Send();
             }
             UpdateUI();
         }
+
+        // NAV1 Course set
 
         private readonly ClientEvent nav1CourseSet = EventManager.GetEvent("vor1_set");
         private void Nav1CourseKeyDown(object sender, KeyEventArgs evt)
@@ -294,9 +405,26 @@ namespace AutoPilotController
                 string course = NormalizeHeading(uint.Parse(Nav1Course.Text));
                 log.Debug?.Log($"NAV1 Course normalized from {Nav1Course.Text} to {course}");
                 Nav1Course.Text = course;
-                nav1CourseSet.Send(data: uint.Parse(course), onError: exc => log.Error?.Log($"Exception: {exc.Message}"));
+                nav1CourseSet.Send(data: uint.Parse(course));
             }
         }
+
+        private readonly ClientEvent vor1Inc = EventManager.GetEvent("vor1_obi_inc");
+        private readonly ClientEvent vor1Dec = EventManager.GetEvent("vor1_obi_dec");
+
+        private void Vor1Wheel(object sender, MouseWheelEventArgs e)
+        {
+            if (e.Delta > 0)
+            {
+                vor1Inc.Send();
+            }
+            else if (e.Delta < 0)
+            {
+                vor1Dec.Send();
+            }
+        }
+
+        // Nav2 Course set
 
         private readonly ClientEvent nav2CourseSet = EventManager.GetEvent("vor2_set");
         private void Nav2CourseKeyDown(object sender, KeyEventArgs evt)
@@ -306,9 +434,26 @@ namespace AutoPilotController
                 string course = NormalizeHeading(uint.Parse(Nav2Course.Text));
                 log.Debug?.Log($"NAV1 Course normalized from {Nav2Course.Text} to {course}");
                 Nav2Course.Text = course;
-                nav2CourseSet.Send(data: uint.Parse(course), onError: exc => log.Error?.Log($"Exception: {exc.Message}"));
+                nav2CourseSet.Send(data: uint.Parse(course));
             }
         }
+
+        private readonly ClientEvent vor2Inc = EventManager.GetEvent("vor2_obi_inc");
+        private readonly ClientEvent vor2Dec = EventManager.GetEvent("vor2_obi_dec");
+
+        private void Vor2Wheel(object sender, MouseWheelEventArgs e)
+        {
+            if (e.Delta > 0)
+            {
+                vor2Inc.Send();
+            }
+            else if (e.Delta < 0)
+            {
+                vor2Dec.Send();
+            }
+        }
+
+        // APProach hold
 
         private readonly ClientEvent appHoldEvent = EventManager.GetEvent("ap_apr_hold");
         private void ToggleApproach(object sender, RoutedEventArgs e)
@@ -316,10 +461,12 @@ namespace AutoPilotController
             if (sender is Button apButton)
             {
                 log.Info?.Log("Toggle Approach Hold");
-                appHoldEvent.Send(onError: exc => log.Error?.Log($"Exception: {exc.Message}"));
+                appHoldEvent.Send();
             }
             UpdateUI();
         }
+
+        // BackCourse Hold
 
         private readonly ClientEvent bcHoldEvent = EventManager.GetEvent("ap_bc_hold");
         private void ToggleBackCourseHold(object sender, RoutedEventArgs e)
@@ -327,9 +474,58 @@ namespace AutoPilotController
             if (sender is Button apButton)
             {
                 log.Info?.Log("Toggle BackCourse Hold");
-                bcHoldEvent.Send(onError: exc => log.Error?.Log($"Exception: {exc.Message}"));
+                bcHoldEvent.Send();
             }
             UpdateUI();
+        }
+
+        private void DoSettings(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void DoClose(object sender, RoutedEventArgs e)
+        {
+            Close();
+        }
+
+        private readonly SolidColorBrush blackBrush = new SolidColorBrush(Colors.Black);
+        private readonly SolidColorBrush grayBrush = new SolidColorBrush(Colors.DarkGray);
+
+        private void SetButtons()
+        {
+            iLink.Foreground = simConnect.IsConnected ? blackBrush : grayBrush;
+            iLinkOff.Visibility = simConnect.IsConnected ? Visibility.Hidden : Visibility.Visible;
+
+            iRenew.Foreground = simConnect.UseAutoConnect ? blackBrush : grayBrush;
+            iNoRenew.Visibility = simConnect.UseAutoConnect ? Visibility.Hidden : Visibility.Visible;
+        }
+
+        private void DoConnect(object sender, RoutedEventArgs e)
+        {
+            if (simConnect.IsConnected)
+            {
+                simConnect.Disconnect();
+            }
+            else
+            {
+                simConnect.Connect();
+            }
+            Dispatcher.Invoke(SetButtons);
+        }
+
+        private void DoAutoConnect(object sender, RoutedEventArgs e)
+        {
+            simConnect.UseAutoConnect = !simConnect.UseAutoConnect;
+            Dispatcher.Invoke(SetButtons);
+        }
+
+        private void StartDrag(object sender, MouseButtonEventArgs e)
+        {
+            if (e.ChangedButton == MouseButton.Left)
+            {
+                this.DragMove();
+            }
         }
     }
 }

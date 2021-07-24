@@ -29,16 +29,16 @@ namespace CsSimConnect.UIComponents
             TextChanged += new TextChangedEventHandler(MaskedTextBox_TextChanged);
         }
 
-        void MaskedTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        private void MaskedTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
             if (sender is FrequencyTextBox tbEntry && tbEntry.Text.Length > 0)
             {
-                tbEntry.Text = formatNumber(tbEntry.Text, FreqStyle);
+                tbEntry.Text = FormatNumber(tbEntry.Text, FreqStyle);
                 CaretIndex = tbEntry.Text.Length;
             }
         }
 
-        public static string formatNumber(string FieldText, string style)
+        public static string FormatNumber(string FieldText, string style)
         {
             bool navStyle = style.ToLower().Equals("nav");
             int maxLen = navStyle ? 6 : 5;
