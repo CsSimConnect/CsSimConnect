@@ -481,7 +481,7 @@ namespace AutoPilotController
 
         private void DoSettings(object sender, RoutedEventArgs e)
         {
-
+            new SettingsDialog().ShowDialog();
         }
 
         private void DoClose(object sender, RoutedEventArgs e)

@@ -1,0 +1,51 @@
+﻿<Window x:Class="AutoPilotController.SettingsDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        xmlns:local="clr-namespace:AutoPilotController"
+        mc:Ignorable="d"
+        TextElement.Foreground="{DynamicResource MaterialDesignBody}"
+        TextElement.FontWeight="Regular"
+        TextElement.FontSize="13"
+        TextOptions.TextFormattingMode="Ideal" 
+        TextOptions.TextRenderingMode="Auto"        
+        Background="{DynamicResource MaterialDesignPaper}"
+        FontFamily="{DynamicResource MaterialDesignFont}"
+        Title="Settings" Height="450" Width="800" WindowStyle="ToolWindow">
+    <DockPanel LastChildFill="True">
+        <materialDesign:ColorZone DockPanel.Dock="Top" Height="24"
+            Mode="PrimaryLight" Foreground="White">
+            <TextBlock Text="Settings" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+        </materialDesign:ColorZone>
+        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Height="48">
+            <Button Margin="5" Style="{StaticResource MaterialDesignFlatButton}" Content="CANCEL" Click="DoCancel"/>
+            <Button Margin="5" Style="{StaticResource MaterialDesignFlatMidBgButton}" Content="OK" Click="DoOk"/>
+        </StackPanel>
+        <StackPanel Orientation="Vertical" Margin="5">
+            <materialDesign:Card>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <TextBlock Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" Margin="5"
+                               HorizontalAlignment="Left"
+                               FontWeight="Bold" Text="Simulator" />
+
+                    <TextBlock Grid.Row="1" Grid.Column="0" Margin="10 0 0 0" Text="Auto-connect" />
+                    <ToggleButton Grid.Row="1" Grid.Column="1" Style="{StaticResource MaterialDesignSwitchToggleButton}" ToolTip="Auto-connect" x:Name="bAutoConnect" />
+
+                    <TextBlock Grid.Row="2" Grid.Column="0" Margin="10 0 0 0" Text="Interop module" />
+                    <ComboBox Grid.Row="2" Grid.Column="1" materialDesign:ComboBoxAssist.ClassicMode="True" />
+                </Grid>
+            </materialDesign:Card>
+        </StackPanel>
+    </DockPanel>
+</Window>
