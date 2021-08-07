@@ -19,13 +19,32 @@ using System.Windows.Controls;
 
 namespace CsSimConnect.UIComponents
 {
-    public class FrequencyTextBox : TextBox
+    public class FrequencyTextBox : NumberTextBox
     {
-        public string FreqStyle { get; set; }
+        private string freqStyle = "NAV";
+
+        public string FreqStyle
+        {
+            get => freqStyle;
+            set
+            {
+                string upperValue = value.ToUpper();
+                if (upperValue.Equals("NAV"))
+                {
+                    NumDigits = 6;
+                }
+                else if (upperValue.Equals("ADF"))
+                {
+                    NumDigits = 5;
+                }
+                freqStyle = upperValue;
+            }
+        }
 
         public FrequencyTextBox()
         {
             FreqStyle = "NAV";
+
             TextChanged += new TextChangedEventHandler(MaskedTextBox_TextChanged);
         }
 
@@ -33,20 +52,18 @@ namespace CsSimConnect.UIComponents
         {
             if (sender is FrequencyTextBox tbEntry && tbEntry.Text.Length > 0)
             {
-                tbEntry.Text = FormatNumber(tbEntry.Text, FreqStyle);
+                tbEntry.Text = FormatNumber(tbEntry.Text);
                 CaretIndex = tbEntry.Text.Length;
             }
         }
 
-        public static string FormatNumber(string FieldText, string style)
+        override public string FormatNumber(string fieldText)
         {
-            bool navStyle = style.ToLower().Equals("nav");
-            int maxLen = navStyle ? 6 : 5;
-            StringBuilder sb = new StringBuilder();
+            StringBuilder sb = new();
 
-            if (FieldText != null)
+            if (fieldText != null)
             {
-                foreach (char c in FieldText)
+                foreach (char c in fieldText)
                 {
                     if (char.IsDigit(c))
                     {
@@ -56,7 +73,7 @@ namespace CsSimConnect.UIComponents
                         }
                         sb.Append(c);
                     }
-                    if (sb.Length == maxLen)
+                    if (sb.Length == NumDigits)
                     {
                         break;
                     }

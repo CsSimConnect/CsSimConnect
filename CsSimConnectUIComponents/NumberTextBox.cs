@@ -14,13 +14,18 @@
  * limitations under the License.
  */
 
+using System;
 using System.Text;
 using System.Windows.Controls;
+using System.Windows.Input;
 
 namespace CsSimConnect.UIComponents
 {
+
     public class NumberTextBox : TextBox
     {
+        private static readonly Logger log = Logger.GetLogger(typeof(NumberTextBox));
+
 
         public int NumDigits { get; set; }
         public bool Positive { get; set; }
@@ -29,6 +34,9 @@ namespace CsSimConnect.UIComponents
         public NumberTextBox()
         {
             NumDigits = 3;
+            Positive = true;
+            AddTicks = false;
+
             TextChanged += new TextChangedEventHandler(MaskedTextBox_TextChanged);
         }
 
@@ -40,40 +48,114 @@ namespace CsSimConnect.UIComponents
             }
         }
 
-        public static string Normalize(string s)
+        public string Normalize(string s)
         {
-            return s?.Replace(",", "").Trim() ?? "0";
+            if (s == null) return "0";
+
+            StringBuilder bld = new();
+            uint digitCount = 0;
+            foreach (char c in s)
+            {
+                if (!Positive && ((bld.Length == 0) && (c == '-')))
+                {
+                    bld.Append(c);
+                    continue;
+                }
+                else if (char.IsDigit(c) && (digitCount < NumDigits))
+                {
+                    bld.Append(c);
+                }
+                else
+                {
+                    log.Warn?.Log($"Dropping character '{c}' from field value \"{s}\".");
+                }
+            }
+            return bld.ToString();
         }
 
-        public string FormatNumber(string FieldText)
+        public virtual string FormatNumber(string fieldText)
         {
-            int digitCount = 0;
-            StringBuilder sb = new();
+            if (fieldText == null) return "0";
+            if (!AddTicks) return fieldText;
 
-            if (FieldText != null)
+            char[] s = Normalize(fieldText).ToCharArray();
+            Array.Reverse(s);
+
+            StringBuilder sb = new();
+            uint digits = 3;
+
+            foreach (char c in s)
             {
-                foreach (char c in FieldText)
+                if ((digits == 0) && char.IsDigit(c))
                 {
-                    if (!Positive && (c == '-'))
-                    {
-                        sb.Append(c);
-                    }
-                    else if (char.IsDigit(c))
-                    {
-                        sb.Append(c);
-                        if (++digitCount == NumDigits)
-                        {
-                            break;
-                        }
-                    }
+                    sb.Insert(0, ',');
+                    digits = 3;
                 }
+                sb.Insert(0, c);
             }
             return sb.ToString();
         }
 
-        public string Normalized() => Normalize(Text);
-        public int AsInt() => int.Parse(Normalize(Text));
-        public uint AsUInt() => uint.Parse(Normalize(Text));
+        public void Set(string value)
+        {
+            Text = FormatNumber(value);
+        }
 
+        public void Set(int? value) => Set(value?.ToString());
+
+        public void ReFormat()
+        {
+            Set(Text);
+        }
+
+        public string Normalized() => Normalize(Text);
+
+        public int AsInt()
+        {
+            try
+            {
+                return int.Parse(Normalize(Text));
+            }
+            catch (Exception e)
+            {
+                log.Error?.Log($"Exception while parsing number: {e.Message}");
+            }
+            return 0;
+        }
+
+        public uint AsUInt()
+        {
+            try
+            {
+                return uint.Parse(Normalize(Text));
+            }
+            catch (Exception e)
+            {
+                log.Error?.Log($"Exception while parsing number: {e.Message}");
+            }
+            return 0;
+        }
+
+        protected override void OnGotKeyboardFocus(KeyboardFocusChangedEventArgs e)
+        {
+            base.OnGotKeyboardFocus(e);
+            if (SelectionLength == 0)
+            {
+                SelectAll();
+            }
+        }
+
+        protected override void OnPreviewMouseLeftButtonDown(MouseButtonEventArgs e)
+        {
+            if (!IsKeyboardFocusWithin)
+            {
+                Focus();
+                e.Handled = true;
+            }
+            else
+            {
+                base.OnPreviewMouseLeftButtonDown(e);
+            }
+        }
     }
 }

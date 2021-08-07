@@ -23,6 +23,8 @@ using Visibility = System.Windows.Visibility;
 using RoutedEventArgs = System.Windows.RoutedEventArgs;
 using CsSimConnect.UIComponents.Domain;
 using System.Windows.Media;
+using System;
+using System.Text;
 
 namespace AutoPilotController
 {
@@ -116,17 +118,8 @@ namespace AutoPilotController
             if (hdg == 0) hdg = 360;
             return $"{hdg:000}";
         }
-        private static string NormalizeHeading(int? hdg) => NormalizeHeading((uint)(hdg ?? 0));
 
-        private static string NormalizeAltitude(int? alt) => (alt == null) ? "0" : $"{alt:##,###}";
-
-        private static string NormalizeSpeed(int? speed) => (speed == null) ? "0" : $"{speed}";
-
-        private static int ParseNumber(string vs) => int.Parse(vs.Replace(",", ""));
-
-        private static string NormalizeVerticalSpeed(int? vs) => (vs == null) ? "0" : $"{vs}";
-
-        private Visibility Indicator(bool? isVisible) => (isVisible ?? false) ? Visibility.Visible : Visibility.Hidden;
+        private static Visibility Indicator(bool? isVisible) => (isVisible ?? false) ? Visibility.Visible : Visibility.Hidden;
 
         private void UpdateUI()
         {
@@ -135,17 +128,17 @@ namespace AutoPilotController
             AdfFreq.Text = BCDToFreq(currentState?.FreqAdf ?? 0);
 
             IndicatorAP.Visibility = Indicator(currentState?.AutoPilotMaster);
-            Heading.Text = NormalizeHeading(currentState?.Heading);
+            Heading.Set(currentState?.Heading);
             IndicatorHDG.Visibility = Indicator(currentState?.HeadingHold);
-            Altitude.Text = NormalizeAltitude(currentState?.Altitude);
+            Altitude.Set(currentState?.Altitude);
             IndicatorALT.Visibility = Indicator(currentState?.AltitudeHold);
-            VerticalSpeed.Text = NormalizeVerticalSpeed(currentState?.VerticalSpeed);
+            VerticalSpeed.Set(currentState?.VerticalSpeed);
             //IndicatorVS.Visibility = Indicator(currentState?.VerticalSpeedHold);
-            Speed.Text = NormalizeSpeed(currentState?.IndicatedAirSpeed);
+            Speed.Set(currentState?.IndicatedAirSpeed);
             IndicatorIAS.Visibility = Indicator(currentState?.SpeedHold);
-            Nav1Course.Text = NormalizeHeading(currentState?.CourseNav1);
+            Nav1Course.Set(currentState?.CourseNav1);
             IndicatorNAV1.Visibility = Indicator(currentState?.Nav1Hold);
-            Nav2Course.Text = NormalizeHeading(currentState?.CourseNav2);
+            Nav2Course.Set(currentState?.CourseNav2);
             IndicatorAPP.Visibility = Indicator(currentState?.ApproachHold);
             IndicatorBC.Visibility = Indicator(currentState?.BackCourseHold);
         }
@@ -161,6 +154,7 @@ namespace AutoPilotController
                 string freq = NormalizeFreq(Nav1Freq.Text);
                 Nav1Freq.Text = freq;
                 nav1RadioSet.Send(data: FreqToBCD(freq));
+                Keyboard.ClearFocus();
             }
         }
 
@@ -175,6 +169,7 @@ namespace AutoPilotController
                 string freq = NormalizeFreq(Nav2Freq.Text);
                 Nav2Freq.Text = freq;
                 nav2RadioSet.Send(data: FreqToBCD(freq));
+                Keyboard.ClearFocus();
             }
         }
 
@@ -189,6 +184,7 @@ namespace AutoPilotController
                 string freq = NormalizeFreq(AdfFreq.Text, 1);
                 AdfFreq.Text = freq;
                 adfRadioSet.Send(data: FreqToBCD(freq+"000"));
+                Keyboard.ClearFocus();
             }
         }
 
@@ -229,6 +225,7 @@ namespace AutoPilotController
                 string heading = NormalizeHeading(uint.Parse(Heading.Text));
                 Heading.Text = heading;
                 headingSet.Send(data: uint.Parse(heading));
+                Keyboard.ClearFocus();
             }
         }
 
@@ -283,9 +280,9 @@ namespace AutoPilotController
         {
             if (evt.Key == Key.Enter)
             {
-                string altitude = NormalizeAltitude(ParseNumber(Altitude.Text));
-                Altitude.Text = altitude;
-                altSet.Send(data: (uint)ParseNumber(altitude));
+                Altitude.ReFormat();
+                altSet.Send(data: Altitude.AsUInt());
+                Keyboard.ClearFocus();
             }
         }
 
@@ -322,9 +319,9 @@ namespace AutoPilotController
         {
             if (evt.Key == Key.Enter)
             {
-                string vs = NormalizeVerticalSpeed(ParseNumber(VerticalSpeed.Text));
-                VerticalSpeed.Text = vs;
-                vsSet.SendSigned(data: ParseNumber(vs));
+                VerticalSpeed.ReFormat();
+                vsSet.SendSigned(data: VerticalSpeed.AsInt());
+                Keyboard.ClearFocus();
             }
         }
 
@@ -361,9 +358,9 @@ namespace AutoPilotController
         {
             if (evt.Key == Key.Enter)
             {
-                string speed = NormalizeSpeed(ParseNumber(Speed.Text));
-                Speed.Text = speed;
-                speedSet.SendSigned(data: ParseNumber(speed));
+                Speed.ReFormat();
+                speedSet.SendSigned(data: Speed.AsInt());
+                Keyboard.ClearFocus();
             }
         }
 
@@ -402,10 +399,9 @@ namespace AutoPilotController
         {
             if (evt.Key == Key.Enter)
             {
-                string course = NormalizeHeading(uint.Parse(Nav1Course.Text));
-                log.Debug?.Log($"NAV1 Course normalized from {Nav1Course.Text} to {course}");
-                Nav1Course.Text = course;
-                nav1CourseSet.Send(data: uint.Parse(course));
+                Nav1Course.ReFormat();
+                nav1CourseSet.Send(data: Nav1Course.AsUInt());
+                Keyboard.ClearFocus();
             }
         }
 
@@ -431,10 +427,9 @@ namespace AutoPilotController
         {
             if (evt.Key == Key.Enter)
             {
-                string course = NormalizeHeading(uint.Parse(Nav2Course.Text));
-                log.Debug?.Log($"NAV1 Course normalized from {Nav2Course.Text} to {course}");
-                Nav2Course.Text = course;
-                nav2CourseSet.Send(data: uint.Parse(course));
+                Nav2Course.ReFormat();
+                nav2CourseSet.Send(data: Nav2Course.AsUInt());
+                Keyboard.ClearFocus();
             }
         }
 
@@ -489,8 +484,8 @@ namespace AutoPilotController
             Close();
         }
 
-        private readonly SolidColorBrush blackBrush = new SolidColorBrush(Colors.Black);
-        private readonly SolidColorBrush grayBrush = new SolidColorBrush(Colors.DarkGray);
+        private readonly SolidColorBrush blackBrush = new(Colors.Black);
+        private readonly SolidColorBrush grayBrush = new(Colors.DarkGray);
 
         private void SetButtons()
         {
