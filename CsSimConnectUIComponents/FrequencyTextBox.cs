@@ -14,13 +14,12 @@
  * limitations under the License.
  */
 
-using System.Text;
-using System.Windows.Controls;
-
 namespace CsSimConnect.UIComponents
 {
     public class FrequencyTextBox : NumberTextBox
     {
+
+        public int FracDigits { get; set; }
         private string freqStyle = "NAV";
 
         public string FreqStyle
@@ -31,11 +30,13 @@ namespace CsSimConnect.UIComponents
                 string upperValue = value.ToUpper();
                 if (upperValue.Equals("NAV"))
                 {
-                    NumDigits = 6;
+                    NumDigits = 5;
+                    FracDigits = 2;
                 }
                 else if (upperValue.Equals("ADF"))
                 {
-                    NumDigits = 5;
+                    NumDigits = 4;
+                    FracDigits = 1;
                 }
                 freqStyle = upperValue;
             }
@@ -44,42 +45,60 @@ namespace CsSimConnect.UIComponents
         public FrequencyTextBox()
         {
             FreqStyle = "NAV";
-
-            TextChanged += new TextChangedEventHandler(MaskedTextBox_TextChanged);
         }
 
-        private void MaskedTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        public string NormalizeFreq(string input)
         {
-            if (sender is FrequencyTextBox tbEntry && tbEntry.Text.Length > 0)
+            string[] freqParts = input.Split('.');
+            if (freqParts == null || (freqParts.Length == 0)) return "0";
+
+            if (freqParts[0].Length > 3) freqParts[0] = freqParts[0].Substring(0, 3);
+            if (freqParts.Length > 1)
             {
-                tbEntry.Text = FormatNumber(tbEntry.Text);
-                CaretIndex = tbEntry.Text.Length;
+                return freqParts[0] + "." + (freqParts[1] + "000").Substring(0, FracDigits);
             }
+            return (FracDigits > 0) ? (freqParts[0] + ".000".Substring(0, FracDigits + 1)) : freqParts[0];
         }
 
-        override public string FormatNumber(string fieldText)
+        public override uint AsUInt()
         {
-            StringBuilder sb = new();
-
-            if (fieldText != null)
+            uint result = 0;
+            foreach (char c in Text)
             {
-                foreach (char c in fieldText)
+                if (char.IsDigit(c))
                 {
-                    if (char.IsDigit(c))
-                    {
-                        if (sb.Length == 3)
-                        {
-                            sb.Append('.');
-                        }
-                        sb.Append(c);
-                    }
-                    if (sb.Length == NumDigits)
-                    {
-                        break;
-                    }
+                    result = (uint)((result << 4) + (c - '0'));
                 }
             }
-            return sb.ToString();
+            if (FreqStyle.Equals("ADF"))
+            {
+                result <<= 12;
+            }
+            return result;
+        }
+
+        public void FromBCD(int freq)
+        {
+            if (freq < 0x100)
+            {
+                Set("0.00");
+            }
+            string result = "";
+            while (freq > 0)
+            {
+                result = ((char)('0' + (freq & 0xf))) + result;
+                if (result.Length == 4)
+                {
+                    result = "." + result;
+                }
+                freq >>= 4;
+            }
+            Set(result.Substring(0, result.Length - 2));
+        }
+
+        public override string FormatNumber(string fieldText)
+        {
+            return NormalizeFreq(fieldText);
         }
 
     }

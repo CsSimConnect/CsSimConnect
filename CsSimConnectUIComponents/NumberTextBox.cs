@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+using CsSimConnect.Events;
 using System;
 using System.Text;
 using System.Windows.Controls;
@@ -31,26 +32,65 @@ namespace CsSimConnect.UIComponents
         public bool Positive { get; set; }
         public bool AddTicks { get; set; }
 
+        private string wheelUpEventName;
+        private ClientEvent wheelUpEvent;
+        public string WheelUpEvent {
+            get => wheelUpEventName;
+            set {
+                wheelUpEventName = value;
+                wheelUpEvent = EventManager.GetEvent(wheelUpEventName);
+            }
+        }
+
+        private string wheelDownEventName;
+        private ClientEvent wheelDownEvent;
+        public string WheelDownEvent
+        {
+            get => wheelDownEventName;
+            set
+            {
+                wheelDownEventName = value;
+                wheelDownEvent = EventManager.GetEvent(wheelDownEventName);
+            }
+        }
+
+        private string setValueEventName;
+        protected ClientEvent setValueEvent;
+        public string SetValueEvent
+        {
+            get => setValueEventName;
+            set
+            {
+                setValueEventName = value;
+                setValueEvent = EventManager.GetEvent(setValueEventName);
+            }
+        }
+
+        private string setSignedValueEventName;
+        protected ClientEvent setSignedValueEvent;
+        public string SetSignedValueEvent
+        {
+            get => setSignedValueEventName;
+            set
+            {
+                setSignedValueEventName = value;
+                setSignedValueEvent = EventManager.GetEvent(setSignedValueEventName);
+            }
+        }
+
         public NumberTextBox()
         {
             NumDigits = 3;
             Positive = true;
             AddTicks = false;
-
-            TextChanged += new TextChangedEventHandler(MaskedTextBox_TextChanged);
-        }
-
-        void MaskedTextBox_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            if (sender is FrequencyTextBox tbEntry && tbEntry.Text.Length > 0)
-            {
-                tbEntry.Text = FormatNumber(tbEntry.Text);
-            }
         }
 
         public string Normalize(string s)
         {
-            if (s == null) return "0";
+            if (s == null)
+            {
+                return "0";
+            }
 
             StringBuilder bld = new();
             uint digitCount = 0;
@@ -92,6 +132,7 @@ namespace CsSimConnect.UIComponents
                     digits = 3;
                 }
                 sb.Insert(0, c);
+                digits--;
             }
             return sb.ToString();
         }
@@ -110,7 +151,7 @@ namespace CsSimConnect.UIComponents
 
         public string Normalized() => Normalize(Text);
 
-        public int AsInt()
+        public virtual int AsInt()
         {
             try
             {
@@ -123,7 +164,7 @@ namespace CsSimConnect.UIComponents
             return 0;
         }
 
-        public uint AsUInt()
+        public virtual uint AsUInt()
         {
             try
             {
@@ -145,6 +186,20 @@ namespace CsSimConnect.UIComponents
             }
         }
 
+        protected override void OnKeyDown(KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter)
+            {
+                ReFormat();
+
+                setValueEvent?.Send(data: AsUInt());
+                setSignedValueEvent?.SendSigned(data: AsInt());
+
+                Keyboard.ClearFocus();
+            }
+            base.OnKeyDown(e);
+        }
+
         protected override void OnPreviewMouseLeftButtonDown(MouseButtonEventArgs e)
         {
             if (!IsKeyboardFocusWithin)
@@ -156,6 +211,19 @@ namespace CsSimConnect.UIComponents
             {
                 base.OnPreviewMouseLeftButtonDown(e);
             }
+        }
+
+        protected override void OnMouseWheel(MouseWheelEventArgs e)
+        {
+            if (e.Delta > 0)
+            {
+                wheelUpEvent?.Send();
+            }
+            else if (e.Delta < 0)
+            {
+                wheelDownEvent?.Send();
+            }
+            base.OnMouseWheel(e);
         }
     }
 }
