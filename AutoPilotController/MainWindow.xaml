@@ -75,45 +75,54 @@
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
-            <apc:FrequencyTextBox Grid.Row="0" Grid.Column="0" Width="50" Height="14" Margin="0,5,0,0" Padding="0" HorizontalAlignment="Right" x:Name="Nav1Freq" Style="{StaticResource MaterialDesignTextBox}" FreqStyle="NAV" materialDesign:HintAssist.Hint="000.00" KeyDown="Nav1KeyDown" />
+            <apc:FrequencyTextBox Grid.Row="0" Grid.Column="0"
+                                  Width="50" Height="14" Margin="0,5,0,0" Padding="0" HorizontalAlignment="Right"
+                                  x:Name="Nav1Freq" FreqStyle="NAV" SetValueEvent="nav1_radio_set"
+                                  Style="{StaticResource MaterialDesignTextBox}" materialDesign:HintAssist.Hint="000.00" />
             <TextBlock Grid.Row="0" Grid.Column="1" Text="NAV1" Margin="5,5,0,0" />
 
-            <apc:FrequencyTextBox Grid.Row="1" Grid.Column="0" Width="50" Height="14" Margin="0,5,0,0" Padding="0" HorizontalAlignment="Right" x:Name="Nav2Freq" Style="{StaticResource MaterialDesignTextBox}" FreqStyle="NAV" materialDesign:HintAssist.Hint="000.00" KeyDown="Nav2KeyDown" />
+            <apc:FrequencyTextBox Grid.Row="1" Grid.Column="0"
+                                  Width="50" Height="14" Margin="0,5,0,0" Padding="0" HorizontalAlignment="Right"
+                                  x:Name="Nav2Freq" FreqStyle="NAV" SetValueEvent="nav2_radio_set"
+                                  Style="{StaticResource MaterialDesignTextBox}" materialDesign:HintAssist.Hint="000.00" />
             <TextBlock Grid.Row="1" Grid.Column="1" Text="NAV2" Margin="5,5,0,0" />
 
-            <apc:FrequencyTextBox Grid.Row="2" Grid.Column="0" Width="50" Height="14" Margin="0,5,0,0" Padding="0" HorizontalAlignment="Right" x:Name="AdfFreq" Style="{StaticResource MaterialDesignTextBox}" FreqStyle="ADF" materialDesign:HintAssist.Hint="000.0" KeyDown="AdfKeyDown" />
+            <apc:FrequencyTextBox Grid.Row="2" Grid.Column="0"
+                                  Width="50" Height="14" Margin="0,5,0,0" Padding="0" HorizontalAlignment="Right"
+                                  x:Name="AdfFreq" FreqStyle="ADF" SetValueEvent="adf_complete_set"
+                                  Style="{StaticResource MaterialDesignTextBox}" materialDesign:HintAssist.Hint="000.0" />
             <TextBlock Grid.Row="2" Grid.Column="1" Text="ADF" Margin="5,5,0,0" />
 
-            <Button Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2"
-                    Width="130" Height="20" Margin="0,5,0,0" Padding="5,0,5,0" HorizontalAlignment="Center" HorizontalContentAlignment="Stretch"
-                    Style="{StaticResource MaterialDesignRaisedAccentButton}"
-                    Click="ToggleAutoPilot">
+            <apc:ClientEventButton Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2"
+                                   Width="130" Height="20" Margin="0,5,0,0" Padding="5,0,5,0" HorizontalAlignment="Center" HorizontalContentAlignment="Stretch"
+                                   Style="{StaticResource MaterialDesignRaisedAccentButton}"
+                                   ClientEvent="ap_master">
                 <DockPanel>
                     <materialDesign:PackIcon DockPanel.Dock="Right" Kind="CheckboxBlank" Foreground="Red" Visibility="Hidden" x:Name="IndicatorAP" />
                     <TextBlock Text="Autopilot" FontWeight="Light" HorizontalAlignment="Center" />
                 </DockPanel>
-            </Button>
+            </apc:ClientEventButton>
 
-            <apc:NumberTextBox Grid.Row="4" Grid.Column="0"
+            <apc:HeadingTextBox Grid.Row="4" Grid.Column="0"
                                Width="50" Height="14" Margin="0,5,0,0" Padding="0" HorizontalAlignment="Right"
-                               x:Name="Heading" NumDigits="3" Positive="True" AddTicks="False"
-                               Style="{StaticResource MaterialDesignTextBox}" materialDesign:HintAssist.Hint="000"
-                               KeyDown="HeadingKeyDown" MouseWheel="HdgWheel" />
-            <Button Grid.Row="4" Grid.Column="1"
-                    Height="20" Width="65" Margin="5,5,0,0" Padding="5,0,5,0" HorizontalContentAlignment="Stretch"
-                    Style="{StaticResource MaterialDesignRaisedAccentButton}"
-                    Click="ToggleHeading">
+                               x:Name="Heading" WheelUpEvent="heading_bug_inc" WheelDownEvent="heading_bug_dec" SetValueEvent="heading_bug_set"
+                               NumDigits="3" Positive="True" AddTicks="False"
+                               Style="{StaticResource MaterialDesignTextBox}" materialDesign:HintAssist.Hint="000" />
+            <apc:ClientEventButton Grid.Row="4" Grid.Column="1"
+                                   Height="20" Width="65" Margin="5,5,0,0" Padding="5,0,5,0" HorizontalContentAlignment="Stretch"
+                                   Style="{StaticResource MaterialDesignRaisedAccentButton}"
+                                   ClientEvent="ap_hdg_hold">
                 <DockPanel>
                     <materialDesign:PackIcon DockPanel.Dock="Right" Kind="CheckboxBlank" Foreground="Red" Visibility="Hidden" x:Name="IndicatorHDG" />
                     <TextBlock DockPanel.Dock="Left" Text="HDG" FontWeight="Light" />
                 </DockPanel>
-            </Button>
+            </apc:ClientEventButton>
 
             <apc:NumberTextBox Grid.Row="5" Grid.Column="0"
                                Width="50" Height="14" Margin="0,5,0,0" Padding="0" HorizontalAlignment="Right"
-                               x:Name="Altitude" NumDigits="5" Positive="True" AddTicks="True"
-                               Style="{StaticResource MaterialDesignTextBox}" materialDesign:HintAssist.Hint="00000"
-                               KeyDown="AltKeyDown" MouseWheel="AltWheel" />
+                               x:Name="Altitude" WheelUpEvent="ap_alt_var_inc" WheelDownEvent="ap_alt_var_dec" SetValueEvent="ap_alt_var_set_english"
+                               NumDigits="5" Positive="True" AddTicks="True"
+                               Style="{StaticResource MaterialDesignTextBox}" materialDesign:HintAssist.Hint="00000" />
             <Button Grid.Row="5" Grid.Column="1"
                     Height="20" Width="65" Margin="5,5,0,0" Padding="5,0,5,0" HorizontalContentAlignment="Stretch"
                     Style="{StaticResource MaterialDesignRaisedAccentButton}"
@@ -126,76 +135,77 @@
 
             <apc:NumberTextBox Grid.Row="6" Grid.Column="0"
                                Width="50" Height="14" Margin="0,5,0,0" Padding="0" HorizontalAlignment="Right"
-                               x:Name="VerticalSpeed" NumDigits="4" Positive="False" AddTicks="False"
-                               Style="{StaticResource MaterialDesignTextBox}"
-                               KeyDown="VSKeyDown" MouseWheel="VSWheel" />
+                               x:Name="VerticalSpeed" WheelUpEvent="ap_vs_var_inc" WheelDownEvent="ap_vs_var_dec" SetSignedValueEvent="ap_vs_var_set_english"
+                               NumDigits="4" Positive="False" AddTicks="False"
+                               Style="{StaticResource MaterialDesignTextBox}" />
             <TextBlock Grid.Row="6" Grid.Column="1" Height="20" Width="65" Margin="5,5,0,0" Padding="5" Text="VS" />
-            <!--        <Button Grid.Row="6" Grid.Column="1"
-                    Height="20" Width="65" Margin="5,5,0,0" Padding="5,0,5,0" HorizontalContentAlignment="Stretch"
-                    Style="{StaticResource MaterialDesignRaisedAccentButton}"
-                    Click="ToggleVerticalSpeed">
+    <!--
+            <apc:NumberTextBox Grid.Row="6" Grid.Column="1"
+                               Height="20" Width="65" Margin="5,5,0,0" Padding="5,0,5,0" HorizontalContentAlignment="Stretch"
+                               Style="{StaticResource MaterialDesignRaisedAccentButton}"
+                               ClientEvent="ap_vs_hold">
                 <DockPanel>
                     <materialDesign:PackIcon DockPanel.Dock="Right" Kind="CheckboxBlank" Foreground="Red" Margin="5,0,0,0" Visibility="Hidden" x:Name="IndicatorVS" />
                     <TextBlock DockPanel.Dock="Left" Text="VS" FontWeight="Light" />
                 </DockPanel>
-            </Button>
+            </apc:NumberTextBox>
     -->
             <apc:NumberTextBox Grid.Row="7" Grid.Column="0"
                                Width="50" Height="14" Margin="0,5,0,0" Padding="0" HorizontalAlignment="Right"
-                               x:Name="Speed" NumDigits="3" Positive="True" AddTicks="False"
-                               Style="{StaticResource MaterialDesignTextBox}" materialDesign:HintAssist.Hint="000"
-                               KeyDown="SpeedKeyDown" MouseWheel="SpeedWheel"/>
-            <Button Grid.Row="7" Grid.Column="1"
-                    Height="20" Width="65" Margin="5,5,0,0" Padding="5,0,5,0" HorizontalContentAlignment="Stretch"
-                    Style="{StaticResource MaterialDesignRaisedAccentButton}"
-                    Click="ToggleSpeed">
+                               x:Name="Speed" WheelUpEvent="ap_spd_var_inc" WheelDownEvent="ap_spd_var_dec" SetValueEvent="ap_spd_var_set"
+                               NumDigits="3" Positive="True" AddTicks="False"
+                               Style="{StaticResource MaterialDesignTextBox}" materialDesign:HintAssist.Hint="000" />
+            <apc:ClientEventButton Grid.Row="7" Grid.Column="1"
+                               Height="20" Width="65" Margin="5,5,0,0" Padding="5,0,5,0" HorizontalContentAlignment="Stretch"
+                               Style="{StaticResource MaterialDesignRaisedAccentButton}"
+                               ClientEvent="ap_panel_speed_hold_toggle">
                 <DockPanel>
                     <materialDesign:PackIcon DockPanel.Dock="Right" Kind="CheckboxBlank" Foreground="Red" Margin="5,0,0,0" Visibility="Hidden" x:Name="IndicatorIAS" />
                     <TextBlock DockPanel.Dock="Left" Text="IAS" FontWeight="Light" />
                 </DockPanel>
-            </Button>
+            </apc:ClientEventButton>
 
-            <apc:NumberTextBox Grid.Row="8" Grid.Column="0"
-                               Width="50" Height="14" Margin="0,5,0,0" Padding="0" HorizontalAlignment="Right"
-                               x:Name="Nav1Course" NumDigits="3" Positive="True" AddTicks="False"
-                               Style="{StaticResource MaterialDesignTextBox}" materialDesign:HintAssist.Hint="000"
-                               KeyDown="Nav1CourseKeyDown" MouseWheel="Vor1Wheel"/>
-            <Button Grid.Row="8" Grid.Column="1"
-                    Height="20" Width="65" Margin="5,5,0,0" Padding="5,0,5,0" HorizontalContentAlignment="Stretch"
-                    Style="{StaticResource MaterialDesignRaisedAccentButton}"
-                    Click="ToggleNav1Hold">
+            <apc:HeadingTextBox Grid.Row="8" Grid.Column="0"
+                                Width="50" Height="14" Margin="0,5,0,0" Padding="0" HorizontalAlignment="Right"
+                                x:Name="Nav1Course" WheelUpEvent="vor1_obi_inc" WheelDownEvent="vor1_obi_dec" SetValueEvent="vor1_set"
+                                NumDigits="3" Positive="True" AddTicks="False"
+                                Style="{StaticResource MaterialDesignTextBox}" materialDesign:HintAssist.Hint="000" />
+            <apc:ClientEventButton Grid.Row="8" Grid.Column="1"
+                                   Height="20" Width="65" Margin="5,5,0,0" Padding="5,0,5,0" HorizontalContentAlignment="Stretch"
+                                   Style="{StaticResource MaterialDesignRaisedAccentButton}"
+                                   ClientEvent="ap_nav1_hold">
                 <DockPanel>
                     <materialDesign:PackIcon DockPanel.Dock="Right" Kind="CheckboxBlank" Foreground="Red" Margin="5,0,0,0" Visibility="Hidden" x:Name="IndicatorNAV1" />
                     <TextBlock DockPanel.Dock="Left" Text="NAV1" FontWeight="Light" />
                 </DockPanel>
-            </Button>
+            </apc:ClientEventButton>
 
-            <apc:NumberTextBox Grid.Row="9" Grid.Column="0"
-                               Width="50" Height="14" Margin="0,5,0,0" Padding="0" HorizontalAlignment="Right"
-                               x:Name="Nav2Course" NumDigits="3" Positive="True" AddTicks="False"
-                               Style="{StaticResource MaterialDesignTextBox}" materialDesign:HintAssist.Hint="000"
-                               KeyDown="Nav2CourseKeyDown" MouseWheel="Vor2Wheel"/>
+            <apc:HeadingTextBox Grid.Row="9" Grid.Column="0"
+                                Width="50" Height="14" Margin="0,5,0,0" Padding="0" HorizontalAlignment="Right"
+                                x:Name="Nav2Course" WheelUpEvent="vor2_obi_inc" WheelDownEvent="vor2_obi_dec" SetValueEvent="vor2_set"
+                                NumDigits="3" Positive="True" AddTicks="False"
+                                Style="{StaticResource MaterialDesignTextBox}" materialDesign:HintAssist.Hint="000" />
             <TextBlock Grid.Row="9" Grid.Column="1" Height="20" Width="65" Margin="5,5,0,0" Padding="5" Text="NAV2" />
 
             <DockPanel Grid.Row="10" Grid.Column="0" Grid.ColumnSpan="2">
-                <Button DockPanel.Dock="Left"
-                        Height="20" Width="65" Margin="0,5,0,0" Padding="5,0,5,0" HorizontalContentAlignment="Stretch"
-                        Style="{StaticResource MaterialDesignRaisedAccentButton}"
-                        Click="ToggleApproach">
+                <apc:ClientEventButton DockPanel.Dock="Left"
+                                       Height="20" Width="65" Margin="0,5,0,0" Padding="5,0,5,0" HorizontalContentAlignment="Stretch"
+                                       Style="{StaticResource MaterialDesignRaisedAccentButton}"
+                                       ClientEvent="ap_apr_hold">
                     <DockPanel>
                         <materialDesign:PackIcon DockPanel.Dock="Right" Kind="CheckboxBlank" Foreground="Red" Margin="5,0,0,0" Visibility="Hidden" x:Name="IndicatorAPP" />
                         <TextBlock DockPanel.Dock="Left" Text="APPR" FontWeight="Light" />
                     </DockPanel>
-                </Button>
-                <Button DockPanel.Dock="Right"
-                        Height="20" Width="65" Margin="0,5,0,0" Padding="5,0,5,0" HorizontalContentAlignment="Stretch"
-                        Style="{StaticResource MaterialDesignRaisedAccentButton}"
-                        Click="ToggleBackCourseHold">
+                </apc:ClientEventButton>
+                <apc:ClientEventButton DockPanel.Dock="Right"
+                                       Height="20" Width="65" Margin="0,5,0,0" Padding="5,0,5,0" HorizontalContentAlignment="Stretch"
+                                       Style="{StaticResource MaterialDesignRaisedAccentButton}"
+                                       ClientEvent="ap_bc_hold">
                     <DockPanel>
                         <materialDesign:PackIcon DockPanel.Dock="Right" Kind="CheckboxBlank" Foreground="Red" Margin="5,0,0,0" Visibility="Hidden" x:Name="IndicatorBC" />
                         <TextBlock DockPanel.Dock="Left" Text="BC" FontWeight="Light" />
                     </DockPanel>
-                </Button>
+                </apc:ClientEventButton>
             </DockPanel>
 
             <StackPanel Orientation="Vertical" Grid.Row="11" Grid.ColumnSpan="2" HorizontalAlignment="Stretch" Margin="0,10,0,10">
