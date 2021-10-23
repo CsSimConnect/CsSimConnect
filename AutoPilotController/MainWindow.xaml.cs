@@ -72,8 +72,11 @@ namespace AutoPilotController
 
         private void UpdateUI()
         {
+            log.Debug?.Log($"Data from Sim: NAV1 Frequency = {currentState.FreqNav1}");
             Nav1Freq.Set($"{currentState?.FreqNav1 ?? 0:000.00}");
+            log.Debug?.Log($"Data from Sim: NAV2 Frequency = {currentState.FreqNav2}");
             Nav2Freq.Set($"{currentState?.FreqNav2 ?? 0:000.00}");
+            log.Debug?.Log($"Data from Sim: ADF Frequency  = {currentState.FreqAdf:X}");
             AdfFreq.FromBCD(currentState?.FreqAdf ?? 0);
 
             IndicatorAP.Visibility = Indicator(currentState?.AutoPilotMaster);
@@ -85,6 +88,7 @@ namespace AutoPilotController
             //IndicatorVS.Visibility = Indicator(currentState?.VerticalSpeedHold);
             Speed.Set(currentState?.IndicatedAirSpeed);
             IndicatorIAS.Visibility = Indicator(currentState?.SpeedHold);
+            SpeedHold.CurrentState = currentState?.SpeedHold ?? false;
             Nav1Course.Set(currentState?.CourseNav1);
             IndicatorNAV1.Visibility = Indicator(currentState?.Nav1Hold);
             Nav2Course.Set(currentState?.CourseNav2);
@@ -167,7 +171,7 @@ namespace AutoPilotController
         {
             if (e.ChangedButton == MouseButton.Left)
             {
-                this.DragMove();
+                DragMove();
             }
         }
     }

@@ -137,7 +137,7 @@ namespace CsSimConnect.UIComponents
             return sb.ToString();
         }
 
-        public void Set(string value)
+        public virtual void Set(string value)
         {
             Text = FormatNumber(value);
         }

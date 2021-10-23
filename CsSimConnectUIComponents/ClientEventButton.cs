@@ -33,9 +33,37 @@ namespace CsSimConnect.UIComponents
             }
         }
 
+        public bool CurrentState { get; set; }
+
+        private string clientOnEventName;
+        private ClientEvent clientOnEvent;
+        public string ClientOnEvent
+        {
+            get => clientOnEventName;
+            set
+            {
+                clientOnEventName = value;
+                clientOnEvent = EventManager.GetEvent(clientOnEventName);
+            }
+        }
+
+        private string clientOffEventName;
+        private ClientEvent clientOffEvent;
+        public string ClientOffEvent
+        {
+            get => clientOffEventName;
+            set
+            {
+                clientOffEventName = value;
+                clientOffEvent = EventManager.GetEvent(clientOffEventName);
+            }
+        }
+
         protected override void OnClick()
         {
             clientEvent?.Send();
+            (CurrentState ? clientOffEvent : clientOnEvent)?.Send();
+
             base.OnClick();
         }
 

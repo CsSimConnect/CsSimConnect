@@ -18,6 +18,7 @@ namespace CsSimConnect.UIComponents
 {
     public class FrequencyTextBox : NumberTextBox
     {
+        private static readonly Logger log = Logger.GetLogger(typeof(FrequencyTextBox));
 
         public int FracDigits { get; set; }
         private string freqStyle = "NAV";
@@ -49,7 +50,12 @@ namespace CsSimConnect.UIComponents
 
         public string NormalizeFreq(string input)
         {
-            string[] freqParts = input.Split('.');
+            var point = '.';
+            if (input.Contains(','))
+            {
+                point = ',';
+            }
+            string[] freqParts = input.Split(point);
             if (freqParts == null || (freqParts.Length == 0)) return "0";
 
             if (freqParts[0].Length > 3) freqParts[0] = freqParts[0].Substring(0, 3);
@@ -74,6 +80,7 @@ namespace CsSimConnect.UIComponents
             {
                 result <<= 12;
             }
+            log.Debug?.Log($"Frequency '{Text}' encoded as {result:X}");
             return result;
         }
 
@@ -101,5 +108,10 @@ namespace CsSimConnect.UIComponents
             return NormalizeFreq(fieldText);
         }
 
+        public override void Set(string value)
+        {
+            log.Debug?.Log($"Frequency set to '{value}', formatting as {freqStyle}.");
+            base.Set(value);
+        }
     }
 }
