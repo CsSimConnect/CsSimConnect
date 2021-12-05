@@ -18,6 +18,7 @@ using CsSimConnect.AI;
 using CsSimConnect.Events;
 using CsSimConnect.Exc;
 using CsSimConnect.Reactive;
+using Rakis.Logging;
 using System;
 using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
@@ -192,7 +193,7 @@ namespace CsSimConnect
 
         public static ClientEvent GetEvent(string eventName)
         {
-            return clientEvents.GetOrAdd(eventName, name => new(Instance, name));
+            return ((eventName == null) || (eventName == "")) ? null : clientEvents.GetOrAdd(eventName, name => new(Instance, name));
         }
 
         private EventGroup defaultGroup;

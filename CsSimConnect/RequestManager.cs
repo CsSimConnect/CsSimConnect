@@ -17,6 +17,7 @@
 using CsSimConnect.AI;
 using CsSimConnect.DataDefs;
 using CsSimConnect.Reactive;
+using Rakis.Logging;
 using System;
 using System.Runtime.InteropServices;
 

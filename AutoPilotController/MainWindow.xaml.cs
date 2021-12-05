@@ -23,6 +23,7 @@ using Visibility = System.Windows.Visibility;
 using RoutedEventArgs = System.Windows.RoutedEventArgs;
 using CsSimConnect.UIComponents.Domain;
 using System.Windows.Media;
+using Rakis.Logging;
 
 namespace AutoPilotController
 {
@@ -34,13 +35,52 @@ namespace AutoPilotController
         private static readonly Logger log = Logger.GetLogger(typeof(MainWindow));
 
         private readonly AIListViewModel aiList;
-        private readonly SimConnect simConnect = SimConnect.Instance;
+        private SimConnect simConnect = SimConnect.Instance;
+
+        internal void ProcessSettings()
+        {
+            AutoPilotSettings settings = AutoPilotSettings.Instance;
+
+            SpeedHold.ClearEvents();
+            if (settings.UseCustomEvents)
+            {
+                if (settings.UseSpeedHoldToggle)
+                {
+                    SpeedHold.ClientEvent = settings.SpeedHoldToggleEvent;
+                }
+                else
+                {
+                    SpeedHold.ClientOnEvent = settings.SpeedHoldOnEvent;
+                    SpeedHold.ClientOffEvent = settings.SpeedHoldOffEvent;
+                }
+            }
+            else
+            {
+                if (settings.UseSpeedHoldToggle)
+                {
+                    SpeedHold.ClientEvent = "ap_airspeed_hold";
+                }
+                else if (settings.UseSpeedHoldPanelEvents)
+                {
+                    SpeedHold.ClientOnEvent = "ap_panel_speed_on";
+                    SpeedHold.ClientOffEvent = "ap_panel_speed_off";
+                }
+                else
+                {
+                    SpeedHold.ClientOnEvent = "ap_panel_speed_hold_toggle";
+                    SpeedHold.ClientOffEvent = "ap_panel_speed_off";
+                }
+            }
+
+        }
 
         public MainWindow()
         {
             aiList = new(action => Dispatcher.Invoke(action));
             DataContext = aiList;
             InitializeComponent();
+
+            ProcessSettings();
 
             if (simConnect.IsConnected)
             {
@@ -128,7 +168,7 @@ namespace AutoPilotController
 
         private void DoSettings(object sender, RoutedEventArgs e)
         {
-            new SettingsDialog().ShowDialog();
+            new SettingsDialog(this).ShowDialog();
         }
 
         private void DoClose(object sender, RoutedEventArgs e)

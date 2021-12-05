@@ -15,6 +15,7 @@
  */
 
 using CsSimConnect.Events;
+using Rakis.Logging;
 using System;
 using System.Text;
 using System.Windows.Controls;

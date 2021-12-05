@@ -15,6 +15,7 @@
  */
 
 using CsSimConnect.Reflection;
+using Rakis.Logging;
 using System;
 using System.Reflection;
 

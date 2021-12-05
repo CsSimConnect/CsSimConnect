@@ -24,7 +24,7 @@
             <Button Margin="5" Style="{StaticResource MaterialDesignFlatMidBgButton}" Content="OK" Click="DoOk"/>
         </StackPanel>
         <StackPanel Orientation="Vertical" Margin="5">
-            <materialDesign:Card>
+            <Expander HorizontalAlignment="Stretch" Header="Connection to Simulator">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
@@ -35,17 +35,103 @@
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
-                    <TextBlock Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" Margin="5"
-                               HorizontalAlignment="Left"
-                               FontWeight="Bold" Text="Simulator" />
 
-                    <TextBlock Grid.Row="1" Grid.Column="0" Margin="10 0 0 0" Text="Auto-connect" />
-                    <ToggleButton Grid.Row="1" Grid.Column="1" Style="{StaticResource MaterialDesignSwitchToggleButton}" ToolTip="Auto-connect" x:Name="bAutoConnect" />
-
-                    <TextBlock Grid.Row="2" Grid.Column="0" Margin="10 0 0 0" Text="Interop module" />
-                    <ComboBox Grid.Row="2" Grid.Column="1" materialDesign:ComboBoxAssist.ClassicMode="True" />
+                    <TextBlock
+                        Grid.Row="0" Grid.Column="0" Margin="10 0 0 0"
+                        Text="Auto-connect" />
+                    <ToggleButton
+                        Grid.Row="0" Grid.Column="1"
+                        Style="{StaticResource MaterialDesignSwitchToggleButton}" ToolTip="Auto-connect"
+                        x:Name="bAutoConnect" IsChecked="{Binding AutoConnect, Mode=TwoWay}"/>
+<!--
+                    <TextBlock
+                        Grid.Row="1" Grid.Column="0" Margin="10 0 0 0"
+                        Text="Interop module" />
+                    <ComboBox
+                        Grid.Row="1" Grid.Column="1" materialDesign:ComboBoxAssist.ClassicMode="True" />
+-->
                 </Grid>
-            </materialDesign:Card>
+            </Expander>
+            <Expander HorizontalAlignment="Stretch" Header="Speed Hold">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock
+                        Grid.Row="0" Grid.Column="0" Margin="10 5 0 5"
+                        Text="Use toggle" />
+                    <ToggleButton
+                        Grid.Row="0" Grid.Column="1"
+                        Style="{StaticResource MaterialDesignSwitchToggleButton}" ToolTip="Use toggle to hold speed"
+                        x:Name="bSpeedToggle"
+                        IsChecked="{Binding UseSpeedHoldToggle, Mode=TwoWay}" />
+
+                    <TextBlock
+                        Grid.Row="1" Grid.Column="0" Margin="10 5 0 5"
+                        Text="Use AP Panel Speed On/Off"
+                        Visibility="{Binding PanelSpeedStyleVisibility}" />
+                    <ToggleButton
+                        Grid.Row="1" Grid.Column="1"
+                        Style="{StaticResource MaterialDesignSwitchToggleButton}" ToolTip="Use 'ap_panel_speed_on' and 'ap_panel_speed_off'."
+                        x:Name="bPanelSpeed"
+                        IsChecked="{Binding UseSpeedHoldPanelEvents, Mode=TwoWay}"
+                        Visibility="{Binding PanelSpeedStyleVisibility}" />
+
+                    <TextBlock
+                        Grid.Row="2" Grid.Column="0" Margin="10 5 0 5"
+                        Text="Use Custom Events" />
+                    <ToggleButton
+                        Grid.Row="2" Grid.Column="1"
+                        Style="{StaticResource MaterialDesignSwitchToggleButton}"
+                        x:Name="bCustomEvents"
+                        IsChecked="{Binding UseCustomEvents, Mode=TwoWay}" />
+
+                    <TextBlock
+                        Grid.Row="3" Grid.Column="0" Margin="10 5 0 5"
+                        Visibility="{Binding SpeedHoldEventVisibility}"
+                        Text="Toggle Speed Hold Event" />
+                    <ComboBox
+                        Grid.Row="3" Grid.Column="1"
+                        materialDesign:HintAssist.Hint="Search"
+                        materialDesign:HintAssist.HintOpacity=".26"
+                        IsEditable="True" ToolTip="The event to toggle SPEED mode."
+                        Visibility="{Binding SpeedHoldEventVisibility}"
+                        ItemsSource="{Binding SpeedHoldToggleEventNames}" Text="{Binding SpeedHoldToggleEvent, Mode=TwoWay}"/>
+
+                    <TextBlock
+                        Grid.Row="4" Grid.Column="0" Margin="10 5 0 5"
+                        Visibility="{Binding SpeedHoldEventsVisibility}"
+                        Text="Set Speed Hold ON Event" />
+                    <ComboBox
+                        Grid.Row="4" Grid.Column="1"
+                        materialDesign:HintAssist.Hint="Search"
+                        materialDesign:HintAssist.HintOpacity=".26"
+                        IsEditable="True" ToolTip="The event to toggle SPEED mode ON."
+                        Visibility="{Binding SpeedHoldEventsVisibility}"
+                        ItemsSource="{Binding SpeedHoldOnEventNames}" Text="{Binding SpeedHoldOnEvent, Mode=TwoWay}"/>
+                    <TextBlock
+                        Grid.Row="5" Grid.Column="0" Margin="10 5 0 5"
+                        Visibility="{Binding SpeedHoldEventsVisibility}"
+                        Text="Set Speed Hold Off Event" />
+                    <ComboBox
+                        Grid.Row="5" Grid.Column="1"
+                        materialDesign:HintAssist.Hint="Search"
+                        materialDesign:HintAssist.HintOpacity=".26"
+                        IsEditable="True" ToolTip="The event to toggle SPEED mode OFF."
+                        Visibility="{Binding SpeedHoldEventsVisibility}"
+                        ItemsSource="{Binding SpeedHoldOffEventNames}" Text="{Binding SpeedHoldOffEvent, Mode=TwoWay}"/>
+                </Grid>
+            </Expander>
         </StackPanel>
     </DockPanel>
 </Window>

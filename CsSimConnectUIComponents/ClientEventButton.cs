@@ -15,12 +15,16 @@
  */
 
 using CsSimConnect.Events;
+using Rakis.Logging;
 using System.Windows.Controls;
 
 namespace CsSimConnect.UIComponents
 {
     public class ClientEventButton : Button
     {
+
+        private readonly static Logger log = Logger.GetLogger(typeof(ClientEventButton));
+
         private string clientEventName;
         private ClientEvent clientEvent;
         public string ClientEvent
@@ -59,10 +63,30 @@ namespace CsSimConnect.UIComponents
             }
         }
 
+        public void ClearEvents()
+        {
+            ClientEvent = null;
+            ClientOnEvent = null;
+            ClientOffEvent = null;
+        }
+
         protected override void OnClick()
         {
-            clientEvent?.Send();
-            (CurrentState ? clientOffEvent : clientOnEvent)?.Send();
+            if (clientEvent != null)
+            {
+                log.Debug?.Log($"Sending '{clientEventName}'");
+                clientEvent?.Send();
+            }
+            if (CurrentState && (clientOffEventName != null))
+            {
+                log.Debug?.Log($"Sending '{clientOffEventName}' to disable SPEED mode");
+                clientOffEvent?.Send();
+            }
+            else if ((!CurrentState) && (clientOnEventName != null))
+            {
+                log.Debug?.Log($"Sending '{clientOnEventName}' to enable SPEED mode");
+                clientOnEvent?.Send();
+            }
 
             base.OnClick();
         }

@@ -25,13 +25,14 @@ namespace CsSimConnect.Sim
         private const string P3DRegistryBase = "HKEY_LOCAL_MACHINE\\SOFTWARE\\Lockheed Martin\\";
 
         private const string P3Dv4Name = "Prepar3D v4";
-        private const string P3Dv4Key = "P3Dv4";
+        public const string P3Dv4Key = "P3Dv4";
 
         private const string P3Dv5Name = "Prepar3D v5";
-        private const string P3Dv5Key = "P3Dv5";
+        public const string P3Dv5Key = "P3Dv5";
 
         private const string MSFSName = "MSFS 2020";
-        private const string MSFSKey = "MSFS";
+        public const string MSFSKey = "MSFS";
+
         private const string InstallPathPrefix = "InstalledPackagesPath ";
 
         public static Simulator GetPrepar3Dv4()
@@ -86,7 +87,18 @@ namespace CsSimConnect.Sim
             result.DllAvailable = File.Exists(P3Dv5Key + "\\CsSimConnectInterOp.dll");
 
             return result;
-
         }
+
+        public static Simulator FromKey(string key)
+        {
+            return key switch
+            {
+                P3Dv4Key => GetPrepar3Dv4(),
+                P3Dv5Key => GetPrepar3Dv5(),
+                MSFSKey => GetMSFS2020(),
+                _ => throw new ArgumentOutOfRangeException($"Unknow Simulator key '{key}'."),
+            };
+        }
+
     }
 }

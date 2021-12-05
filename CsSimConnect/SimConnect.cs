@@ -15,6 +15,7 @@
  */
 
 using CsSimConnect.Exc;
+using Rakis.Logging;
 using System;
 using System.Collections.Generic;
 using System.IO;

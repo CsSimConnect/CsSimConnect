@@ -16,6 +16,7 @@
 
 using CsSimConnect;
 using CsSimConnect.Sim;
+using Rakis.Logging;
 using System.Windows;
 
 namespace AutoPilotController
@@ -29,8 +30,11 @@ namespace AutoPilotController
         private void App_Startup(object sender, StartupEventArgs e)
         {
             Logger.Configure();
-            SimConnect.SetFlightSimType(Util.GetPrepar3Dv5().Type);
-            SimConnect.Instance.UseAutoConnect = true;
+            AutoPilotSettings settings = AutoPilotSettings.Instance;
+            settings.Load();
+
+            SimConnect.SetFlightSimType(Util.FromKey(settings.SimulatorKey).Type);
+            SimConnect.Instance.UseAutoConnect = settings.AutoConnect;
 
             new MainWindow().Show();
         }

@@ -21,6 +21,7 @@ using NSwag.Collections;
 using System.Collections.Generic;
 using System;
 using System.ComponentModel;
+using Rakis.Logging;
 
 namespace CsSimConnectUI.Domain
 {

@@ -16,6 +16,7 @@
 
 using CsSimConnect.DataDefs;
 using CsSimConnect.Exc;
+using Rakis.Logging;
 using System;
 using System.Reflection;
 

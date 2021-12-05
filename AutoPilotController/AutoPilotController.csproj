@@ -9,6 +9,9 @@
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>AutoPilotController.pfx</AssemblyOriginatorKeyFile>
     <DelaySign>false</DelaySign>
+    <PackageIcon>Artboard 1.png</PackageIcon>
+    <PackageIconUrl />
+    <ApplicationIcon>AutoPilotController.ico</ApplicationIcon>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -26,6 +29,7 @@
   <ItemGroup>
     <PackageReference Include="MaterialDesignThemes" Version="4.1.0" />
     <PackageReference Include="NSwag.Core" Version="13.11.1" />
+    <PackageReference Include="Rakis.Settings" Version="0.9.0" />
     <PackageReference Include="System.Reactive" Version="5.0.0" />
   </ItemGroup>
 

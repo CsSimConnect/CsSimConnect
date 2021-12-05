@@ -18,6 +18,7 @@ using CsSimConnect.AI;
 using CsSimConnect.DataDefs;
 using CsSimConnect.Reactive;
 using CsSimConnect.Reflection;
+using Rakis.Logging;
 using System;
 
 namespace CsSimConnect

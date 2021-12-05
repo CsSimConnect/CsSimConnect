@@ -16,6 +16,7 @@
 
 using CsSimConnect;
 using CsSimConnectUI.Domain;
+using Rakis.Logging;
 using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;

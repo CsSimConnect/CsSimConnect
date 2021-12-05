@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+using Rakis.Logging;
+
 namespace CsSimConnect.UIComponents
 {
     public class FrequencyTextBox : NumberTextBox

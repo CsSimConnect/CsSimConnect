@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+using Rakis.Logging;
 using System;
 using System.Text;
 

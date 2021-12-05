@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-using CsSimConnect;
+using Rakis.Logging;
 using System.Windows;
 
 namespace CsSimConnectUI

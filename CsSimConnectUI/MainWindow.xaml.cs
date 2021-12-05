@@ -17,6 +17,7 @@
 using CsSimConnect;
 using CsSimConnect.AI;
 using CsSimConnectUI.Domain;
+using Rakis.Logging;
 using System;
 using System.Threading;
 using System.Threading.Tasks;

@@ -18,6 +18,7 @@ using CsSimConnect.DataDefs;
 using CsSimConnect.Exc;
 using CsSimConnect.Reactive;
 using CsSimConnect.Reflection;
+using Rakis.Logging;
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
