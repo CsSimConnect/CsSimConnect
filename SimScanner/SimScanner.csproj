@@ -18,6 +18,9 @@
 
   <ItemGroup>
     <PackageReference Include="ini-parser-netstandard" Version="2.5.2" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="6.0.0" />
+    <PackageReference Include="Rakis.Logging" Version="0.9.0" />
+    <PackageReference Include="Rakis.Settings" Version="0.9.0" />
   </ItemGroup>
 
 </Project>

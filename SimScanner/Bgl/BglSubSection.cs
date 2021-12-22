@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-using System.Collections.Generic;
-
 namespace SimScanner.Bgl
 {
 
@@ -78,6 +76,20 @@ namespace SimScanner.Bgl
             }
         }
 
-        public BglAirport Airport => section.Type != SectionType.Airport ? null : (new(this));
+        public BglAirport Airport => !section.IsAirport ? null : (new(this));
+
+        public BglNameList NameList => !section.IsNameList ? null : (new(this));
+
+        public ushort BglRecordType(uint index)
+        {
+            if (index >= NumRecords)
+            {
+                return 0;
+            }
+            using var reader = section.file.File.Section(DataOffset, DataSize);
+            reader.Read(out ushort id);
+
+            return id;
+        }
     }
 }

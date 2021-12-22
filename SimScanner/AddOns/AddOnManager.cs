@@ -22,11 +22,11 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Xml.Linq;
-using static SimScanner.Sim.Util;
+using static SimScanner.Sim.SimUtil;
 
 namespace SimScanner.AddOns
 {
-    public static class Util
+    public static class AddOnManager
     {
 
         public static List<string> FindAddOnConfigFiles(Simulator sim)
@@ -51,7 +51,7 @@ namespace SimScanner.AddOns
             return result;
         }
 
-        private static void readAddOnXml(AddOn addOn)
+        private static void ReadAddOnXml(AddOn addOn)
         {
             var config = XElement.Load(addOn.ConfigFile);
             addOn.Name = config.Element("AddOn.Name").Value.Trim();
@@ -127,7 +127,7 @@ namespace SimScanner.AddOns
                         if (File.Exists(xmlFile))
                         {
                             package.ConfigFile = xmlFile;
-                            readAddOnXml(package);
+                            ReadAddOnXml(package);
                         }
                     }
                     result.Add(package);
@@ -163,7 +163,7 @@ namespace SimScanner.AddOns
                         if (File.Exists(xmlFile))
                         {
                             subPackage.ConfigFile = xmlFile;
-                            readAddOnXml(subPackage);
+                            ReadAddOnXml(subPackage);
                         }
                         result.Add(subPackage);
                     }

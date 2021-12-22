@@ -21,17 +21,26 @@ namespace SimScanner.Bgl
 {
     public enum SectionType
     {
-        None = 0x0,
-        Copyright = 0x1,
-        Guid = 0x2,
-        Airport = 0x3,
+        None = 0x00,
+        Copyright = 0x01,
+        Guid = 0x02,
+        Airport = 0x03,
+        RunWay = 0x04,
+        RunwayStart = 0x11,
+        Com = 0x12,
         IlsVor = 0x13,
         Ndb = 0x17,
         Marker = 0x18,
+        AirportName = 0x19,
+        TaxiwayPoint = 0x1a,
+        TaxiwayPath = 0x1c,
+        TaxiwayName = 0x1d,
         Boundary = 0x20,
         Waypoint = 0x22,
         Geopol = 0x23,
+        Approach = 0x24,
         SceneryObject = 0x25,
+        Helipad = 0x26,
         NameList = 0x27,
         VorIlsIcaoIndex = 0x28,
         NdbIcaoIndex = 0x29,
@@ -40,7 +49,17 @@ namespace SimScanner.Bgl
         AirportSummary = 0x2C,
         Exclusion = 0x2E,
         TimeZone = 0x2F,
+        ApronDetail = 0x30,
+        ApronEdgeLight = 0x31,
+        DeleteAirport = 0x33,
+        ApronSurface = 0x37,
+        BlastFence = 0x38,
+        BoundaryFence = 0x39,
+        Jetway = 0x3A,
+        Unknown3B = 0x3B,
+        TaxiwayParking = 0x3d,
         TerrainVectorDb = 0x65,
+        AirportTowerScenery = 0x66,
         TerrainElevation = 0x67,
         TerrainLandClass = 0x68,
         TerrainWaterClass = 0x69,
@@ -76,6 +95,7 @@ namespace SimScanner.Bgl
         TerrainPhotoNight = 0x98,
         Tacan = 0xA0,
         TacanIndex = 0xA1,
+        UnknownAA = 0xAA,
         FakeTypes = 0x2710,
         IcaoRunway = 0x2711
     }
@@ -102,7 +122,7 @@ namespace SimScanner.Bgl
         private BglSectionHeader header;
         public BglSectionHeader Header => header;
         public uint Index { get; init; }
-        public readonly List<BglSubSection> subSections = new();
+        public readonly Dictionary<uint, BglSubSection> subSections = new();
 
         public SectionType Type => header.Type;
         public uint SubSectionCount => header.SubSectionCount;
@@ -151,6 +171,7 @@ namespace SimScanner.Bgl
         public bool IsWaypoint => Type == SectionType.Waypoint;
         public bool IsSceneryObject => Type == SectionType.SceneryObject;
         public bool IsTerrain => terrainTypes.Contains(Type);
+        public bool IsNameList => Type == SectionType.NameList;
 
         internal BglSection(BglFile file, uint index)
         {
@@ -158,11 +179,6 @@ namespace SimScanner.Bgl
             Index = index;
             using var sectionReader = file.File.Section(file.SectionHeaderOffset(index), BglSectionHeader.Size);
             sectionReader.Read(out header, BglSectionHeader.Size);
-
-            for (uint subIndex = 0; subIndex < header.SubSectionCount; subIndex++)
-            {
-                subSections.Add(new(this, subIndex));
-            }
         }
 
         internal uint SubSectionHeaderOffset(uint index)
@@ -170,7 +186,64 @@ namespace SimScanner.Bgl
             return header.SubSectionStartOffset + (index * header.SubSectionSize);
         }
 
-        public bool HaveSubsections => subSections.Count != 0;
-        public BglAirport Airport => HaveSubsections ? subSections[0].Airport : null;
+        public bool HaveSubsections => SubSectionCount != 0;
+
+        public BglSubSection GetSubSection(uint index)
+        {
+            if (!HaveSubsections || index > SubSectionCount)
+            {
+                return null;
+            }
+            if (!subSections.ContainsKey(index))
+            {
+                subSections.Add(index, new BglSubSection(this, index));
+            }
+            return subSections[index];
+        }
+
+        public IEnumerable<BglSubSection> EnumerateSubSections()
+        {
+            for (uint i = 0; i < header.SubSectionCount; i++)
+            {
+                yield return GetSubSection(i);
+            }
+        }
+
+        public IEnumerable<BglSubSection> SubSections => EnumerateSubSections();
+
+        public BglAirport GetAirport(uint subSectionNr)
+        {
+            return subSectionNr < header.SubSectionCount ? GetSubSection(subSectionNr)?.Airport : null;
+        }
+
+        public IEnumerable<BglAirport> EnumerateAirports()
+        {
+            if (IsAirport)
+            {
+                for (uint i = 0; i < header.SubSectionCount; i++)
+                {
+                    yield return GetAirport(i);
+                }
+            }
+        }
+
+        public IEnumerable<BglAirport> Airports => EnumerateAirports();
+
+        public BglNameList GetNameList(uint subSectionNr)
+        {
+            return subSectionNr < header.SubSectionCount ? GetSubSection(subSectionNr)?.NameList : null;
+        }
+
+        public IEnumerable<BglNameList> EnumerateNameLists()
+        {
+            if (IsNameList)
+            {
+                for (uint i = 0; i < header.SubSectionCount; i++)
+                {
+                    yield return GetNameList(i);
+                }
+            }
+        }
+        public IEnumerable<BglNameList> NameLists => EnumerateNameLists();
     }
 }

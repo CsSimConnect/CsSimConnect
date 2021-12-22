@@ -20,7 +20,7 @@ using System.IO;
 
 namespace SimScanner.Sim
 {
-    public static class Util
+    public static class SimUtil
     {
         private const string P3DRegistryBase = "HKEY_LOCAL_MACHINE\\SOFTWARE\\Lockheed Martin\\";
 

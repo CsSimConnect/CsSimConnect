@@ -14,7 +14,10 @@
  * limitations under the License.
  */
 
+using Rakis.Logging;
 using SimScanner.Bgl;
+using SimScanner.Model;
+using SimScanner.Sim;
 using System;
 
 namespace BglReader
@@ -23,7 +26,27 @@ namespace BglReader
     {
         static void Main(string[] args)
         {
-            Console.WriteLine($"BglReader called with {args.Length} arguments, #0 is '{args[0]}'");
+            Logger.Configure();
+
+            if (args.Length > 0)
+            {
+                foreach (string filename in args)
+                {
+                    BglFile file = AnalyzeFile(args);
+                }
+            }
+            else
+            {
+                using (SceneryManager mgr = new(simulator: SimUtil.GetPrepar3Dv5()))
+                {
+                    mgr.BuildDb();
+                }
+            }
+
+        }
+
+        private static BglFile AnalyzeFile(string[] args)
+        {
             var file = new BglFile(args[0]);
             var status = file.Valid ? "VALID" : "NOT VALID";
             Console.WriteLine($"BglFile(\"{args[0]}\") is {status}");
@@ -33,12 +56,53 @@ namespace BglReader
 
             foreach (BglSection section in file.Sections)
             {
-                Console.WriteLine($"Section {section.Index}: {section.Header.Type} ({section.Header.SubSectionCount} subsection(s) of {section.Header.SubSectionSize} byte(s) each)");
+                Console.WriteLine($"Section {section.Index}: {section.Header.Type} ({section.Header.SubSectionCount} subsection(s))");
+
                 if (section.IsAirport)
                 {
-                    Console.WriteLine($"  ==> ICAO code {section.Airport.ICAO}, region ident {section.Airport.RegionCode}.");
+                    Console.WriteLine($"  --> Section has {section.SubSectionCount} subsection(s)");
+                    foreach (BglSubSection subSection in section.SubSections)
+                    {
+                        Console.WriteLine($"      SubSection {subSection.Index} has {subSection.DataSize} byte(s) of data.");
+                    }
+
+                    foreach (BglAirport bglAirport in section.Airports)
+                    {
+                        Console.WriteLine($"  ==> name {bglAirport.Name}, ICAO code {bglAirport.ICAO}, region ident {bglAirport.RegionCode}, {bglAirport.NumRunwayStarts} runway(s), {bglAirport.Taxiways.Count} named taxiway(s), {bglAirport.NumJetways} jetway(s), {bglAirport.Parkings.Count} parking(s).");
+                        Console.WriteLine($"      Latitude  {bglAirport.Latitude:###.###}");
+                        Console.WriteLine($"      Longitude {bglAirport.Longitude:###.###}");
+                    }
+                }
+                else if (section.IsNameList)
+                {
+                    foreach (BglNameList nameList in section.NameLists)
+                    {
+                        if (nameList?.Names == null)
+                        {
+                            Console.WriteLine("  ==> Skipping empty list.");
+                            continue;
+                        }
+                        foreach (BglName name in nameList.Names)
+                        {
+                            Console.WriteLine($"  ==> {name.ICAO}: '{name.Airport}', city {name.City}, state {name.State}, country {name.Country}, region {name.Region}.");
+                        }
+                    }
+                }
+                else
+                {
+                    for (uint i = 0; i < section.SubSectionCount; i++)
+                    {
+                        var subSection = section.GetSubSection(i);
+                        Console.WriteLine($"  ==> Subsection[{i:D3}] has {subSection.NumRecords} record(s) in {subSection.DataSize} byte(s).");
+                        for (uint j = 0; j < subSection.NumRecords; j++)
+                        {
+                            Console.WriteLine($"      Subsection [{i:D3}][{j:D3}]: type = 0x{subSection.BglRecordType(j)}:X2");
+                        }
+                    }
                 }
             }
+
+            return file;
         }
     }
 }

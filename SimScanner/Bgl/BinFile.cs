@@ -14,17 +14,22 @@
  * limitations under the License.
  */
 
+using Rakis.Logging;
 using System;
 using System.IO;
 using System.IO.MemoryMappedFiles;
+using System.Text;
 
 namespace SimScanner.Bgl
 {
     public class BinSection : IDisposable
     {
+        private static readonly Logger log = Logger.GetLogger(typeof(BinFile));
+
         private BinFile reader;
         private MemoryMappedViewAccessor accessor;
         private long pos = 0;
+        public long Position => pos;
 
         public BinSection(BinFile reader, long offset, long size)
         {
@@ -34,6 +39,14 @@ namespace SimScanner.Bgl
         public BinSection Read<T>(out T value, uint size)
             where T : struct
         {
+            if (accessor.Capacity < pos+size)
+            {
+                log.Fatal?.Log($"Trying to read {size} byte(s) starting at {pos}, Capacity = {accessor.Capacity}.");
+            }
+            else
+            {
+                log.Trace?.Log($"Reading {size} bytes starting at {pos}, Capacity = {accessor.Capacity}.");
+            }
             accessor.Read(pos, out value);
             pos += size;
 
@@ -49,6 +62,56 @@ namespace SimScanner.Bgl
         public BinSection Read(out ulong value) => Read(out value, 8);
         public BinSection Read(out float value) => Read(out value, 4);
         public BinSection Read(out double value) => Read(out value, 8);
+
+        public BinSection Skip(uint size)
+        {
+            pos += size;
+            return this;
+        }
+
+        public BinSection Seek(long pos)
+        {
+            if ((pos < 0) || (pos >= accessor.Capacity))
+            {
+                log.Fatal?.Log($"Trying to seek to pos {pos}, Capacity = {accessor.Capacity}.");
+            }
+            this.pos = pos;
+            return this;
+        }
+
+        public BinSection Read(out string value, int maxSize =-1)
+        {
+            StringBuilder bld = new();
+            long i = (maxSize >= 0) ? maxSize : (accessor.Capacity - pos);
+            while (i-- > 0)
+            {
+                Read(out byte b);
+                if (b == 0)
+                {
+                    break;
+                }
+                bld.Append((char)b);
+            }
+            value = bld.ToString();
+            return this;
+        }
+
+        public string HexDump(long offset, uint size)
+        {
+            StringBuilder bld = new();
+            for (uint i = 0; i < size; i++)
+            {
+                accessor.Read(offset + i, out byte b);
+                bld.Append($"{b:X2} ");
+            }
+            bld.Append("| '");
+            for (uint i = 0; i < size; i++)
+            {
+                accessor.Read(offset + i, out byte b);
+                bld.Append(((b >= 0x20) && (b <= 0x7f)) ? ((char)b) : '.');
+            }
+            return bld.ToString();
+        }
 
         public void Dispose()
         {

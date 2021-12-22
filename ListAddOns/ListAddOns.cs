@@ -15,9 +15,10 @@
  */
 
 using SimScanner.AddOns;
-using static SimScanner.AddOns.Util;
+using static SimScanner.AddOns.AddOnManager;
 using System;
 using SimScanner.Sim;
+using SimScanner.Scenery;
 
 namespace CsSimConnect
 {
@@ -25,7 +26,12 @@ namespace CsSimConnect
     {
         static void Main(string[] args)
         {
-            foreach (AddOn addOn in FindAddOns(SimScanner.Sim.Util.GetPrepar3Dv4()))
+            Simulator sim = SimScanner.Sim.SimUtil.GetPrepar3Dv5();
+
+            SceneryConfiguration cfg = new(sim);
+            cfg.LoadSceneryConfig();
+
+            foreach (AddOn addOn in FindAddOns(sim))
             {
                 Console.WriteLine($"Addon \"{addOn.Name}\"");
                 Console.WriteLine($"- Installed at {addOn.Path}");
@@ -34,13 +40,22 @@ namespace CsSimConnect
 
                 foreach (Component comp in addOn.Components)
                 {
-                    Console.WriteLine($"  * {comp.Category} component at {comp.Path}");
+//                    Console.WriteLine($"  * {comp.Category} component at {comp.Path}");
                     if (comp.Category == ComponentCategory.Scenery)
                     {
-                        Console.WriteLine($"    Name=\"{comp.Name}\"");
-                        Console.WriteLine($"    Layer={comp.Layer}");
+                        //                        Console.WriteLine($"    Name=\"{comp.Name}\"");
+                        //                        Console.WriteLine($"    Layer={comp.Layer}");
+                        cfg.Entries.Add(SceneryEntry.FromComponent(addOn, comp));
+                        cfg.SortEntries();
                     }
                 }
+            }
+
+            Console.WriteLine($"Loaded {cfg.Entries.Count} scenery entries.");
+
+            foreach (SceneryEntry entry in cfg.Entries)
+            {
+                Console.WriteLine($"[{entry.Layer,5}]: {entry.LocalPath}");
             }
         }
     }
