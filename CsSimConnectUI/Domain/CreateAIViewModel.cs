@@ -15,6 +15,9 @@
  */
 
 using CsSimConnect;
+using Rakis.Settings;
+using SimScanner.Model;
+using SimScanner.Sim;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using static CsSimConnect.Util.StringUtil;
@@ -82,59 +85,41 @@ namespace CsSimConnectUI.Domain
             set
             {
                 objectType = value;
-                Validate();
                 NotifyPropertyChanged(nameof(ObjectType));
             }
         }
 
-        private string title;
-        public string Title
-        {
-            get => title;
-            set
-            {
-                title = value;
-                Validate();
-                NotifyPropertyChanged(nameof(Title));
-            }
-        }
-
-        private string tailNumber;
-        public string TailNumber
-        {
-            get => tailNumber;
-            set
-            {
-                tailNumber = value;
-                Validate();
-                NotifyPropertyChanged(nameof(TailNumber));
-            }
-        }
-
-        private string airportId;
-        public string AirportId
-        {
-            get => airportId;
-            set
-            {
-                airportId = value;
-                Validate();
-                NotifyPropertyChanged(nameof(AirportId));
-            }
-        }
-
-        public bool Validated { get; private set; }
-        private void Validate()
-        {
-            bool oldOk = Validated;
-            Validated = !IsEmpty(Title) && !IsEmpty(TailNumber) && !IsEmpty(AirportId);
-            if (oldOk != Validated)
-            {
-                NotifyPropertyChanged(nameof(Validated));
-            }
-        }
+        public List<string> Titles { get; }
+        public List<string> ICAOList { get; }
+        public List<string> Parkings { get; } = new();
+        public Airport Airport { get; set; }
+        public Parking Parking { get; set; }
 
         public ObservableCollection<ObjectTypeSelector> ObjectTypes { get; init; }
+
+        public static readonly  Context DBContext = new("CsSimConnect", "SimScanner");
+
+        private SceneryManager sceneryManager;
+
+        public void LoadParkings(string icao)
+        {
+            List<int> layers = sceneryManager.GetLayersForICAO(icao);
+            if (layers.Count == 0)
+            {
+                return;
+            }
+            Parkings.Clear();
+
+            Airport = sceneryManager.GetAirport(layers[0], icao);
+            if (Airport.Parkings.Count != 0)
+            {
+                foreach (string name in Airport.Parkings.Keys)
+                {
+                    Parkings.Add(name);
+                }
+            }
+            NotifyPropertyChanged(nameof(Parkings));
+        }
 
         public CreateAIViewModel()
         {
@@ -145,6 +130,18 @@ namespace CsSimConnectUI.Domain
             ObjectTypes.Add(new(ObjectType.Helicopter));
             ObjectTypes.Add(new(ObjectType.Aircraft));
             ObjectTypes.Add(new(ObjectType.GroundVehicle));
+
+            Simulator simulator = SimUtil.FromInterOpType(SimConnect.InterOpType);
+            AircraftManager aircraftMgr = new(DBContext, simulator);
+            Titles = aircraftMgr.ListAllAircraft();
+
+            sceneryManager = new(DBContext, simulator);
+            ICAOList = sceneryManager.GetICAOList();
+        }
+
+        public void SetSelectedParking(string name)
+        {
+            Parking = Airport?.Parkings[name];
         }
     }
 }

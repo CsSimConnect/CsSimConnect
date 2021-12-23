@@ -30,6 +30,8 @@ namespace SimScanner.Model
         public string City { get; set; }
         public double Latitude { get; set; }
         public double Longitude { get; set; }
+        public double AltitudeMeters { get; set; }
+        public double AltitudeFeet { get; set; }
 
         public IDictionary<string, Parking> Parkings { get; } = new Dictionary<string, Parking>();
         public ICollection<string> ParkingNames => Parkings.Keys;

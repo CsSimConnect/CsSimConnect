@@ -19,6 +19,10 @@ using CsSimConnect.AI;
 using CsSimConnectUI.Domain;
 using System;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Input;
+using System.Windows.Media;
+using static CsSimConnect.Util.StringUtil;
 
 namespace CsSimConnectUI
 {
@@ -40,13 +44,16 @@ namespace CsSimConnectUI
 
         private void DoCreate(object sender, RoutedEventArgs e)
         {
-            if (model.Validated)
+            if (!IsEmpty(tailNumber.Text) && !IsEmpty(aircraftTitle.SelectedValue?.ToString()) && (model.Parking != null))
             {
-                AircraftBuilder bld = AircraftBuilder.Builder(model.Title)
-                    .WithTailNumber(model.TailNumber)
-                    .AtAirport(model.AirportId);
-                AIManager.Instance.Create((ParkedAircraft)bld.Build()).Subscribe(_ => Dispatcher.Invoke(Close), ShowError);
+                SimulatedAircraft aircraft = AircraftBuilder.Builder(aircraftTitle.SelectedValue?.ToString())
+                    .WithTailNumber(tailNumber.Text)
+                    .AtPosition(model.Parking.Latitude, model.Parking.Longitude, model.Airport.AltitudeFeet)
+                    .WithHeading(model.Parking.Heading)
+                    .OnGround().Static().Build();
+                AIManager.Instance.Create(aircraft).Subscribe(_ => Dispatcher.Invoke(Close), ShowError);
             }
+            Close();
         }
 
         private void ShowError(Exception exc)
@@ -58,5 +65,103 @@ namespace CsSimConnectUI
         {
             Close();
         }
+
+        private void AirportSelected(object sender, RoutedEventArgs e)
+        {
+            model.LoadParkings(icao.Text);
+        }
+
+        private void ParkingSelected(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        {
+            model.SetSelectedParking(parking.SelectedValue.ToString());
+        }
+
+        private void KeyUp_ICAO(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            bool found = false;
+            var data = model.ICAOList;
+
+            string query = icao.Text;
+
+            if (query.Length == 0)
+            {
+                // Clear
+                icaoResults.Children.Clear();
+                icaoLister.Visibility = Visibility.Collapsed;
+            }
+            else
+            {
+                icaoLister.Visibility = Visibility.Visible;
+            }
+
+            // Clear the list
+            icaoResults.Children.Clear();
+
+            // Add the result
+            int maxResults = 10;
+            foreach (var airportIcao in data)
+            {
+                if (airportIcao.Contains(query))
+                {
+                    // The word starts with this... Autocomplete must work
+                    addItem(airportIcao);
+                    found = true;
+                    if (--maxResults == 0)
+                    {
+                        break;
+                    }
+                }
+            }
+
+            if (!found)
+            {
+                icaoResults.Children.Add(new TextBlock() { Text = "No results found." });
+            }
+        }
+        private void addItem(string text)
+        {
+            TextBlock block = new TextBlock();
+
+            // Add the text
+            block.Text = text;
+
+            // A little style...
+            block.Margin = new Thickness(2, 3, 2, 3);
+            block.Cursor = Cursors.Hand;
+
+            // Mouse events
+            block.MouseLeftButtonUp += (sender, e) =>
+            {
+                icao.Text = (sender as TextBlock).Text;
+                icaoLister.Visibility = Visibility.Collapsed;
+            };
+
+            block.MouseEnter += (sender, e) =>
+            {
+                TextBlock b = sender as TextBlock;
+                b.Background = Brushes.PeachPuff;
+            };
+
+            block.MouseLeave += (sender, e) =>
+            {
+                TextBlock b = sender as TextBlock;
+                b.Background = Brushes.Transparent;
+            };
+            block.KeyDown += (sender, key) =>
+            {
+                if (key.Key == Key.Enter)
+                {
+                    icao.Text = (sender as TextBlock).Text;
+                    icaoLister.Visibility = Visibility.Collapsed;
+                }
+                else if (key.Key == Key.Escape)
+                {
+                    icaoLister.Visibility = Visibility.Collapsed;
+                }
+            };
+            // Add to the panel
+            icaoResults.Children.Add(block);
+        }
+
     }
 }

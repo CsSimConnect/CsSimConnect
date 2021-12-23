@@ -83,6 +83,7 @@ namespace ShowAirport
                     if (HaveValue(airport.City))    Console.WriteLine($"      City     : {airport.City}");
                     Console.WriteLine($"      Latitude : {airport.Latitude:###.###}");
                     Console.WriteLine($"      Longitude: {airport.Longitude:###.###}");
+                    Console.WriteLine($"      Altitude : {airport.AltitudeMeters:#####} meter(s) ({airport.AltitudeFeet:######} feet)");
                     if (showParkings)
                     {
                         foreach (Parking p in airport.ParkingValues)

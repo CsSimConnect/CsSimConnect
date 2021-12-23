@@ -151,28 +151,33 @@ namespace SimScanner.AddOns
                         continue;
                     }
 
-                    foreach (string subdir in Directory.EnumerateFiles(package.Path))
-                    {
-                        AddOn subPackage = new();
-                        subPackage.Name = subdir;
-                        subPackage.Path = Path.Combine(package.Path, subdir);
-                        subPackage.IsActive = package.IsActive;
-                        subPackage.IsRequired = package.IsRequired;
-
-                        string xmlFile = Path.Combine(subPackage.Path, "add-on.xml");
-                        if (File.Exists(xmlFile))
-                        {
-                            subPackage.ConfigFile = xmlFile;
-                            ReadAddOnXml(subPackage);
-                        }
-                        result.Add(subPackage);
-                    }
+                    DiscoverPackages(result, package.Path, package.IsActive, package.IsRequired);
 
                     index++;
                     sectionTitle = $"DiscoveryPath.{index}";
                 }
             }
             return result;
+        }
+
+        private static void DiscoverPackages(List<AddOn> result, string path, bool isActive =true, bool isRequired =true)
+        {
+            foreach (string subdir in Directory.EnumerateFiles(path))
+            {
+                AddOn subPackage = new();
+                subPackage.Name = subdir;
+                subPackage.Path = Path.Combine(path, subdir);
+                subPackage.IsActive = isActive;
+                subPackage.IsRequired = isRequired;
+
+                string xmlFile = Path.Combine(subPackage.Path, "add-on.xml");
+                if (File.Exists(xmlFile))
+                {
+                    subPackage.ConfigFile = xmlFile;
+                    ReadAddOnXml(subPackage);
+                }
+                result.Add(subPackage);
+            }
         }
     }
 }

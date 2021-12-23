@@ -432,6 +432,62 @@ CS_SIMCONNECT_DLL_EXPORT_LONG CsAddToDataDefinition(HANDLE handle, uint32_t defI
  * AI
  */
 
+CS_SIMCONNECT_DLL_EXPORT_LONG CsAICreateEnrouteATCAircraft(HANDLE handle, const char* title, const char* tailNumber, int flightNumber, const char* flightPlanPath, double flightPlanPosition, uint32_t touchAndGo, uint32_t requestId)
+{
+	initLog();
+
+	logger.info("CsAICreateEnrouteATCAircraft(..., '{}', '{}', {}, '{}', {}, {})", title, tailNumber, flightNumber, flightPlanPath, flightPlanPosition, requestId);
+	if (handle == nullptr) {
+		logger.error("Handle passed to CsAICreateEnrouteATCAircraft is null!");
+		return FALSE;
+	}
+
+	std::unique_lock<std::mutex> scLock(scMutex);
+	return fetchSendId(handle, SimConnect_AICreateEnrouteATCAircraft(handle, title, tailNumber, flightNumber, flightPlanPath, flightPlanPosition, touchAndGo, requestId), "AICreateEnrouteATCAircraft");
+}
+
+#if IS_PREPAR3D
+
+CS_SIMCONNECT_DLL_EXPORT_LONG CsAICreateEnrouteATCAircraftW(HANDLE handle, const wchar_t* title, const wchar_t* tailNumber, int flightNumber, const wchar_t* flightPlanPath, double flightPlanPosition, uint32_t touchAndGo, uint32_t requestId)
+{
+	initLog();
+
+	logger.info("CsAICreateEnrouteATCAircraft(..., '{}', '{}', {}, '{}', {}, {})", title, tailNumber, flightNumber, flightPlanPath, flightPlanPosition, requestId);
+	if (handle == nullptr) {
+		logger.error("Handle passed to CsAICreateEnrouteATCAircraft is null!");
+		return FALSE;
+	}
+
+	std::unique_lock<std::mutex> scLock(scMutex);
+	return fetchSendId(handle, SimConnect_AICreateEnrouteATCAircraftW(handle, title, tailNumber, flightNumber, flightPlanPath, flightPlanPosition, touchAndGo, requestId), "AICreateEnrouteATCAircraft");
+}
+
+#endif
+
+CS_SIMCONNECT_DLL_EXPORT_LONG CsAICreateNonATCAircraft(HANDLE handle, const char* title, const char* tailNumber, SIMCONNECT_DATA_LATLONALT* pos, SIMCONNECT_DATA_XYZ* pbh, uint32_t onGround, uint32_t airspeed, uint32_t requestId)
+{
+	initLog();
+
+	logger.info("CsAICreateNonATCAircraft(..., '{}', '{}', ..., {})", title, tailNumber, requestId);
+	if (handle == nullptr) {
+		logger.error("Handle passed to CsAICreateNonATCAircraft is null!");
+		return FALSE;
+	}
+
+	SIMCONNECT_DATA_INITPOSITION initPos;
+	initPos.Latitude = pos->Latitude;
+	initPos.Longitude = pos->Longitude;
+	initPos.Altitude = pos->Altitude;
+	initPos.Pitch = pbh->x;
+	initPos.Bank = pbh->y;
+	initPos.Heading = pbh->z;
+	initPos.OnGround = onGround;
+	initPos.Airspeed = airspeed;
+
+	std::unique_lock<std::mutex> scLock(scMutex);
+	return fetchSendId(handle, SimConnect_AICreateNonATCAircraft(handle, title, tailNumber, initPos, requestId), "AICreateNonATCAircraft");
+}
+
 CS_SIMCONNECT_DLL_EXPORT_LONG CsAICreateParkedATCAircraft(HANDLE handle, const char* title, const char* tailNumber, const char* airportId, uint32_t requestId)
 {
 	initLog();
@@ -444,4 +500,42 @@ CS_SIMCONNECT_DLL_EXPORT_LONG CsAICreateParkedATCAircraft(HANDLE handle, const c
 
 	std::unique_lock<std::mutex> scLock(scMutex);
 	return fetchSendId(handle, SimConnect_AICreateParkedATCAircraft(handle, title, tailNumber, airportId, requestId), "AICreateParkedATCAircraft");
+}
+
+CS_SIMCONNECT_DLL_EXPORT_LONG CsAICreateSimulatedObject(HANDLE handle, const char* title, SIMCONNECT_DATA_LATLONALT* pos, SIMCONNECT_DATA_XYZ* pbh, uint32_t onGround, uint32_t airspeed, uint32_t requestId)
+{
+	initLog();
+
+	logger.info("CsAICreateSimulatedObject(..., '{}', ..., {})", title, requestId);
+	if (handle == nullptr) {
+		logger.error("Handle passed to CsAICreateSimulatedObjectis null!");
+		return FALSE;
+	}
+
+	SIMCONNECT_DATA_INITPOSITION initPos;
+	initPos.Latitude = pos->Latitude;
+	initPos.Longitude = pos->Longitude;
+	initPos.Altitude = pos->Altitude;
+	initPos.Pitch = pbh->x;
+	initPos.Bank = pbh->y;
+	initPos.Heading = pbh->z;
+	initPos.OnGround = onGround;
+	initPos.Airspeed = airspeed;
+
+	std::unique_lock<std::mutex> scLock(scMutex);
+	return fetchSendId(handle, SimConnect_AICreateSimulatedObject(handle, title, initPos, requestId), "AICreateSimulatedObject");
+}
+
+CS_SIMCONNECT_DLL_EXPORT_LONG CsAIRemoveObject(HANDLE handle, uint32_t objectId, uint32_t requestId)
+{
+	initLog();
+
+	logger.info("CsAIRemoveObject(..., {}, {})", objectId, requestId);
+	if (handle == nullptr) {
+		logger.error("Handle passed to CsAIRemoveObject null!");
+		return FALSE;
+	}
+
+	std::unique_lock<std::mutex> scLock(scMutex);
+	return fetchSendId(handle, SimConnect_AIRemoveObject(handle, objectId, requestId), "AIRemoveObject");
 }

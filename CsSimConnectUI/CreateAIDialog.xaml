@@ -15,50 +15,91 @@
         FontFamily="{DynamicResource MaterialDesignFont}"
         Title="CreateAIDialog" Height="360" Width="400" SizeToContent="WidthAndHeight">
     <Grid Margin="10,10,10,10">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
-            <RowDefinition Height="32" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
-        <StackPanel Grid.Row="0" Orientation="Vertical" Margin="10,10,10,10">
-            <ComboBox materialDesign:HintAssist.Hint="Type" ItemsSource="{Binding ObjectTypes}" Margin="10,10,10,10">
-                <ComboBox.ItemTemplate>
-                    <DataTemplate>
-                        <StackPanel Orientation="Horizontal">
-                            <materialDesign:PackIcon Kind="{Binding IconName}" Margin="5,0,5,0"/>
-                            <TextBlock Text="{Binding Name}"/>
-                        </StackPanel>
-                    </DataTemplate>
-                </ComboBox.ItemTemplate>
-            </ComboBox>
-            <TextBox x:Name="TitleTextBox" materialDesign:HintAssist.Hint="Title" Margin="10,10,10,10">
-                <TextBox.Text>
-                    <Binding Path="Title" UpdateSourceTrigger="PropertyChanged">
-                        <Binding.ValidationRules>
-                            <domain:NotEmptyValidationRule ValidatesOnTargetUpdated="True" />
-                        </Binding.ValidationRules>
-                    </Binding>
-                </TextBox.Text>
-            </TextBox>
-            <TextBox x:Name="TailNumberTextBox" materialDesign:HintAssist.Hint="TailNumber" Margin="10,10,10,10">
-                <TextBox.Text>
-                    <Binding Path="TailNumber" UpdateSourceTrigger="PropertyChanged">
-                        <Binding.ValidationRules>
-                            <domain:NotEmptyValidationRule ValidatesOnTargetUpdated="True" />
-                        </Binding.ValidationRules>
-                    </Binding>
-                </TextBox.Text>
-            </TextBox>
-            <TextBox x:Name="AirportTextBox" materialDesign:HintAssist.Hint="Airport ICAO code" Margin="10,10,10,10">
-                <TextBox.Text>
-                    <Binding Path="AirportId" UpdateSourceTrigger="PropertyChanged">
-                        <Binding.ValidationRules>
-                            <domain:NotEmptyValidationRule ValidatesOnTargetUpdated="True" />
-                        </Binding.ValidationRules>
-                    </Binding>
-                </TextBox.Text>
-            </TextBox>
-        </StackPanel>
-        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Bottom">
+
+        <TextBlock
+            Grid.Row="0" Grid.Column="0"
+            Margin="10,10,10,10"
+            Text="SimObject type" />
+        <ComboBox Grid.Row="0" Grid.Column="1"
+            materialDesign:HintAssist.Hint="Type" ItemsSource="{Binding ObjectTypes}" Margin="10,10,10,10">
+            <ComboBox.ItemTemplate>
+                <DataTemplate>
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="{Binding IconName}" Margin="5,0,5,0"/>
+                        <TextBlock Text="{Binding Name}"/>
+                    </StackPanel>
+                </DataTemplate>
+            </ComboBox.ItemTemplate>
+        </ComboBox>
+
+        <TextBlock
+            Grid.Row="1" Grid.Column="0"
+            Margin="10,10,10,10"
+            Text="Tailnumber" />
+        <TextBox
+            Grid.Row="1" Grid.Column="1"
+            x:Name="tailNumber" materialDesign:HintAssist.Hint="TailNumber" Margin="10,10,10,10">
+            <TextBox.Text>
+                <Binding Path="TailNumber" UpdateSourceTrigger="PropertyChanged">
+                    <Binding.ValidationRules>
+                        <domain:NotEmptyValidationRule ValidatesOnTargetUpdated="True" />
+                    </Binding.ValidationRules>
+                </Binding>
+            </TextBox.Text>
+        </TextBox>
+
+        <TextBlock
+            Grid.Row="2" Grid.Column="0"
+            Margin="10,10,10,10"
+            Text="Aircraft" />
+        <ComboBox 
+            Grid.Row="2" Grid.Column="1"
+            x:Name="aircraftTitle" materialDesign:HintAssist.Hint="Aircraft title" IsEditable="True"
+            Margin="10,10,10,10"
+            ItemsSource="{Binding Titles}"/>
+
+        <TextBlock
+            Grid.Row="3" Grid.Column="0"
+            Margin="10,10,10,10"
+            Text="Airport (ICAO code)" />
+        <TextBox 
+            Grid.Row="3" Grid.Column="1"
+            x:Name="icao" materialDesign:HintAssist.Hint="ICAO"
+            Margin="10,10,10,10"
+            SelectionChanged="AirportSelected" KeyUp="KeyUp_ICAO" />
+        <Border
+            Grid.Row="3" Grid.Column="1" Grid.ZIndex="1"
+            x:Name="icaoLister"
+            Width="298" Height="150" BorderBrush="Black" BorderThickness="1" Visibility="Collapsed">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel Name="icaoResults"></StackPanel>
+            </ScrollViewer>
+        </Border>
+
+        <TextBlock
+            Grid.Row="4" Grid.Column="0"
+            Margin="10,10,10,10"
+            Text="Parking" />
+        <ComboBox 
+            Grid.Row="4" Grid.Column="1"
+            x:Name="parking" materialDesign:HintAssist.Hint="Parking" IsEditable="True"
+            Margin="10,10,10,10"
+            ItemsSource="{Binding Parkings}" SelectionChanged="ParkingSelected"/>
+
+        <StackPanel Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="2"
+                    Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Bottom">
             <Button Style="{StaticResource MaterialDesignFlatButton}" Content="CANCEL" Margin="5,0,5,0" Click="DoCancel" />
             <Button Style="{StaticResource MaterialDesignFlatButton}" Content="OK" Margin="5,0,5,0" Click="DoCreate" />
         </StackPanel>

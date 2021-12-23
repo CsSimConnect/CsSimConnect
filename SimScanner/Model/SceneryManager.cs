@@ -51,6 +51,8 @@ namespace SimScanner.Model
                                     apt_icao     VARCHAR(4) NOT NULL,
                                     apt_lat      REAL       NOT NULL,
                                     apt_lon      REAL       NOT NULL,
+                                    apt_alt_mtr  REAL       NOT NULL,
+                                    apt_alt_feet REAL       NOT NULL,
                                     PRIMARY KEY (bgl_layer,apt_icao)
                                   )"
                     },
@@ -158,6 +160,8 @@ namespace SimScanner.Model
                             foreach (BglAirport bglAirport in section.Airports)
                             {
                                 Airport airport = new(bglAirport.Name, entry.Layer, file.Name, bglAirport.ICAO, bglAirport.Latitude, bglAirport.Longitude);
+                                airport.AltitudeMeters = bglAirport.Header.Altitude / 1000.0;
+                                airport.AltitudeFeet = airport.AltitudeMeters * 3.28084;
                                 foreach (Parking parking in bglAirport.Parkings)
                                 {
                                     if (airport.Parkings.ContainsKey(parking.FullName))
@@ -230,7 +234,7 @@ namespace SimScanner.Model
             Airport result = null;
 
             var query = DB().CreateCommand();
-            query.CommandText = @"SELECT apt_name,bgl_layer,bgl_filename,apt_icao,apt_lat,apt_lon FROM airports WHERE (bgl_layer=$layer) AND (apt_icao=$icao)";
+            query.CommandText = @"SELECT apt_name,bgl_layer,bgl_filename,apt_icao,apt_lat,apt_lon,apt_alt_mtr,apt_alt_feet FROM airports WHERE (bgl_layer=$layer) AND (apt_icao=$icao)";
             query.Parameters.AddWithValue("$layer", layer);
             query.Parameters.AddWithValue("$icao", icao);
             using (var reader = query.ExecuteReader())
@@ -238,6 +242,8 @@ namespace SimScanner.Model
                 if (reader.Read())
                 {
                     result = new(reader.GetString(0), reader.GetInt32(1), reader.GetString(2), reader.GetString(3), reader.GetDouble(4), reader.GetDouble(5));
+                    result.AltitudeMeters = reader.GetDouble(6);
+                    result.AltitudeFeet = reader.GetDouble(7);
 
                     query = DB().CreateCommand();
                     query.CommandText = @"SELECT prk_number,prk_name,prk_lat,prk_lon,prk_heading FROM parkings WHERE (bgl_layer=$layer) AND (apt_icao=$icao)";
@@ -260,7 +266,7 @@ namespace SimScanner.Model
                     }
                 }
             }
-            if (HaveAirportName(layer, icao))
+            if ((result != null) && HaveAirportName(layer, icao))
             {
                 var nameQuery = DB().CreateCommand();
                 nameQuery.CommandText = @"SELECT apt_region,apt_country,apt_state,apt_city,apt_name FROM airport_names WHERE bgl_layer=$layer AND apt_icao=$icao";
@@ -298,6 +304,23 @@ namespace SimScanner.Model
             return result;
         }
 
+        public List<string> GetICAOList()
+        {
+            List<string> result = new();
+
+            var query = DB().CreateCommand();
+            query.CommandText = @"SELECT DISTINCT apt_icao FROM airports ORDER BY apt_icao ASC";
+
+            using (var reader = query.ExecuteReader())
+            {
+                while (reader.Read())
+                {
+                    result.Add(reader.GetString(0));
+                }
+            }
+            return result;
+        }
+
         private static SqliteParameter addParameter(SqliteCommand cmd, string name)
         {
             var parm = cmd.CreateParameter();
@@ -314,13 +337,15 @@ namespace SimScanner.Model
                 log.Debug?.Log($"Adding {airport.ICAO} (layer {airport.Layer})");
 
                 var cmd = DB().CreateCommand();
-                cmd.CommandText = @"INSERT INTO airports(apt_name,bgl_layer,bgl_filename,apt_icao,apt_lat,apt_lon) VALUES($name,$layer,$filename,$icao,$lat,$lon)";
+                cmd.CommandText = @"INSERT INTO airports(apt_name,bgl_layer,bgl_filename,apt_icao,apt_lat,apt_lon,apt_alt_mtr,apt_alt_feet) VALUES($name,$layer,$filename,$icao,$lat,$lon,$altMtr,$altFeet)";
                 cmd.Parameters.AddWithValue("$name", airport.Name ?? "");
                 cmd.Parameters.AddWithValue("$layer", airport.Layer);
                 cmd.Parameters.AddWithValue("$filename", airport.Filename);
                 cmd.Parameters.AddWithValue("$icao", airport.ICAO);
                 cmd.Parameters.AddWithValue("$lat", airport.Latitude);
                 cmd.Parameters.AddWithValue("$lon", airport.Longitude);
+                cmd.Parameters.AddWithValue("$altMtr", airport.AltitudeMeters);
+                cmd.Parameters.AddWithValue("$altFeet", airport.AltitudeFeet);
                 if (cmd.ExecuteNonQuery() != 1)
                 {
                     return false;

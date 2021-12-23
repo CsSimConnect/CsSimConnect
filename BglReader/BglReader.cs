@@ -71,6 +71,7 @@ namespace BglReader
                         Console.WriteLine($"  ==> name {bglAirport.Name}, ICAO code {bglAirport.ICAO}, region ident {bglAirport.RegionCode}, {bglAirport.NumRunwayStarts} runway(s), {bglAirport.Taxiways.Count} named taxiway(s), {bglAirport.NumJetways} jetway(s), {bglAirport.Parkings.Count} parking(s).");
                         Console.WriteLine($"      Latitude  {bglAirport.Latitude:###.###}");
                         Console.WriteLine($"      Longitude {bglAirport.Longitude:###.###}");
+                        Console.WriteLine($"      Altitude : {bglAirport.Header.Altitude:#####} meter(s) (tower alt {bglAirport.Header.TowerAltitude:#####})");
                     }
                 }
                 else if (section.IsNameList)

@@ -60,7 +60,7 @@ namespace CsSimConnect
         private static extern long CsRequestDataOnSimObjectType(IntPtr handle, UInt32 requestId, UInt32 defId, UInt32 radius, UInt32 objectType);
 
         [DllImport("CsSimConnectInterOp.dll")]
-        private static extern long CsAICreateParkedATCAircraft(IntPtr handle, [MarshalAs(UnmanagedType.LPStr)] string title, [MarshalAs(UnmanagedType.LPStr)] string tailNumber, [MarshalAs(UnmanagedType.LPStr)] string airportId, UInt32 requestId);
+        private static extern long CsAICreateNonATCAircraft(IntPtr handle, [MarshalAs(UnmanagedType.LPStr)] string title, [MarshalAs(UnmanagedType.LPStr)] string tailNumber, ref LatLonAlt pos, ref PBH pbh, UInt32 onGround, UInt32 airSpeed, UInt32 requestId);
 
         private static readonly Logger log = Logger.GetLogger(typeof(RequestManager));
 
@@ -168,12 +168,15 @@ namespace CsSimConnect
             return RegisterStreamObserver<T>(requestId, CsRequestDataOnSimObjectType(simConnect.handle, requestId, objectDefinition.DefinitionId, radiusInMeters, (uint)objectType), "RequestDataOnSimObjectType");
         }
 
-        public MessageResult<AssignedObjectId> CreateParkedAircraft(ParkedAircraft aircraft)
+        public MessageResult<AssignedObjectId> CreateNonATCAircraft(SimulatedAircraft aircraft)
         {
             uint requestId = NextId();
-            log.Debug?.Log("CreateParkedAircraft(): RequestId {0}", requestId);
+            log.Debug?.Log("CreateNonAircraft(): RequestId {0}", requestId);
 
-            return RegisterResultObserver<AssignedObjectId>(requestId, CsAICreateParkedATCAircraft(simConnect.handle, aircraft.Title, aircraft.TailNumber, aircraft.AirportId, requestId), "CreateParkedAircraft");
+            LatLonAlt pos = new() { Latitude = aircraft.Latitude, Longitude = aircraft.Longitude, Altitude = aircraft.Altitude };
+            PBH pbh = new() { Pitch = aircraft.Pitch, Bank = aircraft.Bank, Heading = aircraft.Heading };
+
+            return RegisterResultObserver<AssignedObjectId>(requestId, CsAICreateNonATCAircraft(simConnect.handle, aircraft.Title, aircraft.TailNumber, ref pos, ref pbh, (uint)(aircraft.OnGround ? 1 : 0), (uint)aircraft.AirSpeed, requestId), "CreateParkedAircraft");
         }
     }
 }

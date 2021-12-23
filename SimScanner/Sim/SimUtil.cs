@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+using CsSimConnect;
 using Microsoft.Win32;
 using System;
 using System.IO;
@@ -117,6 +118,16 @@ namespace SimScanner.Sim
 
             return result;
 
+        }
+
+        public static Simulator FromInterOpType(CsSimConnect.FlightSimType type)
+        {
+            return type switch
+            {
+                CsSimConnect.FlightSimType.Prepar3Dv5 => GetPrepar3Dv5(),
+                CsSimConnect.FlightSimType.MSFS2020 => GetMSFS2020(),
+                _ => null
+            };
         }
     }
 }

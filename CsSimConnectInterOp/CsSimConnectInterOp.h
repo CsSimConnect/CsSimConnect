@@ -62,4 +62,11 @@ CS_SIMCONNECT_DLL_EXPORT_LONG CsRequestDataOnSimObjectType(HANDLE handle, uint32
 CS_SIMCONNECT_DLL_EXPORT_LONG CsAddToDataDefinition(HANDLE handle, uint32_t defId, const char* datumName, const char* UnitsName, uint32_t datumType, float epsilon, uint32_t datumId);
 CS_SIMCONNECT_DLL_EXPORT_LONG CsSetDataOnSimObject(HANDLE handle, uint32_t defId, uint32_t objectId, uint32_t flags, uint32_t count, uint32_t unitSize, void* data);
 
+CS_SIMCONNECT_DLL_EXPORT_LONG CsAICreateEnrouteATCAircraft(HANDLE handle, const char* title, const char* tailNumber, int flightNumber, const char* flightPlanPath, double flightPlanPosition, uint32_t touchAndGo, uint32_t requestId);
+#if IS_PREPAR3D
+CS_SIMCONNECT_DLL_EXPORT_LONG CsAICreateEnrouteATCAircraftW(HANDLE handle, const wchar_t* title, const wchar_t* tailNumber, int flightNumber, const wchar_t* flightPlanPath, double flightPlanPosition, uint32_t touchAndGo, uint32_t requestId);
+#endif
+CS_SIMCONNECT_DLL_EXPORT_LONG CsAICreateNonATCAircraft(HANDLE handle, const char* title, const char* tailNumber, SIMCONNECT_DATA_LATLONALT* pos, SIMCONNECT_DATA_XYZ* pbh, uint32_t onGround, uint32_t airspeed, uint32_t requestId);
 CS_SIMCONNECT_DLL_EXPORT_LONG CsAICreateParkedATCAircraft(HANDLE handle, const char* title, const char* tailNumber, const char* airportId, uint32_t requestId);
+CS_SIMCONNECT_DLL_EXPORT_LONG CsAICreateSimulatedObject(HANDLE handle, const char* title, SIMCONNECT_DATA_LATLONALT* pos, SIMCONNECT_DATA_XYZ* pbh, uint32_t onGround, uint32_t airspeed, uint32_t requestId);
+CS_SIMCONNECT_DLL_EXPORT_LONG CsAIRemoveObject(HANDLE handle, uint32_t objectId, uint32_t requestId);

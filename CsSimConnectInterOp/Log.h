@@ -29,7 +29,7 @@ namespace nl {
 namespace rakis {
 
 	struct any {
-		enum class Type { Char, Int, UInt, Long, ULong, LLong, ULLong, Float, Double, String };
+		enum class Type { Char, Int, UInt, Long, ULong, LLong, ULLong, Float, Double, String, WString };
 		any(char e) { m_data.char_ = e; m_type = Type::Char; }
 		any(const int   e) { m_data.int_ = e; m_type = Type::Int; }
 		any(const unsigned int   e) { m_data.uint_ = e; m_type = Type::UInt; }
@@ -40,6 +40,7 @@ namespace rakis {
 		any(const float e) { m_data.float_ = e; m_type = Type::Float; }
 		any(const double e) { m_data.double_ = e; m_type = Type::Double; }
 		any(const char* e) { m_data.str_ = e; m_type = Type::String; }
+		any(const wchar_t* e) { m_data.wstr_ = e; m_type = Type::WString; }
 		any(std::string const& s) { m_data.str_ = s.c_str(); m_type = Type::String; }
 		Type type() const { return m_type; }
 		int asChar() const { return m_data.char_; }
@@ -52,6 +53,7 @@ namespace rakis {
 		float asFloat() const { return m_data.float_; }
 		double asDouble() const { return m_data.double_; }
 		const char* asString() const { return m_data.str_; }
+		const wchar_t* asWString() const { return m_data.wstr_; }
 	private:
 		Type m_type;
 		union {
@@ -65,6 +67,7 @@ namespace rakis {
 			float float_;
 			double double_;
 			const char* str_;
+			const wchar_t* wstr_;
 		} m_data;
 	};
 
@@ -145,6 +148,7 @@ namespace rakis {
 						case any::Type::Float: s << argVec[arg].asFloat(); break;
 						case any::Type::Double: s << argVec[arg].asDouble(); break;
 						case any::Type::String: s << argVec[arg].asString(); break;
+						case any::Type::WString: s << argVec[arg].asWString(); break;
 						}
 						arg++;
 					}

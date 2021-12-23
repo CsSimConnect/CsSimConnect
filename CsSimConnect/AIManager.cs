@@ -16,6 +16,7 @@
 
 using CsSimConnect.AI;
 using CsSimConnect.DataDefs;
+using CsSimConnect.Events;
 using CsSimConnect.Reactive;
 using CsSimConnect.Reflection;
 using Rakis.Logging;
@@ -43,86 +44,6 @@ namespace CsSimConnect
         Viewer,
     }
 
-    public enum GearPosition
-    {
-        Unknown = 0,
-        Up = 1,
-        Down = 2
-    }
-
-    public class AllGearPositions
-    {
-        [DataDefinition("GEAR POSITION:0", Type = DataType.Int32)]
-        public GearPosition Center { get; set; }
-
-        [DataDefinition("GEAR POSITION:1", Type = DataType.Int32)]
-        public GearPosition Left { get; set; }
-
-        [DataDefinition("GEAR POSITION:2", Type = DataType.Int32)]
-        public GearPosition Right { get; set; }
-
-        [DataDefinition("GEAR POSITION:3", Type = DataType.Int32)]
-        public GearPosition Aux { get; set; }
-
-        public AllGearPositions(GearPosition center, GearPosition left, GearPosition right, GearPosition aux = GearPosition.Unknown)
-        {
-            Center = center;
-            Left = left;
-            Right = right;
-            Aux = aux;
-        }
-
-        public AllGearPositions(GearPosition all)
-        {
-            Center = all;
-            Left = all;
-            Right = all;
-            Aux = all;
-        }
-    }
-
-    public class AllGearPercentages
-    {
-        [DataDefinition("GEAR CENTER POSITION", Units = "Percent over 100", Type = DataType.Int32)]
-        public int Center;
-        [DataDefinition("GEAR LEFT POSITION", Units = "Percent over 100", Type = DataType.Int32)]
-        public int Left;
-        [DataDefinition("GEAR RIGHT POSITION", Units = "Percent over 100", Type = DataType.Int32)]
-        public int Right;
-        [DataDefinition("GEAR TAIL POSITION", Units = "Percent over 100", Type = DataType.Int32, Usage = Usage.GetOnly)]
-        public int Tail;
-        [DataDefinition("GEAR AUX POSITION", Units = "Percent over 100", Type = DataType.Int32, Usage = Usage.GetOnly)]
-        public int Aux;
-
-        public AllGearPercentages(GearPosition all)
-        {
-            Center = (all == GearPosition.Up) ? 0 : 100;
-            Left = (all == GearPosition.Up) ? 0 : 100;
-            Right = (all == GearPosition.Up) ? 0 : 100;
-        }
-
-        public AllGearPercentages(int center, int left, int right)
-        {
-            Center = center;
-            Left = left;
-            Right = right;
-        }
-
-        public void Up()
-        {
-            Center = 0;
-            Left = 0;
-            Right = 0;
-        }
-
-        public void Down()
-        {
-            Center = 100;
-            Left = 100;
-            Right = 100;
-        }
-    }
-
     public class AIManager : MessageManager
     {
 
@@ -132,27 +53,26 @@ namespace CsSimConnect
 
         public static AIManager Instance { get { return lazyInstance.Value; } }
 
-        public readonly AllGearPercentages GearsDown = new(GearPosition.Down);
-
         private AIManager(SimConnect simConnect) : base("ObjectID", 0, simConnect)
         {
         }
 
-        public MessageResult<ParkedAircraft> Create(ParkedAircraft aircraft)
+        public MessageResult<SimulatedAircraft> Create(SimulatedAircraft aircraft)
         {
-            log.Info?.Log("Creating a '{0}' at {1}.", aircraft.Title, aircraft.AirportId);
-            MessageResult<ParkedAircraft> result = new();
-            RequestManager.Instance.CreateParkedAircraft(aircraft).Subscribe(obj => CleanupParkedAircraft(aircraft, obj.ObjectId, result), exc => result.OnError(exc));
+            log.Info?.Log("Creating a '{0}'.", aircraft.Title);
+            MessageResult<SimulatedAircraft> result = new();
+            RequestManager.Instance.CreateNonATCAircraft(aircraft).Subscribe(obj => CleanupNonATCAircraft(aircraft, obj.ObjectId, result), exc => result.OnError(exc));
             return result;
         }
 
-        private void CleanupParkedAircraft(SimulatedAircraft aircraft, uint objectId, MessageResult<ParkedAircraft> observer)
+        private void CleanupNonATCAircraft(SimulatedAircraft aircraft, uint objectId, MessageResult<SimulatedAircraft> observer)
         {
             log.Info?.Log("Assigned ObjectId {0} to '{1}'.", objectId, aircraft.Title);
             aircraft.ObjectId = objectId;
             if (aircraft.OnGround)
             {
-                DataManager.Instance.SetData(objectId, GearsDown);
+                ClientEvent evt = EventManager.GetEvent("ENGINE_AUTO_SHUTDOWN");
+                evt.Send(objectId);
             }
             observer.OnNext(aircraft);
         }

@@ -26,8 +26,13 @@ namespace CsSimConnect.AI
         public string Details { get; set; }
         public uint ObjectId { get; set; }
 
-        public LatLonAlt Position { get; set; }
-        public PBH Rotation { get; set; }
+        public double Latitude { get; set; }
+        public double Longitude { get; set; }
+        public double Altitude { get; set; }
+        public double Pitch { get; set; }
+        public double Bank { get; set; }
+        public double Heading { get; set; }
+
         public bool OnGround { get; set; }
         public int AirSpeed { get; set; }
 

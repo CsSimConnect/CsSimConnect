@@ -28,8 +28,18 @@ namespace CsSimConnect.AI
         }
 
         public string Title { get; set; }
+
         public string TailNumber { get; set; }
-        public InitPosition InitPosition { get; set; }
+
+        public double Latitude { get; set; }
+        public double Longitude { get; set; }
+        public double Altitude { get; set; }
+        public double Pitch { get; set; }
+        public double Bank { get; set; }
+        public double Heading { get; set; }
+
+        public bool IsOnGround { get; set; }
+        public int AirSpeed { get; set; }
         public string AirportId { get; set; }
 
         private AircraftBuilder(string title)
@@ -40,22 +50,101 @@ namespace CsSimConnect.AI
         public AircraftBuilder WithTailNumber(string tailNumber)
         {
             TailNumber = tailNumber;
+
             return this;
         }
 
         public AircraftBuilder AtAirport(string airportId)
         {
             AirportId = airportId;
+
+            return this;
+        }
+
+        public AircraftBuilder AtPosition(double latitude, double longitude, double altitude =0.0)
+        {
+            Latitude = latitude;
+            Longitude = longitude;
+            Altitude = altitude;
+
+            return this;
+        }
+
+        public AircraftBuilder WithPBH(double pitch, double bank, double heading)
+        {
+            Pitch = pitch;
+            Bank = bank;
+            Heading = heading;
+
+            return this;
+        }
+
+        public AircraftBuilder WithPitch(double pitch)
+        {
+            Pitch = pitch;
+
+            return this;
+        }
+
+        public AircraftBuilder WithBank(double bank)
+        {
+            Bank = bank;
+
+            return this;
+        }
+
+        public AircraftBuilder WithHeading(double heading)
+        {
+            Heading = heading;
+
+            return this;
+        }
+
+        public AircraftBuilder OnGround()
+        {
+            Altitude = 0.0;
+
+            Pitch = 0.0;
+            Bank = 0.0;
+
+            IsOnGround = true;
+            return this;
+        }
+
+        public AircraftBuilder WithAirSpeed(int speed)
+        {
+            AirSpeed = speed;
+
+            return this;
+        }
+
+        public AircraftBuilder Static()
+        {
+            AirSpeed = 0;
+
             return this;
         }
 
         public SimulatedAircraft Build()
         {
+            SimulatedAircraft result;
             if (!IsEmpty(AirportId))
             {
-                return new ParkedAircraft(airportId: AirportId, title: Title, tailNumber: TailNumber);
+                result = new ParkedAircraft(airportId: AirportId, title: Title, tailNumber: TailNumber);
             }
-            return new SimulatedAircraft(title: Title);
+            else
+            {
+                result = new SimulatedAircraft(title: Title, tailNumber: TailNumber);
+                result.Latitude = Latitude;
+                result.Longitude = Longitude;
+                result.Altitude = Altitude;
+            }
+            result.Pitch = Pitch;
+            result.Bank = Bank;
+            result.Heading = Heading;
+            result.OnGround = IsOnGround;
+            result.AirSpeed = AirSpeed;
+            return result;
         }
 
     }

@@ -1,11 +1,12 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
+    <OutputType>WinExe</OutputType>
     <TargetFramework>net5.0-windows</TargetFramework>
     <UseWPF>true</UseWPF>
     <StartupObject>CsSimConnectUI.App</StartupObject>
     <Configurations>Debug;Release</Configurations>
+    <ApplicationIcon />
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -28,6 +29,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\CsSimConnect\CsSimConnect.csproj" />
+    <ProjectReference Include="..\SimScanner\SimScanner.csproj" />
   </ItemGroup>
 
   <ItemGroup>
