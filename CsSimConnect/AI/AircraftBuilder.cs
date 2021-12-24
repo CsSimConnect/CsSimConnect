@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-using CsSimConnect.DataDefs;
 using static CsSimConnect.Util.StringUtil;
 
 namespace CsSimConnect.AI
@@ -38,9 +37,11 @@ namespace CsSimConnect.AI
         public double Bank { get; set; }
         public double Heading { get; set; }
 
-        public bool IsOnGround { get; set; }
-        public int AirSpeed { get; set; }
-        public string AirportId { get; set; }
+        public bool IsOnGround { get; set; } = true;        // By default, we want the aircraft on the ground.
+        public bool EnginesRunning { get; set; } = true;    // By default, engines are running.
+        public int AirSpeed { get; set; } = 0;              // By default, we want the aircraft to stand still.
+
+        public string AirportId { get; set; } = null;       // If we select an airport ICAO id, we want a parked, ATC-controlled aircraft
 
         private AircraftBuilder(string title)
         {
@@ -122,6 +123,18 @@ namespace CsSimConnect.AI
         {
             AirSpeed = 0;
 
+            return this;
+        }
+
+        public AircraftBuilder WithEnginesStopped()
+        {
+            EnginesRunning = false;
+            return this;
+        }
+
+        public AircraftBuilder WithEnginesRunning()
+        {
+            EnginesRunning = true;
             return this;
         }
 

@@ -5,6 +5,7 @@ VisualStudioVersion = 16.0.31129.286
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CsSimConnectUI", "CsSimConnectUI\CsSimConnectUI.csproj", "{C34673BB-9158-42BB-9A3C-6980ADD7A369}"
 	ProjectSection(ProjectDependencies) = postProject
+		{920C2FA8-CF10-4ABF-8894-DEEDFC7E1EC1} = {920C2FA8-CF10-4ABF-8894-DEEDFC7E1EC1}
 		{AF4EEAE1-CEB4-44C3-91D4-E890787C468A} = {AF4EEAE1-CEB4-44C3-91D4-E890787C468A}
 	EndProjectSection
 EndProject
@@ -37,7 +38,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CsSimConnectUIComponents", 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ShowAirport", "ShowAirport\ShowAirport.csproj", "{8E2FEA09-FD0C-41E4-A89E-8B87DF9F899D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ListAircraft", "ListAircraft\ListAircraft.csproj", "{19C44F35-8290-40BE-8C74-1849320028A9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ListAircraft", "ListAircraft\ListAircraft.csproj", "{19C44F35-8290-40BE-8C74-1849320028A9}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

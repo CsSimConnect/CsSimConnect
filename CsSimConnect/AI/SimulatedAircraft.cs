@@ -19,6 +19,7 @@ namespace CsSimConnect.AI
     public class SimulatedAircraft : SimulatedObject
     {
         public string TailNumber { get; set; }
+        public bool EnginesRunning { get; set; } = true;
 
         public SimulatedAircraft(string tailNumber = null, string title = null, uint objectId = RequestManager.SimObjectUser)
             : base(ObjectType.Aircraft, title : title, objectId : objectId)

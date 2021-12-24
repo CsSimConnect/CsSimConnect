@@ -15,8 +15,7 @@
  */
 
 using CsSimConnect;
-using CsSimConnect.AI;
-using CsSimConnectUI.Domain;
+using CsSimConnect.UIComponents.Domain;
 using Rakis.Logging;
 using System;
 using System.Threading;

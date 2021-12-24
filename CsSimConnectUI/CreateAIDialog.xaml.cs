@@ -16,7 +16,7 @@
 
 using CsSimConnect;
 using CsSimConnect.AI;
-using CsSimConnectUI.Domain;
+using CsSimConnect.UIComponents.Domain;
 using System;
 using System.Windows;
 using System.Windows.Controls;
