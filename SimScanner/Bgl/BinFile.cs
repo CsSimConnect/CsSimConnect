@@ -26,7 +26,6 @@ namespace SimScanner.Bgl
     {
         private static readonly Logger log = Logger.GetLogger(typeof(BinFile));
 
-        private BinFile reader;
         private MemoryMappedViewAccessor accessor;
         private long pos = 0;
         public long Position => pos;
@@ -36,20 +35,20 @@ namespace SimScanner.Bgl
             accessor = reader.file.CreateViewAccessor(offset, size);
         }
 
-        public BinSection Read<T>(out T value, uint size)
+        public BinSection Read<T>(out T value, uint size, bool readAhead =false)
             where T : struct
         {
             if (accessor.Capacity < pos+size)
             {
-                log.Fatal?.Log($"Trying to read {size} byte(s) starting at {pos}, Capacity = {accessor.Capacity}.");
+                throw new ArgumentOutOfRangeException($"Trying to read 0x{size:X4} byte(s) starting at 0x{pos:X4}, Capacity = 0x{accessor.Capacity:X4}.");
             }
-            else
-            {
-                log.Trace?.Log($"Reading {size} bytes starting at {pos}, Capacity = {accessor.Capacity}.");
-            }
-            accessor.Read(pos, out value);
-            pos += size;
+            log.Trace?.Log($"Reading 0x{size:X4} bytes starting at 0x{pos:X4}, Capacity = 0x{accessor.Capacity:X4}.");
 
+            accessor.Read(pos, out value);
+            if (!readAhead)
+            {
+                pos += size;
+            }
             return this;
         }
 
@@ -63,6 +62,8 @@ namespace SimScanner.Bgl
         public BinSection Read(out float value) => Read(out value, 4);
         public BinSection Read(out double value) => Read(out value, 8);
 
+        public BinSection ReadAhead(out ushort value) => Read(out value, sizeof(ushort), true);
+
         public BinSection Skip(uint size)
         {
             pos += size;
@@ -73,7 +74,7 @@ namespace SimScanner.Bgl
         {
             if ((pos < 0) || (pos >= accessor.Capacity))
             {
-                log.Fatal?.Log($"Trying to seek to pos {pos}, Capacity = {accessor.Capacity}.");
+                throw new ArgumentOutOfRangeException($"Trying to seek to pos {pos}, Capacity = {accessor.Capacity}.");
             }
             this.pos = pos;
             return this;
@@ -115,7 +116,6 @@ namespace SimScanner.Bgl
 
         public void Dispose()
         {
-            reader = null;
             accessor?.Dispose();
         }
     }

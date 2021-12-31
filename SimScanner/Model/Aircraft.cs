@@ -23,13 +23,22 @@ namespace SimScanner.Model
         public string Model { get; set; }
         public string Category { get; set; }
 
+        private static string Cleanup(string s)
+        {
+            if ((s != null) && s.StartsWith("\"") && s.EndsWith("\""))
+            {
+                return s.Substring(1, s.Length - 2);
+            }
+            return s;
+        }
+
         public Aircraft() { }
         public Aircraft(string title, string type, string model, string category)
         {
-            Title = title;
-            Type = type;
-            Model = model;
-            Category = category;
+            Title = Cleanup(title);
+            Type = Cleanup(type);
+            Model = Cleanup(model);
+            Category = Cleanup(category);
         }
     }
 }

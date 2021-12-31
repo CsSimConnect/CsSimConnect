@@ -14,7 +14,10 @@
  * limitations under the License.
  */
 
+using Rakis.Args;
+using Rakis.Logging;
 using SimScanner.Model;
+using SimScanner.Sim;
 using System;
 using System.Collections.Generic;
 
@@ -22,30 +25,28 @@ namespace ShowAirport
 {
     class ShowAirport
     {
+        private const string OPT_P3D = "p3dv5";
+        private const string OPT_MSFS = "msfs";
+        private const string OPT_LIST_PARKINGS = "list-parkings";
+
         static bool HaveValue(string s) => (s != null) && (s.Trim().Length != 0);
 
         static void Main(string[] args)
         {
-            bool showParkings = false;
+            Logger.Configure();
+            var parsedArgs = new ArgParser(args)
+                .WithOption(OPT_P3D)
+                .WithOption(OPT_MSFS)
+                .WithOption(OPT_LIST_PARKINGS)
+                .Parse();
 
-            List<string> cmdArgs = new();
-            uint i = 0;
-            while (i < args.Length)
-            {
-                if (args[i] == "--parking")
-                {
-                    showParkings = true;
-                }
-                else
-                {
-                    break;
-                }
-                i++;
-            }
+            bool showParkings = parsedArgs.Has(OPT_LIST_PARKINGS);
+            Simulator simulator = parsedArgs.Has(OPT_MSFS) ? SimUtil.GetMSFS2020() : SimUtil.GetPrepar3Dv5();
 
-            using (SceneryManager mgr = new())
+            using (SceneryManager mgr = simulator.SceneryManager())
             {
-                foreach (string arg in args)
+                Console.WriteLine($"Showing {parsedArgs.Parameters.Count} airports from {simulator.Name}");
+                foreach (string arg in parsedArgs.Parameters)
                 {
                     string icao = arg;
                     int layer = -1;

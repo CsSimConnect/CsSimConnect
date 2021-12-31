@@ -17,6 +17,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Rakis.Args" Version="0.1.4" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\SimScanner\SimScanner.csproj" />
   </ItemGroup>
 

@@ -52,11 +52,7 @@
             Grid.Row="1" Grid.Column="1"
             x:Name="tailNumber" materialDesign:HintAssist.Hint="TailNumber" Margin="10,10,10,10">
             <TextBox.Text>
-                <Binding Path="TailNumber" UpdateSourceTrigger="PropertyChanged">
-                    <Binding.ValidationRules>
-                        <domain:NotEmptyValidationRule ValidatesOnTargetUpdated="True" />
-                    </Binding.ValidationRules>
-                </Binding>
+                <Binding Path="TailNumber" UpdateSourceTrigger="PropertyChanged"/>
             </TextBox.Text>
         </TextBox>
 

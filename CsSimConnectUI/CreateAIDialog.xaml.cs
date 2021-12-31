@@ -17,6 +17,7 @@
 using CsSimConnect;
 using CsSimConnect.AI;
 using CsSimConnect.UIComponents.Domain;
+using Rakis.Logging;
 using System;
 using System.Windows;
 using System.Windows.Controls;
@@ -32,6 +33,7 @@ namespace CsSimConnectUI
     /// </summary>
     public partial class CreateAIDialog : Window
     {
+        private static readonly Logger log = Logger.GetLogger(typeof(CreateAIDialog));
 
         private CreateAIViewModel model = new();
 
@@ -44,18 +46,43 @@ namespace CsSimConnectUI
 
         private void DoCreate(object sender, RoutedEventArgs e)
         {
-            if (!IsEmpty(tailNumber.Text) && !IsEmpty(aircraftTitle.SelectedValue?.ToString()) && (model.Parking != null))
+            string title = aircraftTitle.SelectedValue?.ToString();
+            if (IsEmpty(title)) title = aircraftTitle.Text;
+            if (!IsEmpty(tailNumber.Text) && !IsEmpty(title) && (model.Parking != null))
             {
-                SimulatedAircraft aircraft = AircraftBuilder.Builder(aircraftTitle.SelectedValue?.ToString())
+                SimulatedAircraft aircraft = AircraftBuilder.Builder(title)
                     .WithTailNumber(tailNumber.Text)
                     .AtPosition(model.Parking.Latitude, model.Parking.Longitude, model.Airport.AltitudeFeet)
                     .WithHeading(model.Parking.Heading)
                     .OnGround().Static().Build();
                 AIManager.Instance.Create(aircraft).Subscribe(_ => Dispatcher.Invoke(Close), ShowError);
             }
-            Close();
+            else if (IsEmpty(tailNumber.Text))
+            {
+                log.Error?.Log($"No tailnumber");
+                Close();
+            }
+            else if (IsEmpty(aircraftTitle.SelectedValue?.ToString()))
+            {
+                log.Error?.Log($"No title");
+                Close();
+            }
+            else if (IsEmpty(aircraftTitle.SelectedValue?.ToString()))
+            {
+                log.Error?.Log($"No Parking selected");
+                Close();
+            }
+            else
+            {
+                Close();
+            }
         }
 
+        private void CleanupAfterCreate()
+        {
+            log.Info?.Log($"Done creating");
+            Dispatcher.Invoke(Close);
+        }
         private void ShowError(Exception exc)
         {
             Dispatcher.Invoke(() => MessageBox.Show("FAILED: " + exc.Message));

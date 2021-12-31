@@ -14,7 +14,10 @@
  * limitations under the License.
  */
 
+using Rakis.Settings;
 using SimScanner.AddOns;
+using SimScanner.AircraftCfg;
+using SimScanner.Model;
 using SimScanner.Scenery;
 using System.Collections.Generic;
 
@@ -39,6 +42,11 @@ namespace SimScanner.Sim
         public bool DllAvailable { get; set; }
 
         public List<AddOn> AddOns { get; set; }
-        public SceneryConfiguration scenery { get; set; }
+
+        public SceneryConfiguration Scenery { get; set; }
+        public AircraftConfiguration Aircraft { get; set; }
+
+        public SceneryManager SceneryManager(Context context =null) => new(context, this);
+        public AircraftManager AircraftManager(Context context = null) => new(context, this);
     }
 }

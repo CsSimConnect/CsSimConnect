@@ -14,6 +14,10 @@
  * limitations under the License.
  */
 
+using Rakis.Logging;
+using System;
+using System.Collections.Generic;
+
 namespace SimScanner.Bgl
 {
 
@@ -39,6 +43,8 @@ namespace SimScanner.Bgl
 
     public class BglSubSection
     {
+        private static readonly Logger log = Logger.GetLogger(typeof(BglSubSection));
+
         internal BglSection section;
         public uint Index { get; init; }
 
@@ -56,40 +62,87 @@ namespace SimScanner.Bgl
 
             if (section.Header.SubSectionSize == BglSubSectionHeader16.Size)
             {
-                using var reader = section.file.File.Section(section.SubSectionHeaderOffset(index), BglSubSectionHeader16.Size);
+                using var reader = section.file.MappedFile.Section(section.SubSectionHeaderOffset(index), BglSubSectionHeader16.Size);
+                long pos = reader.Position;
                 reader.Read(out BglSubSectionHeader16 header, BglSubSectionHeader16.Size);
 
                 QMID1 = header.QMID1;
                 QMID2 = header.QMID2;
                 DataOffset = header.DataOffset;
                 DataSize = header.DataSize;
+                log.Trace?.Log($"SubSection Header at 0x{pos:X4}: NumRecords={NumRecords}, DataOffset=0x{DataOffset:X4}, DataSize=0x{DataSize:X4}");
             }
             else if (section.Header.SubSectionSize == BglSubSectionHeader20.Size)
             {
-                using var reader = section.file.File.Section(section.SubSectionHeaderOffset(index), BglSubSectionHeader20.Size);
+                using var reader = section.file.MappedFile.Section(section.SubSectionHeaderOffset(index), BglSubSectionHeader20.Size);
+                long pos = reader.Position;
                 reader.Read(out BglSubSectionHeader20 header, BglSubSectionHeader20.Size);
                 QMID1 = header.QMID1;
                 QMID2 = header.QMID2;
                 NumRecords = header.NumRecords;
                 DataOffset = header.DataOffset;
                 DataSize = header.DataSize;
+                log.Trace?.Log($"SubSection Header at 0x{pos:X}: NumRecords={NumRecords}, DataOffset={DataOffset}, DataSize={DataSize}");
+            }
+            else
+            {
+                log.Error?.Log($"SubSectionSize == {section.Header.SubSectionSize}?");
+            }
+            CollectAirports();
+        }
+
+        // Airport
+
+        public List<BglAirport> Airports { get; init; } = new();
+
+        // Lookahead...
+
+        private SectionType BglRecordType(long pos, out uint size)
+        {
+            using var reader = section.file.MappedFile.Section(DataOffset, DataSize);
+            reader.Seek(pos).Read(out ushort id).Read(out size);
+
+            return (SectionType)id;
+        }
+
+        private void CollectAirports()
+        {
+            if (!section.IsAirport)
+            {
+                return;
+            }
+            long pos = 0;
+            while (pos < DataSize)
+            {
+                SectionType type = BglRecordType(pos, out uint recordSize);
+                if (type == SectionType.AirportMSFS)
+                {
+                    Airports.Add(new BglMSFSAirport(this, pos));
+                }
+                else if (type == SectionType.AirportFSX)
+                {
+                    Airports.Add(new BglFSXAirport(this, pos));
+                }
+                else if (type == SectionType.AirportP3D)
+                {
+                    Airports.Add(new BglP3DAirport(this, pos));
+                }
+                else
+                {
+                    log.Error?.Log($"Found a {type} record, while expecting only airports");
+                    //break;
+                }
+                pos += recordSize;
             }
         }
 
-        public BglAirport Airport => !section.IsAirport ? null : (new(this));
+        // NameList
 
         public BglNameList NameList => !section.IsNameList ? null : (new(this));
 
-        public ushort BglRecordType(uint index)
-        {
-            if (index >= NumRecords)
-            {
-                return 0;
-            }
-            using var reader = section.file.File.Section(DataOffset, DataSize);
-            reader.Read(out ushort id);
+        // AirportSummary
 
-            return id;
-        }
+        public BglAirportSummary AirportSummary => !section.IsAirportSummary ? null : new(this);
+
     }
 }

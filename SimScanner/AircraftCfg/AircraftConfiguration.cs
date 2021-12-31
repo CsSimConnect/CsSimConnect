@@ -17,7 +17,6 @@
 using IniParser;
 using IniParser.Model;
 using Rakis.Logging;
-using SimScanner.AddOns;
 using SimScanner.Sim;
 using SimScanner.Model;
 using System.Collections.Generic;
@@ -26,7 +25,7 @@ using System.Text.RegularExpressions;
 
 namespace SimScanner.AircraftCfg
 {
-    public class AircraftConfiguration
+    public abstract class AircraftConfiguration
     {
         public const string CategoryAirplanes = "Airplanes";
         public const string CategoryRotorcraft = "Rotorcraft";
@@ -46,32 +45,45 @@ namespace SimScanner.AircraftCfg
             Simulator = simulator;
         }
 
+        public abstract void ScanSimObjects();
+
         public ICollection<string> ScannedCategories => new List<string>(Directory.GetFiles(Path.Combine(Simulator.InstallationPath, "SimObjects")));
 
-        public void ScanSimObjects()
+        protected void AddAircraftFrom(string filename, string category)
         {
-            entries.Clear();
+            var parser = new FileIniDataParser();
+            parser.Parser.Configuration.AllowCreateSectionsOnFly = false;
+            parser.Parser.Configuration.AllowDuplicateKeys = true;
+            parser.Parser.Configuration.AllowDuplicateSections = true;
+            parser.Parser.Configuration.CaseInsensitive = true;
+            parser.Parser.Configuration.CommentRegex = new Regex(@"(#|;|//)(.*)");
+            parser.Parser.Configuration.ThrowExceptionsOnError = false;
 
-            foreach (string category in Categories)
+            log.Debug?.Log($"Reading {filename}");
+            IniData data = parser.ReadFile(filename);
+            if (data == null)
             {
-                string path = Path.Combine(Simulator.InstallationPath, "SimObjects", category);
-                ScanDirectory(path, category);
+                log.Error?.Log($"Unable to parse {filename}. Skipping.");
+                return;
             }
-            foreach (AddOn addOn in AddOnManager.FindAddOns(Simulator))
+            var general = data["general"];
+            var variation = data["variation"];
+
+            string type = (general == null) ? ("["+variation["base_container"]+"]") : general["atc_type"];
+            string model = (general == null) ? ("[" + variation["base_container"] + "]") : general["atc_model"];
+            foreach (SectionData collection in data.Sections)
             {
-                foreach (Component addOnComponent in addOn.Components)
+                string heading = collection.SectionName.ToLower();
+                if (heading.StartsWith("fltsim."))
                 {
-                    if (addOnComponent.Category == ComponentCategory.SimObjects)
-                    {
-                        log.Debug?.Log($"Adding {addOnComponent.Name} from Add-on {addOn.Name}.");
-                        ScanDirectory(Path.Combine(addOn.Path, addOnComponent.Path));
-                    }
+                    var fltsim = data[heading];
+                    log.Debug?.Log($"Adding '{fltsim["title"]}'");
+                    entries.Add(new(fltsim["title"], fltsim["atc_type"] ?? type, fltsim["atc_model"] ?? model, general?["category"] ?? category));
                 }
             }
-            SortEntries();
         }
 
-        private void ScanDirectory(string path, string category = null)
+        protected void ScanDirectory(string path, string category = null)
         {
             log.Debug?.Log($"Scanning '{path}' for aircraft.");
             foreach (string objectPath in Directory.GetDirectories(path))
@@ -79,34 +91,7 @@ namespace SimScanner.AircraftCfg
                 string filename = Path.Combine(objectPath, "aircraft.cfg");
                 if (File.Exists(filename))
                 {
-                    var parser = new FileIniDataParser();
-                    parser.Parser.Configuration.AllowCreateSectionsOnFly = false;
-                    parser.Parser.Configuration.AllowDuplicateKeys = true;
-                    parser.Parser.Configuration.AllowDuplicateSections = true;
-                    parser.Parser.Configuration.CaseInsensitive = true;
-                    parser.Parser.Configuration.CommentRegex = new Regex(@"(#|;|//)(.*)");
-                    parser.Parser.Configuration.ThrowExceptionsOnError = false;
-
-                    log.Debug?.Log($"Reading {filename}");
-                    IniData data = parser.ReadFile(filename);
-                    if (data == null)
-                    {
-                        log.Error?.Log($"Unable to parse {filename}. Skipping.");
-                        continue;
-                    }
-                    var general = data["general"];
-                    string type = general["atc_type"];
-                    string model = data["general"]["atc_model"];
-                    foreach (SectionData collection in data.Sections)
-                    {
-                        string heading = collection.SectionName.ToLower();
-                        if (heading.StartsWith("fltsim."))
-                        {
-                            var fltsim = data[heading];
-                            log.Debug?.Log($"Adding '{fltsim["title"]}'");
-                            entries.Add(new(fltsim["title"], fltsim["atc_type"] ?? type, fltsim["atc_model"] ?? model, general["category"] ?? category));
-                        }
-                    }
+                    AddAircraftFrom(filename, category);
                 }
             }
         }

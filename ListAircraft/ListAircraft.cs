@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-using SimScanner.AircraftCfg;
+using Rakis.Args;
+using Rakis.Logging;
 using SimScanner.Model;
 using SimScanner.Sim;
 using System;
@@ -23,20 +24,40 @@ namespace ListAircraft
 {
     class ListAircraft
     {
+        private const string OPT_P3D = "p3dv5";
+        private const string OPT_MSFS = "msfs";
+        private const string OPT_LIST = "list";
+        private const string OPT_FILTER = "filter";
+        private const string OPT_BUILD_DB = "build-db";
+
         static void Main(string[] args)
         {
-            using AircraftManager mgr = new();
+            Logger.Configure();
+            var parsedArgs = new ArgParser(args)
+                .WithOption(OPT_P3D)
+                .WithOption(OPT_MSFS)
+                .WithOption(OPT_LIST)
+                .WithOption(OPT_FILTER, true)
+                .WithOption(OPT_BUILD_DB)
+                .Parse();
 
-            if ((args == null) || (args.Length == 0))
+            Simulator simulator = parsedArgs.Has(OPT_MSFS) ? SimUtil.GetMSFS2020() : SimUtil.GetPrepar3Dv5();
+            using AircraftManager mgr = simulator.AircraftManager();
+
+            if (parsedArgs.Has(OPT_LIST))
+            {
+
+            }
+            else if (parsedArgs.Has(OPT_BUILD_DB))
             {
                 foreach (Aircraft aircraft in mgr.BuildDB())
                 {
                     Console.WriteLine($"Added '{aircraft.Title}'");
                 }
             }
-            else
+            else if (parsedArgs.Parameters.Count > 0)
             {
-                foreach (string title in args)
+                foreach (string title in parsedArgs.Parameters)
                 {
                     var aircraft = mgr.GetAircraft(title);
                     if (aircraft == null)

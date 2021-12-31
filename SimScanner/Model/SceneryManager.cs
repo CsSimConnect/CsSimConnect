@@ -133,7 +133,7 @@ namespace SimScanner.Model
 
         public void BuildDb()
         {
-            SceneryConfiguration config = new(Simulator);
+            SceneryConfiguration config = Simulator.Scenery;
             config.LoadSceneryConfig();
             config.LoadAddOnScenery();
 
@@ -145,49 +145,61 @@ namespace SimScanner.Model
                     continue;
                 }
                 log.Debug?.Log($"Scanning '{entry.Title}'");
-                if (entry.SceneryFiles.Count == 0)
+                if (entry.Files.Count == 0)
                 {
-                    log.Warn?.Log($"No Scenery files for {entry.Title}.");
+                    log.Warn?.Log($"No Scenery files for {entry.Title} in {entry.LocalPath}.");
                 }
-                foreach (string bglFile in entry.SceneryFiles)
+                foreach (string bglFile in entry.Files)
                 {
-                    log.Trace?.Log($"- Reading '{bglFile}'");
-                    BglFile file = new(bglFile);
-                    foreach (BglSection section in file.Sections)
+                    try
                     {
-                        if (section.IsAirport)
+                        log.Trace?.Log($"- Reading '{bglFile}'");
+                        BglFile file = new(bglFile);
+                        foreach (BglSection section in file.Sections)
                         {
-                            foreach (BglAirport bglAirport in section.Airports)
+                            if (section.IsAirport)
                             {
-                                Airport airport = new(bglAirport.Name, entry.Layer, file.Name, bglAirport.ICAO, bglAirport.Latitude, bglAirport.Longitude);
-                                airport.AltitudeMeters = bglAirport.Header.Altitude / 1000.0;
-                                airport.AltitudeFeet = airport.AltitudeMeters * 3.28084;
-                                foreach (Parking parking in bglAirport.Parkings)
+                                foreach (BglAirport bglAirport in section.Airports)
                                 {
-                                    if (airport.Parkings.ContainsKey(parking.FullName))
+                                    if (bglAirport == null)
                                     {
-                                        log.Debug?.Log($"Replacing '{parking.FullName}' at {bglAirport.ICAO}");
-                                        airport.Parkings[parking.FullName] = parking;
+                                        continue;
                                     }
-                                    else
-                                    {
-                                        airport.Parkings.Add(parking.FullName, parking);
-                                    }
-                                }
 
-                                PutAirport(airport);
+                                    Airport airport = new(bglAirport.Name, entry.Layer, file.Name, bglAirport.ICAO, bglAirport.Latitude, bglAirport.Longitude);
+                                    airport.AltitudeMeters = bglAirport.Altitude;
+                                    airport.AltitudeFeet = airport.AltitudeMeters * 3.28084;
+                                    foreach (Parking parking in bglAirport.Parkings)
+                                    {
+                                        if (airport.Parkings.ContainsKey(parking.FullName))
+                                        {
+                                            log.Debug?.Log($"Replacing '{parking.FullName}' at {bglAirport.ICAO}");
+                                            airport.Parkings[parking.FullName] = parking;
+                                        }
+                                        else
+                                        {
+                                            airport.Parkings.Add(parking.FullName, parking);
+                                        }
+                                    }
+
+                                    PutAirport(airport);
+                                }
                             }
-                        }
-                        else if (section.IsNameList)
-                        {
-                            foreach (BglNameList bglNameList in section.NameLists)
+                            else if (section.IsNameList)
                             {
-                                foreach (BglName name in bglNameList.Names)
+                                foreach (BglNameList bglNameList in section.NameLists)
                                 {
-                                    PutAirportName(entry.Layer, file.Name, name.ICAO, name.Region, name.Country, name.State, name.City, name.Airport);
+                                    foreach (BglName name in bglNameList.Names)
+                                    {
+                                        PutAirportName(entry.Layer, file.Name, name.ICAO, name.Region, name.Country, name.State, name.City, name.Airport);
+                                    }
                                 }
                             }
                         }
+                    }
+                    catch (Exception e)
+                    {
+                        log.Error?.Log($"Exception while parsing '{bglFile}': {e.Message}");
                     }
                 }
             }

@@ -23,6 +23,7 @@ namespace SimScanner.Model
         public Airport Airport { get; set; }
 
         public uint Number { get; set; } = 0;
+        public string Type { get; set; } = "";
         public bool HasPushbackLeft { get; set; }
         public bool HasPushbackRight { get; set; }
         public string Name { get; set; } = "";
@@ -38,6 +39,6 @@ namespace SimScanner.Model
         private readonly List<string> airlineDesignators = new();
         public List<string> AirlineDesignators => airlineDesignators;
 
-        public string FullName => Name + ((Name != "") && (Number != 0) ? " " : "") + Number;
+        public string FullName => Name + (((Name != "") && (Number != 0)) ? " " : "") + Number;
     }
 }

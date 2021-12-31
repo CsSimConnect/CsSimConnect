@@ -85,7 +85,7 @@ namespace SimScanner.Model
 
         public List<Aircraft> BuildDB()
         {
-            AircraftConfiguration cfg = new(Simulator);
+            AircraftConfiguration cfg = Simulator.Aircraft;
             cfg.ScanSimObjects();
             foreach (Aircraft aircraft in cfg.Entries)
             {

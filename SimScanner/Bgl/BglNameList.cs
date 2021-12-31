@@ -115,7 +115,7 @@ namespace SimScanner.Bgl
         {
             this.subSection = subSection;
 
-            using var reader = subSection.section.file.File.Section(subSection.DataOffset, subSection.DataSize);
+            using var reader = subSection.section.file.MappedFile.Section(subSection.DataOffset, subSection.DataSize);
 
             reader.Read(out header.Id).Read(out header.Size)
                 .Read(out header.NumRegions)

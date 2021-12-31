@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-using CsSimConnect;
 using Microsoft.Win32;
+using SimScanner.AircraftCfg;
+using SimScanner.Scenery;
 using System;
 using System.IO;
 
@@ -57,6 +58,8 @@ namespace SimScanner.Sim
             result.Key = P3Dv5Key;
             result.Type = FlightSimType.Prepar3Dv5;
             result.DllAvailable = File.Exists(P3Dv5Key + "\\CsSimConnectInterOp.dll");
+            result.Scenery = new P3DSceneryConfiguration(result);
+            result.Aircraft = new P3DAircraftConfiguration(result);
 
             return result;
         }
@@ -115,6 +118,9 @@ namespace SimScanner.Sim
             result.Key = MSFSKey;
             result.Type = FlightSimType.MSFS2020;
             result.DllAvailable = File.Exists(P3Dv5Key + "\\CsSimConnectInterOp.dll");
+
+            result.Scenery = new MSFSSceneryConfiguration(result);
+            result.Aircraft = new MSFSAircraftConfiguration(result);
 
             return result;
 

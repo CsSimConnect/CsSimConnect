@@ -28,7 +28,7 @@ namespace CsSimConnect
         {
             Simulator sim = SimScanner.Sim.SimUtil.GetPrepar3Dv5();
 
-            SceneryConfiguration cfg = new(sim);
+            SceneryConfiguration cfg = sim.Scenery;
             cfg.LoadSceneryConfig();
 
             foreach (AddOn addOn in FindAddOns(sim))

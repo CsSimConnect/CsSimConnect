@@ -35,7 +35,8 @@ namespace SimScanner.Scenery
         public bool Required { get; set; }
         public string Exclude { get; set; }
 
-        public List<string> SceneryFiles => new(Directory.GetFiles(Path.Combine(LocalPath, "scenery"), "*.bgl"));
+        private List<string> fileList = new();
+        public List<string> Files => fileList;
 
         public static SceneryEntry FromIniFile(Simulator sim, KeyDataCollection section)
         {
@@ -46,6 +47,8 @@ namespace SimScanner.Scenery
             result.Active = Boolean.Parse(section["active"]);
             result.Required = Boolean.Parse(section["active"]);
             result.Layer = Int32.Parse(section["Layer"]);
+
+            result.fileList = new(Directory.GetFiles(Path.Combine(result.LocalPath, "scenery"), "*.bgl"));
 
             return result;
         }
@@ -58,6 +61,8 @@ namespace SimScanner.Scenery
             result.LocalPath = Path.Combine(addOn.Path, comp.Path);
             result.Active = true;
             result.Layer = comp.Layer;
+
+            result.fileList = new(Directory.GetFiles(Path.Combine(result.LocalPath, "scenery"), "*.bgl"));
 
             return result;
         }
