@@ -71,22 +71,7 @@ namespace SimScanner.Bgl
 
             using (BinSection header = MappedFile.Section(0, BglHeader.Size))
             {
-                header
-                .Read(out bglHeader.Magic1)
-                .Read(out bglHeader.HeaderSize)
-                .Read(out bglHeader.DateTimeLow)
-                .Read(out bglHeader.DateTimeHigh)
-                .Read(out bglHeader.Magic2)
-                .Read(out bglHeader.SectionCount)
-                .Read(out bglHeader.QMID1)
-                .Read(out bglHeader.QMID2)
-                .Read(out bglHeader.QMID3)
-                .Read(out bglHeader.QMID4)
-                .Read(out bglHeader.QMID5)
-                .Read(out bglHeader.QMID6)
-                .Read(out bglHeader.QMID7)
-                .Read(out bglHeader.QMID8);
-;
+                header.Read(out bglHeader, BglHeader.Size);
             }
 
             for (uint index = 0; index < NumSections; index++)

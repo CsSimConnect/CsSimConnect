@@ -18,10 +18,12 @@ using Rakis.Logging;
 using SimScanner.Model;
 using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace SimScanner.Bgl
 {
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct BglP3DAirportHeader
     {
         public const uint Size = 0x3C;
@@ -71,29 +73,7 @@ namespace SimScanner.Bgl
 
             using var reader = subSection.section.file.MappedFile.Section(subSection.DataOffset, subSection.DataSize);
 
-            reader
-                .Seek(pos)
-                .Read(out header.Id)
-                .Read(out header.TotalSize)
-                .Read(out header.NumRunways)
-                .Read(out header.NumComs)
-                .Read(out header.NumStarts)
-                .Read(out header.Unknown0)
-                .Read(out header.EncodedNumAprons)
-                .Read(out header.NumHeliPads)
-                .Read(out header.Longitude)
-                .Read(out header.Latitude)
-                .Read(out header.Altitude)
-                .Read(out header.TowerLongitude)
-                .Read(out header.TowerLatitude)
-                .Read(out header.TowerAltitude)
-                .Read(out header.MagneticVariance)
-                .Read(out header.EncodedICAO)
-                .Read(out header.EncodedRegionIdent)
-                .Read(out header.FuelAvailability)
-                .Read(out header.TrafficScalar)
-                .Read(out header.NumApproaches)
-                .Read(out header.Unknown1);
+            reader.Seek(pos).Read(out header, BglP3DAirportHeader.Size);
 
             log.Debug?.Log($"Reading FSX/P3D airport record for {ICAO}");
             log.Trace?.Log($"Airport Record has id 0x{header.Id:X4}, starting pos 0x{pos:X8}, TotalSize 0x{header.TotalSize:X8}.");
@@ -106,219 +86,106 @@ namespace SimScanner.Bgl
                 recNum += 1;
                 log.Trace?.Log($"Starting to look at subrecord {recNum}, pos=0x{pos:X4}, dataSize=0x{subSection.DataSize:X4}, reader position=0x{reader.Position:X4}.");
 
-                ushort id;
-                uint size;
+                BglObjectHeader subRecord;
 
                 try
                 {
-                    reader.Seek(pos).Read(out id).Read(out size);
+                    reader.Seek(pos).Read(out subRecord, BglObjectHeader.HeaderSize);
                 }
                 catch (Exception e)
                 {
                     log.Fatal?.Log($"Failed to read start of subrecord {recNum}, subsection {subSection.Index} of section {subSection.section.Index}, airport {DecodeName(header.EncodedICAO)}.");
                     throw e;
                 }
-                log.Trace?.Log($"Reading subrecord {recNum} (pos=0x{pos:X4}, id=0x{id:X4} ({((MSFSAirportRecordId)id).ToString()}), size={size} (0x{size:X4}) byte(s) {subSection.DataSize - pos} byte(s) left)");
-                if (id == 0)
+                log.Trace?.Log($"Reading subrecord {recNum} (pos=0x{pos:X4}, real=0x{(pos+reader.Position):X8}, id=0x{subRecord.Id:X4} ({((RecordId)subRecord.Id).ToString()}), size={subRecord.Size} (0x{subRecord.Size:X4}) byte(s) {subSection.DataSize - pos} byte(s) left)");
+                if (subRecord.Id == 0)
                 {
                     log.Trace?.Log($"Section 0, stopping scan.");
                     break;
                 }
-                SectionType recordType = (SectionType)id;
+                RecordId recordType = (RecordId)subRecord.Id;
                 switch (recordType)
                 {
-                    case SectionType.AirportName:
-                        StringBuilder bld = new();
-                        uint i = 6;
-                        while (i < size)
-                        {
-                            byte b;
-                            reader.Read(out b);
-                            i++;
-                            if (b == 0)
-                            {
-                                break;
-                            }
-                            bld.Append((char)b);
-                        }
-                        Name = bld.ToString();
+                    case RecordId.AirportName:
+                        reader.Read(out string name, subRecord.DataSize);
+                        Name = name;
                         break;
 
-                    case SectionType.AirportTowerScenery:
-                        break;
-
-                    case SectionType.DeleteAirport:
-                        ushort flags;
-                        byte numRunways;
-                        byte numStarts;
-                        byte numFrequencies;
-                        reader.Read(out flags)
-                            .Read(out numRunways)
-                            .Read(out numStarts)
-                            .Read(out numFrequencies)
-                            .Skip(sizeof(byte))
-                            .Skip(size - 0x0c);
-                        break;
-
-                    case SectionType.Com:
-                        break;
-
-                    case SectionType.ApronDetail:
+                    case RecordId.ApronDetail:
                         NumApronDetailRecords += 1;
                         break;
 
-                    case SectionType.ApronEdgeLight:
+                    case RecordId.ApronEdgeLight:
                         NumApronEdgeLightRecords += 1;
                         break;
 
-                    case SectionType.ApronSurface:
+                    case RecordId.ApronSurface:
                         NumApronSurfaceRecords += 1;
                         break;
 
-                    case SectionType.TaxiwayPointFSX:
-                        break;
+                    case RecordId.TaxiwayName:
+                        reader.Read(out TaxiName numNames, TaxiName.HeaderSize);
 
-                    case SectionType.TaxiwayPath:
-                        break;
-
-                    case SectionType.TaxiwayName:
-                        ushort numNames;
-                        reader.Read(out numNames);
-                        uint recordPos = 8;
-                        for (i = 0; i < numNames; i++)
+                        for (uint i = 0; i < numNames.NumNames; i++)
                         {
-                            byte[] b = new byte[8];
-                            for (uint j = 0; j < b.Length; j++) reader.Read(out b[j]);
-                            recordPos += 8;
-
-                            bld = new();
-                            for (uint j = 0; j < b.Length; j++)
+                            reader.Read(out string taxiwayName, subRecord.DataSize);
+                            if (taxiwayName != "")
                             {
-                                if (b[j] == 0)
-                                {
-                                    break;
-                                }
-                                bld.Append((char)b[j]);
-                            }
-
-                            string name = bld.ToString();
-                            if (name != "")
-                            {
-                                Taxiways.Add(name);
+                                Taxiways.Add(taxiwayName);
                             }
                         }
                         break;
 
-                    case SectionType.TaxiwayParkingFSX:
-                    case SectionType.TaxiwayParkingP3D:
-                        reader.Read(out ushort numParkings);
-                        log.Trace?.Log($"We have {numParkings} parking entries");
+                    case RecordId.TaxiwayParkingFSX:
+                    case RecordId.TaxiwayParkingP3D:
+                        reader.Read(out TaxiwayParkingFSX parkingFSX, TaxiwayParkingFSX.RecordSize);
+                        log.Trace?.Log($"We have {parkingFSX.NumParkings} parking entries");
 
-                        recordPos = 8;
-                        for (i = 0; i < numParkings; i++)
+                        for (uint i = 0; i < parkingFSX.NumParkings; i++)
                         {
-                            reader
-                                .Read(out uint info)
-                                .Read(out float radius)
-                                .Read(out float heading)
-                                .Read(out float teeOffset1)
-                                .Read(out float teeOffset2)
-                                .Read(out float teeOffset3)
-                                .Read(out float teeOffset4)
-                                .Read(out int lon)
-                                .Read(out int lat);
-                            recordPos += 9 * 4;
-                            log.Trace?.Log($"info=0x{info:X8}, heading={heading:###.##}");
-
+                            log.Trace?.Log($"Reading parking from pos 0x{reader.Position:X8}.");
+                            reader.Read(out TaxiwayParkingRecordFSX parkingRecord, TaxiwayParkingRecordFSX.RecordSize);
                             Parking parking = new();
-                            parking.Number = (info >> 12) & 0x0fff;
-                            uint numAirlineDesignators = (info >> 24);
+                            parking.Number = parkingRecord.Number;
+                            uint numAirlineDesignators = parkingRecord.NumAirlineDesignators;
 
-                            parking.HasPushbackLeft = (info & 0x40) != 0;
-                            parking.HasPushbackRight = (info & 0x80) != 0;
-                            uint gateName = (info & 0x3f);
-                            parking.Name = gateName switch
-                            {
-                                0 => "",
-                                1 => "Parking",
-                                2 => "N Parking",
-                                3 => "NE Parking",
-                                4 => "E Parking",
-                                5 => "SE Parking",
-                                6 => "S Parking",
-                                7 => "SW Parking",
-                                8 => "W Parking",
-                                9 => "NW Parking",
-                                10 => "Gate",
-                                11 => "Dock",
-                                _ => "Gate " + ((char) (53 + gateName))
-                            };
-                            parking.Type = ((info >> 8) & 0x0f) switch
-                            {
-                                0 => "None",
-                                1 => "Ramp GA",
-                                2 => "Ramp GA small",
-                                3 => "Ramp GA medium",
-                                4 => "Ramp GA large",
-                                5 => "Ramp cargo",
-                                6 => "Ramp mil cargo",
-                                7 => "Ramp mil combat",
-                                8 => "Gate small",
-                                9 => "Gate medium",
-                                10 => "Gate heavy",
-                                11 => "Docker GA",
-                                12 => "Fuel",
-                                13 => "Vehicle",
-                                14 => "Ramp GA extra",
-                                15 => "Gate extra",
-                                _ => "Unknown"
-                            };
-                            log.Trace?.Log($"name='{parking.Name}', number={parking.Number}");
-                            parking.Heading = heading;
-                            parking.Latitude = 90.0 - lat * (180.0 / (2 * 0x10000000));
-                            parking.Longitude = -180.0 + (lon * (360.0 / (3 * 0x10000000)));
+                            parking.HasPushbackLeft = parkingRecord.PushbackType == PushbackType.Left || parkingRecord.PushbackType == PushbackType.Both;
+                            parking.HasPushbackRight = parkingRecord.PushbackType == PushbackType.Right || parkingRecord.PushbackType == PushbackType.Both;
+                            parking.Name = parkingRecord.Name.ToString().Replace('_', ' ');
+                            parking.Type = parkingRecord.Type.ToString().Replace('_', ' ');
+                            parking.Heading = parkingRecord.Heading;
+                            parking.Latitude = parkingRecord.Latitude;
+                            parking.Longitude = parkingRecord.Longitude;
 
                             Parkings.Add(parking);
 
-                            uint airlineDesignatorsSkip = 4 * numAirlineDesignators;
-                            reader.Skip(airlineDesignatorsSkip);
-                            recordPos += airlineDesignatorsSkip;
-
-                            reader.Skip(4); // unknown
+                            reader
+                                .Skip(sizeof(uint) * numAirlineDesignators)
+                                .Skip(4); // unknown
                         }
                         break;
 
-                    case SectionType.Helipad:
+                    case RecordId.Helipad:
                         NumHelipads += 1;
                         break;
 
-                    case SectionType.SceneryObject:
-                        break;
-
-                    case SectionType.Jetway:
+                    case RecordId.Jetway:
                         NumJetways += 1;
                         break;
 
-                    case SectionType.Approach:
+                    case RecordId.Approach:
                         NumApproaches += 1;
                         break;
 
-                    case SectionType.Waypoint:
-                        break;
-
-                    case SectionType.BlastFence:
-                    case SectionType.BoundaryFence:
-                        break;
-
-                    case SectionType.RunwayStart:
+                    case RecordId.RunwayStart:
                         NumRunwayStarts += 1;
                         break;
 
                     default:
                         break;
                 }
-                log.Trace?.Log($"Updating pos {size} byte(s) (0x{size:X4}) from 0x{pos:X4}, reader position=0x{reader.Position:X4}");
-                pos += size;
+                log.Trace?.Log($"Updating pos {subRecord.Size} byte(s) (0x{subRecord.Size:X4}) from 0x{pos:X4}, reader position=0x{reader.Position:X4}");
+                pos += subRecord.Size;
             }
         }
     }

@@ -18,10 +18,12 @@ using Rakis.Logging;
 using SimScanner.Model;
 using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace SimScanner.Bgl
 {
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct BglFSXAirportHeader
     {
         public const uint Size = 0x38;
@@ -71,29 +73,7 @@ namespace SimScanner.Bgl
 
             using var reader = subSection.section.file.MappedFile.Section(subSection.DataOffset, subSection.DataSize);
 
-            reader
-                .Seek(pos)
-                .Read(out header.Id)
-                .Read(out header.TotalSize)
-                .Read(out header.NumRunways)
-                .Read(out header.NumComs)
-                .Read(out header.NumStarts)
-                .Read(out header.NumApproaches)
-                .Read(out header.EncodedNumAprons)
-                .Read(out header.NumHeliPads)
-                .Read(out header.Longitude)
-                .Read(out header.Latitude)
-                .Read(out header.Altitude)
-                .Read(out header.TowerLongitude)
-                .Read(out header.TowerLatitude)
-                .Read(out header.TowerAltitude)
-                .Read(out header.MagneticVariance)
-                .Read(out header.EncodedICAO)
-                .Read(out header.EncodedRegionIdent)
-                .Read(out header.FuelAvailability)
-                .Read(out header.UnKnown0)
-                .Read(out header.INT)
-                .Read(out header.Unknown1);
+            reader.Seek(pos).Read(out header, BglFSXAirportHeader.Size);
 
             log.Debug?.Log($"Reading FSX/P3D airport record for {ICAO}");
             log.Trace?.Log($"Airport Record has id 0x{header.Id:X4}, size {header.TotalSize}.");
@@ -118,16 +98,16 @@ namespace SimScanner.Bgl
                     log.Fatal?.Log($"Failed to read start of subrecord {recNum}, subsection {subSection.Index} of section {subSection.section.Index}, airport {DecodeName(header.EncodedICAO)}.");
                     throw e;
                 }
-                log.Trace?.Log($"Reading subrecord {recNum} (pos=0x{pos:X4}, id=0x{id:X4} ({((MSFSAirportRecordId)id).ToString()}), size={size} (0x{size:X4}) byte(s) {subSection.DataSize - pos} byte(s) left)");
+                log.Trace?.Log($"Reading subrecord {recNum} (pos=0x{pos:X4}, id=0x{id:X4} ({((RecordId)id).ToString()}), size={size} (0x{size:X4}) byte(s) {subSection.DataSize - pos} byte(s) left)");
                 if (id == 0)
                 {
                     log.Trace?.Log($"Section 0, stopping scan.");
                     break;
                 }
-                SectionType recordType = (SectionType)id;
+                RecordId recordType = (RecordId)id;
                 switch (recordType)
                 {
-                    case SectionType.AirportName:
+                    case RecordId.AirportName:
                         StringBuilder bld = new();
                         uint i = 6;
                         while (i < size)
@@ -144,10 +124,7 @@ namespace SimScanner.Bgl
                         Name = bld.ToString();
                         break;
 
-                    case SectionType.AirportTowerScenery:
-                        break;
-
-                    case SectionType.DeleteAirport:
+                    case RecordId.DeleteAirport:
                         ushort flags;
                         byte numRunways;
                         byte numStarts;
@@ -160,28 +137,19 @@ namespace SimScanner.Bgl
                             .Skip(size - 0x0c);
                         break;
 
-                    case SectionType.Com:
-                        break;
-
-                    case SectionType.ApronDetail:
+                    case RecordId.ApronDetail:
                         NumApronDetailRecords += 1;
                         break;
 
-                    case SectionType.ApronEdgeLight:
+                    case RecordId.ApronEdgeLight:
                         NumApronEdgeLightRecords += 1;
                         break;
 
-                    case SectionType.ApronSurface:
+                    case RecordId.ApronSurface:
                         NumApronSurfaceRecords += 1;
                         break;
 
-                    case SectionType.TaxiwayPointFSX:
-                        break;
-
-                    case SectionType.TaxiwayPath:
-                        break;
-
-                    case SectionType.TaxiwayName:
+                    case RecordId.TaxiwayName:
                         ushort numNames;
                         reader.Read(out numNames);
                         uint recordPos = 8;
@@ -209,7 +177,7 @@ namespace SimScanner.Bgl
                         }
                         break;
 
-                    case SectionType.TaxiwayParkingFSX:
+                    case RecordId.TaxiwayParkingFSX:
                         reader.Read(out ushort numParkings);
                         log.Trace?.Log($"We have {numParkings} parking entries");
 
@@ -285,7 +253,7 @@ namespace SimScanner.Bgl
                         }
                         break;
 
-                    case SectionType.TaxiwayParkingP3D:
+                    case RecordId.TaxiwayParkingP3D:
                         reader.Read(out numParkings);
                         log.Trace?.Log($"We have {numParkings} parking entries");
 
@@ -363,29 +331,19 @@ namespace SimScanner.Bgl
                         }
                         break;
 
-                    case SectionType.Helipad:
+                    case RecordId.Helipad:
                         NumHelipads += 1;
                         break;
 
-                    case SectionType.SceneryObject:
-                        break;
-
-                    case SectionType.Jetway:
+                    case RecordId.Jetway:
                         NumJetways += 1;
                         break;
 
-                    case SectionType.Approach:
+                    case RecordId.Approach:
                         NumApproaches += 1;
                         break;
 
-                    case SectionType.Waypoint:
-                        break;
-
-                    case SectionType.BlastFence:
-                    case SectionType.BoundaryFence:
-                        break;
-
-                    case SectionType.RunwayStart:
+                    case RecordId.RunwayStart:
                         NumRunwayStarts += 1;
                         break;
 

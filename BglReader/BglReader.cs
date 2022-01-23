@@ -126,7 +126,7 @@ namespace BglReader
                 {
                     foreach (BglSubSection subSection in section.SubSections)
                     {
-                        Console.WriteLine($"- Subsection {subSection.Index:D2}: 0x{subSection.DataSize:X8} byte(s) of data, {subSection.NumRecords} record(s)");
+                        Console.WriteLine($"- Subsection {subSection.Index:D2}: 0x{subSection.DataSize:X8} byte(s) of data, {subSection.NumRecords} record(s), starting pos 0x{subSection.DataOffset:X8}");
                     }
                 }
 
@@ -139,12 +139,13 @@ namespace BglReader
                 {
                     if (dumpHeader)
                     {
-                        using (var reader = section.file.MappedFile.Section(section.GetSubSection(0).DataOffset, section.GetSubSection(0).DataSize))
+                        uint dataOffset = section.GetSubSection(0).DataOffset;
+                        using (var reader = section.file.MappedFile.Section(dataOffset, section.GetSubSection(0).DataSize))
                         {
                             uint i = 0;
                             while (i <= 256)
                             {
-                                Console.WriteLine($"0x{i:X8}: {reader.HexDump(i, 16)}");
+                                Console.WriteLine($"0x{(dataOffset + i):X8}: {reader.HexDump(i, 16)}");
                                 i += 16;
                             }
                         }
@@ -190,9 +191,9 @@ namespace BglReader
                     foreach (BglAirportSummary summary in section.AirportSummaries)
                     {
                         Console.WriteLine($"  ==> Summary for {summary.ICAO}: region {summary.RegionCode}.");
-                        Console.WriteLine($"      Latitude  {summary.Latitude:###.###}");
-                        Console.WriteLine($"      Longitude {summary.Longitude:###.###}");
-                        Console.WriteLine($"      Altitude : {summary.Altitude:#####} meter(s)");
+                        Console.WriteLine($"      Latitude : {summary.Latitude:###.###}");
+                        Console.WriteLine($"      Longitude: {summary.Longitude:###.###}");
+                        Console.WriteLine($"      Elevation: {summary.Elevation:#####.##} meter(s)");
                     }
                 }
                 else

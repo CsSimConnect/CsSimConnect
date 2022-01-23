@@ -18,6 +18,7 @@ using Rakis.Logging;
 using System;
 using System.IO;
 using System.IO.MemoryMappedFiles;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace SimScanner.Bgl
@@ -44,7 +45,19 @@ namespace SimScanner.Bgl
             }
             log.Trace?.Log($"Reading 0x{size:X4} bytes starting at 0x{pos:X4}, Capacity = 0x{accessor.Capacity:X4}.");
 
-            accessor.Read(pos, out value);
+            try
+            {
+                int marshalSize = Marshal.SizeOf(typeof(T));
+                if (marshalSize != size)
+                {
+                    log.Error?.Log($"Type {typeof(T).Name} has marshalSize = 0x{marshalSize:X8}, size = 0x{size:X8}");
+                }
+                accessor.Read(pos, out value);
+            }
+            catch (ArgumentException e)
+            {
+                throw new ArgumentOutOfRangeException($"Trying to read 0x{size:X4} byte(s) starting at 0x{pos:X4}, Capacity = 0x{accessor.Capacity:X4}.");
+            }
             if (!readAhead)
             {
                 pos += size;
@@ -80,10 +93,10 @@ namespace SimScanner.Bgl
             return this;
         }
 
-        public BinSection Read(out string value, int maxSize =-1)
+        public BinSection Read(out string value, uint maxSize)
         {
             StringBuilder bld = new();
-            long i = (maxSize >= 0) ? maxSize : (accessor.Capacity - pos);
+            long i = maxSize;
             while (i-- > 0)
             {
                 Read(out byte b);
@@ -95,6 +108,11 @@ namespace SimScanner.Bgl
             }
             value = bld.ToString();
             return this;
+        }
+
+        public BinSection Read(out string value)
+        {
+            return Read(out value, (uint)(accessor.Capacity - pos));
         }
 
         public string HexDump(long offset, uint size)

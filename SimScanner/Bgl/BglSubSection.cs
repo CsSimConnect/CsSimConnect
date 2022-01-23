@@ -15,7 +15,6 @@
  */
 
 using Rakis.Logging;
-using System;
 using System.Collections.Generic;
 
 namespace SimScanner.Bgl
@@ -89,6 +88,7 @@ namespace SimScanner.Bgl
                 log.Error?.Log($"SubSectionSize == {section.Header.SubSectionSize}?");
             }
             CollectAirports();
+            CollectAirportSummaries();
         }
 
         // Airport
@@ -97,12 +97,18 @@ namespace SimScanner.Bgl
 
         // Lookahead...
 
-        private SectionType BglRecordType(long pos, out uint size)
+        private ushort GetIdAndSize(long pos, out uint size)
         {
             using var reader = section.file.MappedFile.Section(DataOffset, DataSize);
             reader.Seek(pos).Read(out ushort id).Read(out size);
+            log.Trace?.Log($"Found a record at 0x{pos:X8} with id 0x{id:X4} of size 0x{size:X8}");
 
-            return (SectionType)id;
+            return id;
+        }
+
+        private RecordId BglRecordId(long pos, out uint size)
+        {
+            return (RecordId)GetIdAndSize(pos, out size);
         }
 
         private void CollectAirports()
@@ -114,23 +120,22 @@ namespace SimScanner.Bgl
             long pos = 0;
             while (pos < DataSize)
             {
-                SectionType type = BglRecordType(pos, out uint recordSize);
-                if (type == SectionType.AirportMSFS)
+                RecordId type = BglRecordId(pos, out uint recordSize);
+                if (type == RecordId.AirportMSFS)
                 {
                     Airports.Add(new BglMSFSAirport(this, pos));
                 }
-                else if (type == SectionType.AirportFSX)
+                else if (type == RecordId.AirportFSX)
                 {
                     Airports.Add(new BglFSXAirport(this, pos));
                 }
-                else if (type == SectionType.AirportP3D)
+                else if (type == RecordId.AirportP3D)
                 {
                     Airports.Add(new BglP3DAirport(this, pos));
                 }
                 else
                 {
-                    log.Error?.Log($"Found a {type} record, while expecting only airports");
-                    //break;
+                    log.Error?.Log($"Found a {type} record, id 0x{((uint)type):X4}, while expecting only airports");
                 }
                 pos += recordSize;
             }
@@ -142,7 +147,37 @@ namespace SimScanner.Bgl
 
         // AirportSummary
 
-        public BglAirportSummary AirportSummary => !section.IsAirportSummary ? null : new(this);
+        public List<BglAirportSummary> AirportSummaries { get; init; } = new();
+
+        private void CollectAirportSummaries()
+        {
+            if (!section.IsAirportSummary)
+            {
+                return;
+            }
+            long pos = 0;
+            while (pos < DataSize)
+            {
+                SectionType type = (SectionType)GetIdAndSize(pos, out uint recordSize);
+                if (type == SectionType.AirportSummaryFSX)
+                {
+                    AirportSummaries.Add(new BglFSXAirportSummary(this, pos));
+                }
+                else if (type == SectionType.AirportSummaryP3D)
+                {
+                    AirportSummaries.Add(new BglP3DAirportSummary(this, pos));
+                }
+                else if (type == SectionType.AirportSummaryMSFS)
+                {
+                    AirportSummaries.Add(new BglMSFSAirportSummary(this, pos));
+                }
+                else
+                {
+                    log.Error?.Log($"Found a {type} record, id 0x{((uint)type):X4}, while expecting only AirportSummaries");
+                }
+                pos += recordSize;
+            }
+        }
 
     }
 }

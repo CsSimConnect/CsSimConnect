@@ -15,10 +15,113 @@
  */
 
 using Rakis.Logging;
-using System;
+using System.Runtime.InteropServices;
+
+using static SimScanner.Bgl.BglRecord;
 
 namespace SimScanner.Bgl
 {
+    public class BglAirportSummary
+    {
+        private static readonly Logger log = Logger.GetLogger(typeof(BglAirportSummary));
+
+        internal BglSubSection subSection;
+
+        public virtual string ICAO => null;
+        public virtual string RegionCode => null;
+        public virtual double Latitude => 0.0;
+        public virtual double Longitude => 0.0;
+        public virtual double Elevation => 0.0;
+        public virtual double ElevationInFeet => 0.0;
+
+        internal BglAirportSummary(BglSubSection subSection)
+        {
+            this.subSection = subSection;
+        }
+    }
+
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    public struct BglFSXAirportSummaryHeader
+    {
+        public const uint Size = 0x2C;
+
+        public ushort Id;
+        public uint TotalSize;
+        public ushort ApproachAvailability;
+        public int Longitude;
+        public int Latitude;
+        public int Elevation;
+        public uint EncodedICAO;
+        public uint EncodedRegionIdent;
+        public float MagneticVariance;
+        public float LongestRunwayLength;
+        public float LongestRunwayHeading;
+        public uint FuelAvailability;
+    }
+
+    public class BglFSXAirportSummary : BglAirportSummary
+    {
+
+        private BglFSXAirportSummaryHeader header;
+        public BglFSXAirportSummaryHeader Header => header;
+
+        public override string ICAO => DecodeName(Header.EncodedICAO);
+        public override string RegionCode => DecodeName(Header.EncodedRegionIdent, false);
+        public override double Latitude => DecodeLatitude(Header.Latitude);
+        public override double Longitude => DecodeLongitude(Header.Longitude);
+        public override double Elevation => DecodeElevation(Header.Elevation);
+        public override double ElevationInFeet => DecodeElevationToFeet(Header.Elevation);
+
+        internal BglFSXAirportSummary(BglSubSection subSection, long pos) : base(subSection)
+        {
+            using var reader = subSection.section.file.MappedFile.Section(subSection.DataOffset, subSection.DataSize);
+
+            reader.Seek(pos).Read(out header, BglFSXAirportSummaryHeader.Size);
+        }
+    }
+
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    public struct BglP3DAirportSummaryHeader
+    {
+        public const uint Size = 0x3C; // !
+
+        public ushort Id;
+        public uint TotalSize;
+        public ushort ApproachAvailability;
+        public int Longitude;
+        public int Latitude;
+        public int Elevation;
+        public uint EncodedICAO;
+        public uint EncodedRegionIdent;
+        public float MagneticVariance;
+        public float LongestRunwayLength;
+        public float LongestRunwayHeading;
+        public uint FuelAvailability;
+        public ulong Unknown1, Unknown2;
+    }
+
+    public class BglP3DAirportSummary : BglAirportSummary
+    {
+
+        private BglP3DAirportSummaryHeader header;
+        public BglP3DAirportSummaryHeader Header => header;
+
+        public override string ICAO => DecodeName(Header.EncodedICAO);
+        public override string RegionCode => DecodeName(Header.EncodedRegionIdent, false);
+        public override double Latitude => DecodeLatitude(Header.Latitude);
+        public override double Longitude => DecodeLongitude(Header.Longitude);
+        public override double Elevation => DecodeElevation(Header.Elevation);
+        public override double ElevationInFeet => DecodeElevationToFeet(Header.Elevation);
+
+        internal BglP3DAirportSummary(BglSubSection subSection, long pos) : base(subSection)
+        {
+            using var reader = subSection.section.file.MappedFile.Section(subSection.DataOffset, subSection.DataSize);
+
+            reader.Seek(pos).Read(out header, BglP3DAirportSummaryHeader.Size);
+        }
+    }
+
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct BglMSFSAirportSummaryHeader
     {
         public const uint Size = 0x2C;
@@ -28,51 +131,33 @@ namespace SimScanner.Bgl
         public ushort ApproachAvailability;
         public int Longitude;
         public int Latitude;
-        public int Altitude;
+        public int Elevation;
         public uint EncodedICAO;
         public uint EncodedRegionIdent;
-        public uint Unknown0;
         public float MagneticVariance;
         public float LongestRunwayLength;
         public float LongestRunwayHeading;
         public uint FuelAvailability;
     }
 
-    public class BglAirportSummary
+    public class BglMSFSAirportSummary : BglAirportSummary
     {
-        private static readonly Logger log = Logger.GetLogger(typeof(BglAirportSummary));
-
-        internal BglSubSection subSection;
 
         private BglMSFSAirportSummaryHeader header;
         public BglMSFSAirportSummaryHeader Header => header;
 
-        public string ICAO => BglAirport.DecodeName(Header.EncodedICAO);
-        public string RegionCode => BglAirport.DecodeName(Header.EncodedRegionIdent, false);
-        public double Latitude => 90.0 - Header.Latitude * (180.0 / (2 * 0x10000000));
-        public double Longitude => -180.0 + (Header.Longitude * (360.0 / (3 * 0x10000000)));
-        public double Altitude => Header.Altitude / 1000.0;
+        public override string ICAO => DecodeName(Header.EncodedICAO);
+        public override string RegionCode => DecodeName(Header.EncodedRegionIdent, false);
+        public override double Latitude => DecodeLatitude(Header.Latitude);
+        public override double Longitude => DecodeLongitude(Header.Longitude);
+        public override double Elevation => DecodeElevation(Header.Elevation);
+        public override double ElevationInFeet => DecodeElevationToFeet(Header.Elevation);
 
-        internal BglAirportSummary(BglSubSection subSection)
+        internal BglMSFSAirportSummary(BglSubSection subSection, long pos) : base(subSection)
         {
-            this.subSection = subSection;
-
             using var reader = subSection.section.file.MappedFile.Section(subSection.DataOffset, subSection.DataSize);
 
-            reader
-                .Read(out header.Id)
-                .Read(out header.TotalSize)
-                .Read(out header.ApproachAvailability)
-                .Read(out header.Longitude)
-                .Read(out header.Latitude)
-                .Read(out header.Altitude)
-                .Read(out header.EncodedICAO)
-                .Read(out header.EncodedRegionIdent)
-                .Read(out header.Unknown0)
-                .Read(out header.MagneticVariance)
-                .Read(out header.LongestRunwayLength)
-                .Read(out header.LongestRunwayHeading)
-                .Read(out header.FuelAvailability);
+            reader.Seek(pos).Read(out header, BglMSFSAirportSummaryHeader.Size);
         }
     }
 }

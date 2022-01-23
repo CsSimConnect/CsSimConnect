@@ -17,73 +17,46 @@
 using Rakis.Logging;
 using SimScanner.Model;
 using System;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace SimScanner.Bgl
 {
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct BglMSFSAirportHeader
     {
         public const uint Size = 0x44;
 
-        public ushort Id;
-        public uint TotalSize;
-        public byte NumRunways;
-        public byte NumComs;
-        public byte NumStarts;
-        public byte NumApproaches;
-        public byte EncodedNumAprons;
-        public byte NumHeliPads;
-        public int Longitude;
-        public int Latitude;
-        public int Altitude;
-        public uint Unknown0,Unknown1,Unknown2;
-        public float MagneticVariance;
-        public uint EncodedICAO;
-        public uint EncodedRegionIdent;
-        public uint FuelAvailability;
-        public byte Unknown3;
-        public byte INT;
-        public byte Flags;
-        public ushort Unknown4;
-        public byte OnlyAddIfReplace;
-        public byte Unknown5;
-        public byte ApplyFlatten;
-        public uint Unknown6, Unknown7;
-
-        public int NumAprons => EncodedNumAprons & 0x7f;
-        public bool Deleted => (EncodedNumAprons & 0x80) != 0;
-    }
-
-    public enum MSFSAirportRecordId
-    {
-        Null = 0x0000,
-        Start = 0x0011,
-        Com = 0x0012,
-        Name = 0x0019,
-        TaxiwayPoint = 0x001a,
-        TaxiName = 0x001d,
-        Waypoint = 0x0022,
-        Approach = 0x0024,
-        Helipad = 0x0026,
-        ApronEdgeLights = 0x0031,
-        DeleteAirport = 0x0033,
-        BlastFence = 0x0038,
-        BoundaryFence = 0x0039,
-        Departure = 0x0042,
-        Arrival = 0x0048,
-        LightSupport = 0x0057,
-        Tower = 0x0066,
-        Runway = 0x00ce,
-        PaintedLine = 0x00cf,
-        Apron = 0x00d3,
-        TaxiwayPath = 0x00d4,
-        PaintedHatchedArea = 0x00d8,
-        TaxiwaySign = 0x00d9,
-        TaxiwayParkingMfgrName = 0x00dd,
-        Jetway = 0x00de,
-        TaxiwayParking = 0x00e7,
-        ProjectedMesh = 0x00e8,
-        GroundMergingTransfer = 0x00e9,
+        public ushort Id;                   // 0x0000
+        public uint TotalSize;              // 0x0002
+        public byte NumRunways;             // 0x0006
+        public byte NumComs;                // 0x0007
+        public byte NumStarts;              // 0x0008
+        public byte NumApproaches;          // 0x0009
+        public byte LegacyNumAprons;       // 0x000A
+        public byte NumHeliPads;            // 0x000B
+        public int Longitude;               // 0x000C
+        public int Latitude;                // 0x0010
+        public int Altitude;                // 0x0014
+        public int TowerLongitude;          // 0x0018
+        public int TowerLatitude;           // 0x001C
+        public int TowerAltitude;           // 0x0020
+        public float MagneticVariance;      // 0x0024
+        public uint EncodedICAO;            // 0x0028
+        public uint EncodedRegionIdent;     // 0x002C
+        public uint FuelAvailability;       // 0x0030
+        public byte Unknown0;
+        public byte INT;                    // 0x0035
+        public byte Flags;                  // 0x0036
+        public byte NumDepartures;          // 0x0037
+        public byte OnlyAddIfReplace;       // 0x0038
+        public byte NumArrivals;            // 0x0039
+        public byte Unknown1;               // 0x003A
+        public byte ApplyFlatten;           // 0x003B
+        public ushort NumAprons;            // 0x003C
+        public ushort NumPaintedLines;      // 0x003E
+        public ushort NumPaintedPolygons;   // 0x0040
+        public ushort NumPaintedHatchedAreas; // 0x0042
     }
 
     public class BglMSFSAirport : BglAirport
@@ -105,38 +78,10 @@ namespace SimScanner.Bgl
 
             using var reader = subSection.section.file.MappedFile.Section(subSection.DataOffset, subSection.DataSize);
 
-            reader
-                .Seek(pos)
-                .Read(out header.Id)
-                .Read(out header.TotalSize)
-                .Read(out header.NumRunways)
-                .Read(out header.NumComs)
-                .Read(out header.NumStarts)
-                .Read(out header.NumApproaches)
-                .Read(out header.EncodedNumAprons)
-                .Read(out header.NumHeliPads)
-                .Read(out header.Longitude)
-                .Read(out header.Latitude)
-                .Read(out header.Altitude)
-                .Read(out header.Unknown0)
-                .Read(out header.Unknown1)
-                .Read(out header.Unknown2)
-                .Read(out header.MagneticVariance)
-                .Read(out header.EncodedICAO)
-                .Read(out header.EncodedRegionIdent)
-                .Read(out header.FuelAvailability)
-                .Read(out header.Unknown3)
-                .Read(out header.INT)
-                .Read(out header.Flags)
-                .Read(out header.Unknown4)
-                .Read(out header.OnlyAddIfReplace)
-                .Read(out header.Unknown5)
-                .Read(out header.ApplyFlatten)
-                .Read(out header.Unknown6)
-                .Read(out header.Unknown7);
+            reader.Seek(pos).Read(out header, BglMSFSAirportHeader.Size);
 
-            log.Debug?.Log($"Reading MSFS airport record for {ICAO}");
-            log.Trace?.Log($"Airport Record has id 0x{header.Id:X4}, size {header.TotalSize}.");
+            log.Debug?.Log($"Airport Record has id 0x{header.Id:X4}, pos 0x{pos:X8}, size 0x{header.TotalSize:X8}, DataOffset 0x{subSection.DataOffset:X8}, DataSize 0x{subSection.DataSize:X8}.");
+            log.Debug?.Log($"Reading MSFS airport record for {ICAO} (encoded 0x{header.EncodedICAO:X8})");
 
             uint recNum = 0;
             pos += BglMSFSAirportHeader.Size;
@@ -159,17 +104,17 @@ namespace SimScanner.Bgl
                     log.Fatal?.Log($"Failed to read start of subrecord {recNum}, subsection {subSection.Index} of section {subSection.section.Index}, airport {DecodeName(header.EncodedICAO)}.");
                     throw e;
                 }
-                log.Trace?.Log($"Reading subrecord {recNum} (pos=0x{pos:X4}, id=0x{id:X4} ({((MSFSAirportRecordId)id).ToString()}), size={size} (0x{size:X4}) byte(s) {subSection.DataSize - pos} byte(s) left)");
+                log.Trace?.Log($"Reading subrecord {recNum} (pos=0x{pos:X4}, id=0x{id:X4} ({((RecordId)id).ToString()}), size={size} (0x{size:X4}) byte(s) {subSection.DataSize - pos} byte(s) left)");
                 if (id == 0)
                 {
                     log.Trace?.Log($"Section 0, stopping scan.");
                     break;
                 }
 
-                MSFSAirportRecordId recordType = (MSFSAirportRecordId)id;
+                RecordId recordType = (RecordId)id;
                 switch (recordType)
                 {
-                    case MSFSAirportRecordId.Name:
+                    case RecordId.AirportName:
                         StringBuilder bld = new();
                         uint i = 6;
                         while (i < size)
@@ -186,10 +131,7 @@ namespace SimScanner.Bgl
                         Name = bld.ToString();
                         break;
 
-                    case MSFSAirportRecordId.Tower:
-                        break;
-
-                    case MSFSAirportRecordId.DeleteAirport:
+                    case RecordId.DeleteAirport:
                         ushort flags;
                         byte numRunways;
                         byte numStarts;
@@ -202,30 +144,11 @@ namespace SimScanner.Bgl
                             .Skip(size - 0x0c);
                         break;
 
-                    case MSFSAirportRecordId.Com:
-                        break;
-
-//                    case SectionType.ApronDetail:
-//                        NumApronDetailRecords += 1;
-//                        reader.Skip(size - 6);
-//                        break;
-
-                    case MSFSAirportRecordId.ApronEdgeLights:
+                    case RecordId.ApronEdgeLight:
                         NumApronEdgeLightRecords += 1;
                         break;
 
-//                    case SectionType.ApronSurface:
-//                        NumApronSurfaceRecords += 1;
-//                        reader.Skip(size - 6);
-//                        break;
-
-                    case MSFSAirportRecordId.TaxiwayPoint:
-                        break;
-
-                    case MSFSAirportRecordId.TaxiwayPath:
-                        break;
-
-                    case MSFSAirportRecordId.TaxiName:
+                    case RecordId.TaxiwayName:
                         ushort numNames;
                         reader.Read(out numNames);
                         uint recordPos = 8;
@@ -253,7 +176,7 @@ namespace SimScanner.Bgl
                         }
                         break;
 
-                    case MSFSAirportRecordId.TaxiwayParking:
+                    case RecordId.TaxiwayParkingMSFS:
                         reader.Read(out ushort numParkings);
                         log.Trace?.Log($"We have {numParkings} parking entries");
 
@@ -333,26 +256,19 @@ namespace SimScanner.Bgl
                         }
                         break;
 
-                    case MSFSAirportRecordId.Helipad:
+                    case RecordId.Helipad:
                         NumHelipads += 1;
                         break;
 
-                    case MSFSAirportRecordId.Jetway:
+                    case RecordId.JetwayMSFS:
                         NumJetways += 1;
                         break;
 
-                    case MSFSAirportRecordId.Approach:
+                    case RecordId.Approach:
                         NumApproaches += 1;
                         break;
 
-                    case MSFSAirportRecordId.Waypoint:
-                        break;
-
-                    case MSFSAirportRecordId.BlastFence:
-                    case MSFSAirportRecordId.BoundaryFence:
-                        break;
-
-                    case MSFSAirportRecordId.Start:
+                    case RecordId.RunwayStart:
                         NumRunwayStarts += 1;
                         break;
 
