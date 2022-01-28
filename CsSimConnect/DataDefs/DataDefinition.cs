@@ -165,6 +165,72 @@ namespace CsSimConnect.Reflection
             }
         }
 
+        private void ToSCStruct<T>(object obj, FieldGetter<T> get)
+        {
+            if (prop != null)
+            {
+                if (prop.PropertyType == typeof(T))
+                {
+                    prop.SetValue(obj, get.Invoke());
+                }
+                else
+                {
+                    log.Error?.Log("Cannot assign a {0} to a {1}.", Type.ToString(), prop.PropertyType.FullName);
+                    throw new NoConversionAvailableException(this, Type, prop.PropertyType);
+                }
+            }
+            else if ((field != null))
+            {
+                if (field.FieldType == typeof(T))
+                {
+                    field.SetValue(obj, get.Invoke());
+                }
+                else
+                {
+                    log.Error?.Log("Cannot assign a {0} to a {1}.", Type.ToString(), field.FieldType.FullName);
+                    throw new NoConversionAvailableException(this, Type, field.FieldType);
+                }
+            }
+            else
+            {
+                log.Error?.Log("No field or property to assign to.");
+                throw new DataDefinitionException(this, "No field or property to assign to.");
+            }
+        }
+
+        private void FromScStruct<T>(object obj, FieldSetter<T> set)
+        {
+            if (prop != null)
+            {
+                if (prop.PropertyType == typeof(T))
+                {
+                    set.Invoke((T)prop.GetValue(obj));
+                }
+                else
+                {
+                    log.Error?.Log("Cannot assign a {0} to a {1}.", prop.PropertyType.FullName, Type.ToString());
+                    throw new NoConversionAvailableException(this, Type, prop.PropertyType);
+                }
+            }
+            else if (field != null)
+            {
+                if (field.FieldType == typeof(T))
+                {
+                    set.Invoke((T)field.GetValue(obj));
+                }
+                else
+                {
+                    log.Error?.Log("Cannot assign a {0} to a {1}.", field.FieldType.FullName, Type.ToString());
+                    throw new NoConversionAvailableException(this, Type, field.FieldType);
+                }
+            }
+            else
+            {
+                log.Error?.Log("No field or property to assign to.");
+                throw new DataDefinitionException(this, "No field or property to assign to.");
+            }
+        }
+
         private void SetBoolean(object obj, FieldGetter<bool> get, ref uint pos)
         {
             prop.SetValue(obj, get);
@@ -224,13 +290,20 @@ namespace CsSimConnect.Reflection
                     SetValue = (data, obj) => FromObject<string>(obj, i => data.VariableWString(i));
                     break;
 
+                case DataType.LatLonAlt:
+                    GetValue = (obj, data) => ToSCStruct(obj, () => data.Data.LatLonAlt());
+                    SetValue = (data, obj) => FromScStruct<LatLonAlt>(obj, l => data.LatLonAlt(l));
+                    break;
+
+                case DataType.PBH:
+                    GetValue = (obj, data) => ToSCStruct(obj, () => data.Data.PBH());
+                    SetValue = (data, obj) => FromScStruct<PBH>(obj, pbh => data.PBH(pbh));
+                    break;
 
                 case DataType.InitPosition:
                 case DataType.MarkerState:
                 case DataType.Waypoint:
-                case DataType.LatLonAlt:
                 case DataType.XYZ:
-                case DataType.PBH:
                 case DataType.Observer:
                 case DataType.VideoStreamInfo:
 

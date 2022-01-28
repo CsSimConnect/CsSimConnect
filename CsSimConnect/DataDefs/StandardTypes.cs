@@ -22,10 +22,18 @@ namespace CsSimConnect.DataDefs
         public const int AirSpeedCruise = -1;
         public const int AirSpeedKeep = -2;
 
+        public InitPosition(double lat, double lon, double alt, double pitch, double bank, double heading, bool onGround, int airSpeed) : this()
+        {
+            Position = new(lat, lon, alt);
+            Orientation = new(pitch, bank, heading);
+            OnGround = onGround;
+            AirSpeed = airSpeed;
+        }
+
         [EmbeddedField]
         public LatLonAlt Position { get; set; }
         [EmbeddedField]
-        public PBH Rotation { get; set; }
+        public PBH Orientation { get; set; }
         public bool OnGround { get; set; }
         public int AirSpeed { get; set; }
     }
@@ -82,6 +90,13 @@ namespace CsSimConnect.DataDefs
         public double Latitude { get; set; }
         public double Longitude { get; set; }
         public double Altitude { get; set; }
+
+        public LatLonAlt(double lat, double lon, double alt)
+        {
+            Latitude = lat;
+            Longitude = lon;
+            Altitude = alt;
+        }
     }
 
     public struct XYZ
@@ -89,6 +104,13 @@ namespace CsSimConnect.DataDefs
         public double X { get; set; }
         public double Y { get; set; }
         public double Z { get; set; }
+
+        public XYZ(double x, double y, double z)
+        {
+            X = x;
+            Y = y;
+            Z = z;
+        }
     }
 
     public struct PBH
@@ -96,6 +118,13 @@ namespace CsSimConnect.DataDefs
         public double Pitch { get; set; }
         public double Bank { get; set; }
         public double Heading { get; set; }
+
+        public PBH(double pitch, double bank, double heading)
+        {
+            Pitch = pitch;
+            Bank = bank;
+            Heading = heading;
+        }
     }
 
     public enum ObserverRegime

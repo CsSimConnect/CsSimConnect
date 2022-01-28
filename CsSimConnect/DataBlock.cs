@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+using CsSimConnect.DataDefs;
 using Rakis.Logging;
 using System;
 using System.Text;
@@ -262,5 +263,74 @@ namespace CsSimConnect
             Pos += 4 - (Pos & 0x03);
         }
 
+        public LatLonAlt LatLonAlt()
+        {
+            double lat = Float64();
+            double lon = Float64();
+            double alt = Float64();
+            return new(lat, lon, alt);
+        }
+
+        public void LatLonAlt(LatLonAlt value)
+        {
+            Float64(value.Latitude);
+            Float64(value.Longitude);
+            Float64(value.Altitude);
+        }
+
+        public XYZ XYZ()
+        {
+            double x = Float64();
+            double y = Float64();
+            double z = Float64();
+            return new(x, y, z);
+        }
+
+        public void XYZ(XYZ value)
+        {
+            Float64(value.X);
+            Float64(value.Y);
+            Float64(value.Z);
+        }
+
+        public PBH PBH()
+        {
+            double pitch = Float64();
+            double bank = Float64();
+            double heading = Float64();
+            return new(pitch, bank, heading);
+        }
+
+        public void PBH(PBH value)
+        {
+            Float64(value.Pitch);
+            Float64(value.Bank);
+            Float64(value.Heading);
+        }
+
+        public InitPosition InitPosition()
+        {
+            double lat = Float64();
+            double lon = Float64();
+            double alt = Float64();
+            double pitch = Float64();
+            double bank = Float64();
+            double heading = Float64();
+            bool onGround = Int32() != 0;
+            int airSpeed = Int32();
+            return new InitPosition(lat, lon, alt, pitch, bank, heading, onGround, airSpeed);
+        }
+
+        public void InitPosition(InitPosition value)
+        {
+            Float64(value.Position.Latitude);
+            Float64(value.Position.Longitude);
+            Float64(value.Position.Altitude);
+            Float64(value.Orientation.Pitch);
+            Float64(value.Orientation.Bank);
+            Float64(value.Orientation.Heading);
+            Int32(value.OnGround ? 1 : 0);
+            Int32(value.AirSpeed);
+        }
     }
 }
