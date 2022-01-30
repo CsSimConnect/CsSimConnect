@@ -319,20 +319,24 @@ namespace CsSimConnect.Reflection
             {
                 case DataType.Int32:
                     GetValue = (obj, data) => ToObject(obj, () => data.Data.Int32() != 0);
+                    SetValue = (data, obj) => FromObject<bool>(obj, l => data.Int32(l ? 1 : 0));
                     break;
 
                 case DataType.Int64:
                     GetValue = (obj, data) => ToObject(obj, () => data.Data.Int64() != 0);
+                    SetValue = (data, obj) => FromObject<bool>(obj, l => data.Int64(l ? 1 : 0));
                     break;
 
                 case DataType.Float32:
-                    log.Warn?.Log("Converting a Float32 to a bool.");
+                    log.Warn?.Log("Converting between a Float32 and a bool.");
                     GetValue = (obj, data) => ToObject(obj, () => data.Data.Float32() != 0);
+                    SetValue = (data, obj) => FromObject<bool>(obj, l => data.Float32(l ? 1 : 0));
                     break;
 
                 case DataType.Float64:
-                    log.Warn?.Log("Converting a Float64 to a bool.");
+                    log.Warn?.Log("Converting between a Float64 and a bool.");
                     GetValue = (obj, data) => ToObject(obj, () => data.Data.Float64() != 0);
+                    SetValue = (data, obj) => FromObject<bool>(obj, l => data.Float64(l ? 1 : 0));
                     break;
 
                 case DataType.String8:

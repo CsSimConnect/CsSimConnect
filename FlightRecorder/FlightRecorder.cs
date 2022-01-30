@@ -15,6 +15,7 @@
  */
 
 using CsSimConnect;
+using CsSimConnect.AI;
 using CsSimConnect.Reflection;
 using Newtonsoft.Json;
 using Rakis.Args;
@@ -27,6 +28,8 @@ namespace FlightRecorder
 {
     public class AircraftData
     {
+        [DataDefinition("ATC ID", Type = DataType.String32)]
+        public string TailNumber;
         [DataDefinition("TITLE", Type = DataType.String256)]
         public string Title;
         [DataDefinition("PLANE LATITUDE", Units = "DEGREES", Type = DataType.Float64, Epsilon = 1.0f)]
@@ -48,6 +51,8 @@ namespace FlightRecorder
     }
     public class FlightData
     {
+        public DateTime ts;
+
         [DataDefinition("PLANE LATITUDE", Units = "DEGREES", Type = DataType.Float64, Epsilon = 1.0f)]
         public double Latitude;
         [DataDefinition("PLANE LONGITUDE", Units = "DEGREES", Type = DataType.Float64, Epsilon = 1.0f)]
@@ -150,29 +155,32 @@ namespace FlightRecorder
                 return;
             }
 
-            // Check recording parameters
-            try
+            if (!parsedArgs.Has(OPT_REPLAY))
             {
-                startDelay = int.Parse(parsedArgs.Parameters[0]);
-                duration = int.Parse(parsedArgs.Parameters[1]);
-            }
-            catch (FormatException e)
-            {
-                Console.WriteLine("Bad number format.");
-                Usage();
-                return;
-            }
-            if (parsedArgs.ArgOpts.ContainsKey(OPT_OBS_DELAY))
-            {
+                // Check recording parameters
                 try
                 {
-                    obsDelay = int.Parse(parsedArgs[OPT_OBS_DELAY]);
+                    startDelay = int.Parse(parsedArgs.Parameters[0]);
+                    duration = int.Parse(parsedArgs.Parameters[1]);
                 }
-                catch (FormatException e)
+                catch (FormatException)
                 {
-                    Console.WriteLine($"Bad observation delay '{parsedArgs[OPT_OBS_DELAY]}'.");
+                    Console.WriteLine("Bad number format.");
                     Usage();
                     return;
+                }
+                if (parsedArgs.ArgOpts.ContainsKey(OPT_OBS_DELAY))
+                {
+                    try
+                    {
+                        obsDelay = int.Parse(parsedArgs[OPT_OBS_DELAY]);
+                    }
+                    catch (FormatException)
+                    {
+                        Console.WriteLine($"Bad observation delay '{parsedArgs[OPT_OBS_DELAY]}'.");
+                        Usage();
+                        return;
+                    }
                 }
             }
             WaitUntilConnected(10);
@@ -202,14 +210,56 @@ namespace FlightRecorder
         private static void Replay()
         {
             using StreamReader f = new(output);
-            using JsonTextReader fj = new(f);
 
-            if (!fj.Read() || fj.TokenType != JsonToken.StartObject)
+            JsonSerializer serializer = new();
+
+            string line = f.ReadLine();
+            AircraftData aircraftData = JsonConvert.DeserializeObject<AircraftData>(line);
+
+            Console.WriteLine($"Creating AI aircraft of type '{aircraftData.Title}'");
+            SimulatedAircraft aircraft = AircraftBuilder.Builder(aircraftData.Title)
+                .WithTailNumber(aircraftData.TailNumber)
+                .AtPosition(aircraftData.Latitude, aircraftData.Longitude, aircraftData.Altitude)
+                .WithPBH(aircraftData.Pitch, aircraftData.Bank, aircraftData.Heading)
+                .OnGround()
+                .WithAirSpeed(aircraftData.AirSpeed)
+                .Build();
+            SimulatedAircraft ai = AIManager.Instance.Create(aircraft).Get();
+
+            Console.WriteLine($"Starting {startDelay} second(s) of wait.");
+            Thread.Sleep(new TimeSpan(0, 0, startDelay));
+
+            line = f.ReadLine();
+            TimeSpan diff = TimeSpan.Zero;
+            while (line != null)
             {
-                Console.WriteLine($"First token read from '{output}' is a {fj.TokenType}");
-                return;
+                FlightData data = JsonConvert.DeserializeObject<FlightData>(line);
+                if (data == null)
+                {
+                    Console.WriteLine("Unable to deserialize object.");
+                    break;
+                }
+                DateTime now = DateTime.Now;
+                Console.WriteLine($"Read data with ts = {data.ts}, now = {now}.");
+                if ((diff == TimeSpan.Zero) || ((data.ts + diff) > now))
+                {
+                    if (diff == TimeSpan.Zero)
+                    {
+                        diff = now - data.ts;
+                        Console.WriteLine($"Going to correct for {diff} in time difference");
+                    }
+                    Thread.Sleep(data.ts + diff - now);
+                    DataManager.Instance.SetData(ai.ObjectId, data);
+                }
+                else
+                {
+                    Console.WriteLine("Skipping old data.");
+                }
+
+                line = f.ReadLine();
             }
-            
+
+            Thread.Sleep(10000);
         }
 
         private static void Record()
@@ -217,22 +267,42 @@ namespace FlightRecorder
             AircraftData aircraft = DataManager.Instance.RequestData<AircraftData>().Get();
 
             using StreamWriter f = new(output, true);
-            using JsonTextWriter fj = new(f);
 
-            fj.WriteRawValue(JsonConvert.SerializeObject(aircraft));
+            f.WriteLine(JsonConvert.SerializeObject(aircraft));
 
             FlightData data = new FlightData();
             bool haveData = false;
-            DataManager.Instance.RequestData(data, period: ObjectDataPeriod.PerSimFrame, onlyWhenChanged: true, onNext: () => { haveData = true; });
+            ulong seqNr = 0;
+            DateTime timestamp = DateTime.Now;
+
+            DataManager.Instance.RequestData(data, period: ObjectDataPeriod.PerSimFrame, onlyWhenChanged: true, onNext: () => { haveData = true; seqNr++; timestamp = DateTime.Now; });
+
+            Console.WriteLine($"Starting {startDelay} second(s) of wait.");
             Thread.Sleep(new TimeSpan(0, 0, startDelay));
+
+            Console.WriteLine($"Starting recording: {duration} second(s)");
+
             DateTime limit = DateTime.Now + new TimeSpan(0, 0, duration);
+
+            DateTime update = DateTime.Now + new TimeSpan(0, 0, 10);
+            int count = 0;
+
+            ulong lastSeqNr = 0;
             while (DateTime.Now < limit)
             {
-                if (haveData)
+                if (haveData && (seqNr > lastSeqNr))
                 {
-                    fj.WriteRawValue(JsonConvert.SerializeObject(data));
+                    lastSeqNr = seqNr;
+                    data.ts = timestamp;
+                    f.WriteLine(JsonConvert.SerializeObject(data));
                 }
                 Thread.Sleep(obsDelay);
+                if (DateTime.Now > update)
+                {
+                    count += 10;
+                    Console.WriteLine($"Recorded {count} second(s).");
+                    update = DateTime.Now + new TimeSpan(0, 0, 10);
+                }
             }
         }
     }
