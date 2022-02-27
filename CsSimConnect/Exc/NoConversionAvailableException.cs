@@ -15,7 +15,6 @@
  */
 
 using CsSimConnect.DataDefs;
-using CsSimConnect.Reflection;
 using System;
 using System.Reflection;
 
@@ -27,20 +26,20 @@ namespace CsSimConnect.Exc
         public Type TargetType { get; init; }
 
         public NoConversionAvailableException(DefinitionBase def, DataType source, Type target)
-            : base(def, String.Format("No conversion available from {0} to {1}", source.ToString(), target.FullName))
+            : base(def, $"No conversion available from {source} to {target.FullName}")
         {
             SourceType = source;
             TargetType = target;
         }
 
         public NoConversionAvailableException(DefinitionBase def, DataType source)
-            : base(def, String.Format("DataType {0} not implemented", source.ToString()))
+            : base(def, $"DataType {source} not implemented")
         {
             SourceType = source;
         }
 
         public NoConversionAvailableException(DefinitionBase def, MemberInfo target)
-            : base(def, String.Format("Member type {0} not implemented", target.Name))
+            : base(def, String.Format($"Member type {target.Name} not implemented"))
         {
             if (target is PropertyInfo prop)
             {

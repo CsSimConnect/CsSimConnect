@@ -40,7 +40,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ShowAirport", "ShowAirport\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ListAircraft", "ListAircraft\ListAircraft.csproj", "{19C44F35-8290-40BE-8C74-1849320028A9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlightRecorder", "FlightRecorder\FlightRecorder.csproj", "{137A7593-9627-46BB-B1BC-397A55128781}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlightRecorder", "FlightRecorder\FlightRecorder.csproj", "{137A7593-9627-46BB-B1BC-397A55128781}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "XmlGauge", "XmlGauge\XmlGauge.csproj", "{5652296E-EC2B-4498-BCB2-1BF6F553AACC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTester", "DataTester\DataTester.csproj", "{B918ADC2-1D35-4EFF-8D24-4FA2B45CC6BF}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -88,6 +92,14 @@ Global
 		{137A7593-9627-46BB-B1BC-397A55128781}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{137A7593-9627-46BB-B1BC-397A55128781}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{137A7593-9627-46BB-B1BC-397A55128781}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5652296E-EC2B-4498-BCB2-1BF6F553AACC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5652296E-EC2B-4498-BCB2-1BF6F553AACC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5652296E-EC2B-4498-BCB2-1BF6F553AACC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5652296E-EC2B-4498-BCB2-1BF6F553AACC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B918ADC2-1D35-4EFF-8D24-4FA2B45CC6BF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B918ADC2-1D35-4EFF-8D24-4FA2B45CC6BF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B918ADC2-1D35-4EFF-8D24-4FA2B45CC6BF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B918ADC2-1D35-4EFF-8D24-4FA2B45CC6BF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -21,7 +21,7 @@ using System.Reflection;
 
 namespace CsSimConnect.DataDefs
 {
-    public class GettableObjectDefinition : ObjectDefinition
+    public class GettableObjectDefinition : AnnotatedObjectDefinition
     {
 
         private static readonly Logger log = Logger.GetLogger(typeof(GettableObjectDefinition));
@@ -30,53 +30,82 @@ namespace CsSimConnect.DataDefs
         {
         }
 
+        private void AddMembers<T>(T[] members) where T : MemberInfo
+        {
+            foreach (T field in members)
+            {
+                switch (Attribute.GetCustomAttribute(field, typeof(DefinitionAttribute)))
+                {
+                    case DataDefinition dataDef:
+                        {
+                            AnnotatedDataDefinition definition = new AnnotatedDataDefinition(dataDef);
+                            if (definition.Size == 0)
+                            {
+                                definition.Size = DataSize[(uint)dataDef.Type];
+                            }
+                            if (definition.Usage != Usage.SetOnly)
+                            {
+                                TotalSize += definition.Size;
+                                fields.Add(new(field, definition, (uint)fields.Count));
+                            }
+                            definition.Setup(field);
+                        }
+                        break;
+                    case DataRequestId dataDef:
+                        {
+                            AnnotatedMetadataDefinition definition = new DataRequestIdDefinition(dataDef);
+                            fields.Add(new(field, definition));
+                            definition.Setup(field);
+                        }
+                        break;
+                    case DataObjectId dataDef:
+                        {
+                            AnnotatedMetadataDefinition definition = new DataObjectIdDefinition(dataDef);
+                            fields.Add(new(field, definition));
+                            definition.Setup(field);
+                        }
+                        break;
+                    case DataDefineId dataDef:
+                        {
+                            AnnotatedMetadataDefinition definition = new DataDefineIdDefinition(dataDef);
+                            fields.Add(new(field, definition));
+                            definition.Setup(field);
+                        }
+                        break;
+                    case DataDefinitionFlags dataDef:
+                        {
+                            AnnotatedMetadataDefinition definition = new DataDefinitionFlagsDefinition(dataDef);
+                            fields.Add(new(field, definition));
+                            definition.Setup(field);
+                        }
+                        break;
+                    case DataEntryNumber dataDef:
+                        {
+                            AnnotatedMetadataDefinition definition = new DataEntryNumberDefinition(dataDef);
+                            fields.Add(new(field, definition));
+                            definition.Setup(field);
+                        }
+                        break;
+                    case DataCount dataDef:
+                        {
+                            AnnotatedMetadataDefinition definition = new DataCountDefinition(dataDef);
+                            fields.Add(new(field, definition));
+                            definition.Setup(field);
+                        }
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }
+
         protected override void CopyFields()
         {
             TotalSize = 0;
             fields.Clear();
 
-            foreach (FieldInfo field in Type.GetFields())
-            {
-                if (Attribute.GetCustomAttribute(field, typeof(DataDefinition)) is DataDefinition def)
-                {
-                    if (def.Size == 0)
-                    {
-                        def.Size = DataSize[(uint)def.Type];
-                    }
-                    if (def.Usage != Usage.SetOnly)
-                    {
-                        TotalSize += def.Size;
-                        fields.Add(new(field, def, (uint)fields.Count));
-                    }
-                    def.Setup(field);
-                }
-                else if (Attribute.GetCustomAttribute(field, typeof(MetaDataDefinition)) is MetaDataDefinition metaDef)
-                {
-                    fields.Add(new(field, metaDef));
-                    metaDef.Setup(field);
-                }
-            }
-            foreach (PropertyInfo prop in Type.GetProperties())
-            {
-                if (Attribute.GetCustomAttribute(prop, typeof(DataDefinition)) is DataDefinition def)
-                {
-                    if (def.Size == 0)
-                    {
-                        def.Size = DataSize[(uint)def.Type];
-                    }
-                    if (def.Usage != Usage.SetOnly)
-                    {
-                        TotalSize += def.Size;
-                        fields.Add(new(prop, def, (uint)fields.Count));
-                    }
-                    def.Setup(prop);
-                }
-                else if (Attribute.GetCustomAttribute(prop, typeof(MetaDataDefinition)) is MetaDataDefinition metaDef)
-                {
-                    fields.Add(new(prop, metaDef));
-                    metaDef.Setup(prop);
-                }
-            }
+            AddMembers(Type.GetFields());
+            AddMembers(Type.GetProperties());
         }
 
         internal void CopyData<T>(ObjectData msg, T data)
@@ -84,9 +113,9 @@ namespace CsSimConnect.DataDefs
         {
             log.Trace?.Log("Filling an instance of {0}.", typeof(T).FullName);
 
-            foreach (DataDefInfo info in fields)
+            foreach (AnnotatedMember info in fields)
             {
-                log.Trace?.Log("Copying value of '{0}' into member '{1}'", info.Definition.Name, info.Definition.MemberName);
+                log.Trace?.Log($"Copying value of '{info.Definition.Name}' into member '{info.Definition.MemberName}'");
                 info.Definition?.GetValue(data, msg);
             }
         }
@@ -94,8 +123,9 @@ namespace CsSimConnect.DataDefs
         internal T GetData<T>(ObjectData msg)
             where T : class
         {
-            log.Trace?.Log("Creating an instance of {0}.", typeof(T).FullName);
-            T data = (T)Activator.CreateInstance(typeof(T));
+            var actualType = typeof(T);
+            log.Trace?.Log($"Creating an instance of {actualType.FullName}.");
+            T data = (T)Activator.CreateInstance(actualType);
             CopyData(msg, data);
 
             return data;

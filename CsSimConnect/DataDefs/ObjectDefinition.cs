@@ -14,58 +14,59 @@
  * limitations under the License.
  */
 
-using CsSimConnect.Reflection;
 using Rakis.Logging;
-using System;
-using System.Collections.Generic;
-using System.Reflection;
+using System.Threading;
 
 namespace CsSimConnect.DataDefs
 {
 
-    public class DataDefInfo
+    public enum DataType
     {
-        public MemberInfo Member { get; init; }
-        public DefinitionBase Definition { get; init; }
-        public uint Tag { get; init; }
+        Invalid,
 
-        public DataDefInfo(MemberInfo member, DefinitionBase definition, uint tag = 0)
-        {
-            Member = member;
-            Definition = definition;
-            Tag = tag;
-        }
+        Int32,
+        Int64,
+        Float32,
+        Float64,
+
+        String8,
+        String32,
+        String64,
+        String128,
+        String256,
+        String260,
+        StringV,
+
+        InitPosition,
+        MarkerState,
+        Waypoint,
+        LatLonAlt,
+        XYZ,
+        PBH,
+        Observer,
+        VideoStreamInfo,
+
+        WString8,
+        WString32,
+        WString64,
+        WString128,
+        WString256,
+        WString260,
+        WStringV,
+
+        Max,
     }
 
-    public abstract class ObjectDefinition
+    public class ObjectDefinition
     {
 
         private static readonly Logger log = Logger.GetLogger(typeof(ObjectDefinition));
 
-        public uint DefinitionId { get; private set; }
+        public const uint UNSET_DATASIZE = 0;
 
-        public bool Defined { private get; set; }
-        public bool IsDefined => Defined;
-
-        public Type Type { get; init; }
-        public uint TotalSize { get; set; }
-
-        public ObjectDefinition(Type type)
+        internal static readonly uint[] DataSize =
         {
-            Type = type;
-            DefinitionId = DataManager.Instance.NextId();
-
-            if (log.IsDebugEnabled)
-            {
-                LogDefinition();
-            }
-        }
-
-        protected readonly List<DataDefInfo> fields = new();
-
-        protected static readonly uint[] DataSize =
-        {
-            0, // Invalid,
+            UNSET_DATASIZE, // Invalid,
 
             4, // Int32,
             8, // Int64,
@@ -101,58 +102,37 @@ namespace CsSimConnect.DataDefs
 
         };
 
-        protected abstract void CopyFields();
+        /// <value>The <c>SIMCONNECT_DATA_DEFINITION_ID</c> for the data block described by this <c>ObjectDefinition</c></ObjectDefinition></value>
+        public uint DefinitionId { get; private set; }
 
+        /// <value>The size of the SimConnect Data Definition block.</value>
+        public uint TotalSize { get; set; }
+
+        private uint isDefined = 0;
+        public bool Defined => isDefined != 0;
+
+        public ObjectDefinition()
+        {
+            DefinitionId = DataManager.Instance.NextId();
+        }
+
+        /**
+         * <summary>Override this method with the code to add all known fields for the data block.</summary>
+         */
+        public virtual void DefineFields()
+        {
+            // No fields
+        }
+
+        /**
+         * <summary>Register this data block with the simulator by calling <see cref="DefineFields"/> at most once.</summary>
+         */
         public void DefineObject()
         {
-            lock (this)
+            if (1 != Interlocked.Exchange(ref isDefined, 1))
             {
-                if (IsDefined)
-                {
-                    return;
-                }
-                var simConnect = SimConnect.Instance;
-                var dataMgr = DataManager.Instance;
-
-                CopyFields();
-                foreach (DataDefInfo info in fields)
-                {
-                    if (info.Definition is DataDefinition)
-                    {
-                        dataMgr.AddToDefinition(DefinitionId, info);
-                    }
-                }
-                Defined = true;
+                DefineFields();
             }
         }
-
-        private void LogDefinition()
-        {
-            log.Debug?.Log("ObjectDefinition '{0}'", Type.FullName);
-            foreach (PropertyInfo prop in Type.GetProperties())
-            {
-                if (Attribute.GetCustomAttribute(prop, typeof(DataDefinition)) is DataDefinition def)
-                {
-                    log.Debug?.Log("  Property '{0}': Name = '{1}', Units = '{2}', Type = {3}, Epsilon = {4}", prop.Name, def.Name, def.Units, def.Type.ToString(), def.Epsilon);
-                }
-                else if (Attribute.GetCustomAttribute(prop, typeof(DataDefinition)) is MetaDataDefinition meta)
-                {
-                    log.Debug?.Log("  Property '{0}': Name = '{1}'", prop.Name);
-                }
-            }
-            foreach (FieldInfo field in Type.GetFields())
-            {
-                if (Attribute.GetCustomAttribute(field, typeof(DataDefinition)) is DataDefinition def)
-                {
-                    log.Debug?.Log("  Field '{0}'   : Name = '{1}', Units = '{2}', Type = {3}, Epsilon = {4}", field.Name, def.Name, def.Units, def.Type.ToString(), def.Epsilon);
-                }
-                else if (Attribute.GetCustomAttribute(field, typeof(DataDefinition)) is MetaDataDefinition meta)
-                {
-                    log.Debug?.Log("  Field '{0}': Name = '{1}'", field.Name);
-                }
-            }
-
-        }
-
     }
 }

@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "BglReader": {
+      "commandName": "Project",
+      "commandLineArgs": "--filter=Airport --dump-header H:\\MSFS-2020\\Packages\\Official\\OneStore\\fs-base\\scenery\\0601\\APX49130.bgl",
+      "workingDirectory": "C:\\dev\\FS\\CsSimConnect\\BglReader\\bin\\Debug\\net5.0-windows",
+      "nativeDebugging": true
+    }
+  }
+}

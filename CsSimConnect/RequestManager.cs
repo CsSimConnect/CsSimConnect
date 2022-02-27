@@ -132,7 +132,7 @@ namespace CsSimConnect
         private const uint taggedFormat = 0x00000002;
         private const uint blockingDispatch = 0x00000004;
 
-        public MessageResult<T> RequestObjectData<T>(ObjectDefinition objectDefinition, uint objectId =SimObjectUser, bool useBlockingDispatch = false)
+        public MessageResult<T> RequestObjectData<T>(AnnotatedObjectDefinition objectDefinition, uint objectId =SimObjectUser, bool useBlockingDispatch = false)
             where T : SimConnectMessage
         {
             uint requestId = NextId();
@@ -143,7 +143,7 @@ namespace CsSimConnect
             return RegisterResultObserver<T>(requestId, CsRequestDataOnSimObject(simConnect.handle, requestId, objectDefinition.DefinitionId, objectId, (uint)ObjectDataPeriod.Once, flags, 0, 0, 0), "RequestObjectData");
         }
 
-        public MessageStream<T> RequestObjectData<T>(ObjectDefinition objectDefinition, ObjectDataPeriod period, uint objectId = SimObjectUser,
+        public MessageStream<T> RequestObjectData<T>(AnnotatedObjectDefinition objectDefinition, ObjectDataPeriod period, uint objectId = SimObjectUser,
                                                      uint origin = 0, uint interval = 0, uint limit = 0,
                                                      bool onlyWhenChanged = false, bool useBlockingDispatch = false)
             where T : SimConnectMessage
@@ -158,7 +158,22 @@ namespace CsSimConnect
             return RegisterStreamObserver<T>(requestId, CsRequestDataOnSimObject(simConnect.handle, requestId, objectDefinition.DefinitionId, objectId, (uint)period, flags, origin, interval, limit), "RequestObjectData");
         }
 
-        public MessageStream<T> RequestDataOnSimObjectType<T>(ObjectDefinition objectDefinition, ObjectType objectType, uint radiusInMeters)
+        public MessageStream<T> RequestObjectData<T>(DynamicObjectDefinition objectDefinition, ObjectDataPeriod period, uint objectId = SimObjectUser,
+                                                     uint origin = 0, uint interval = 0, uint limit = 0,
+                                                     bool onlyWhenChanged = false, bool useBlockingDispatch = false)
+            where T : SimConnectMessage
+        {
+            uint requestId = NextId();
+            log.Debug?.Log("RequestObjectData<{0}>(): RequestId {1}, period = {2}, onlyWhenChanged = {3}, useBlockingDispatch = {4}",
+                typeof(T).FullName, requestId, period.ToString(), onlyWhenChanged, useBlockingDispatch);
+            uint flags = 0;
+            if (onlyWhenChanged) flags |= whenChanged;
+            if (useBlockingDispatch) flags |= blockingDispatch;
+
+            return RegisterStreamObserver<T>(requestId, CsRequestDataOnSimObject(simConnect.handle, requestId, objectDefinition.DefinitionId, objectId, (uint)period, flags, origin, interval, limit), "RequestObjectData");
+        }
+
+        public MessageStream<T> RequestDataOnSimObjectType<T>(AnnotatedObjectDefinition objectDefinition, ObjectType objectType, uint radiusInMeters)
             where T : SimConnectMessage
         {
             uint requestId = NextId();

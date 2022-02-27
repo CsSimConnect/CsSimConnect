@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+using CsSimConnect.DataDefs;
 using CsSimConnect.Reflection;
 
 namespace AutoPilotController

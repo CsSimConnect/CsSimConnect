@@ -16,6 +16,7 @@
 
 using CsSimConnect;
 using CsSimConnect.AI;
+using CsSimConnect.DataDefs;
 using CsSimConnect.Reflection;
 using Newtonsoft.Json;
 using Rakis.Args;

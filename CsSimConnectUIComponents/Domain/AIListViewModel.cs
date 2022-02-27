@@ -16,13 +16,13 @@
 
 using CsSimConnect.AI;
 using CsSimConnect.DataDefs;
-using CsSimConnect.Reflection;
 using static CsSimConnect.Util.StringUtil;
 using NSwag.Collections;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Rakis.Logging;
+using CsSimConnect.Reflection;
 
 namespace CsSimConnect.UIComponents.Domain
 {

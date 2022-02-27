@@ -1,0 +1,9 @@
+{
+  "profiles": {
+    "FlightRecorder": {
+      "commandName": "Project",
+      "commandLineArgs": "--p3dv5 --output=ehgg-a15-to-a14.json --replay",
+      "workingDirectory": "C:\\dev\\FS\\CsSimConnect\\FlightRecorder\\bin\\Debug\\net5.0-windows"
+    }
+  }
+}

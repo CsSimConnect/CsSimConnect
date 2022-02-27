@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-using System;
+using Rakis.Logging;
 using System.Reflection;
 
 namespace CsSimConnect.DataDefs
@@ -27,9 +27,27 @@ namespace CsSimConnect.DataDefs
         Always
     }
 
-    [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property, Inherited = true)]
-    public abstract class DefinitionBase : Attribute
+    public abstract class DefinitionBase
     {
+        private static readonly Logger log = Logger.GetLogger(typeof(DefinitionBase));
+
+        public string Name { get; set; }
+        public Usage Usage { get; set; }
+
+        protected DefinitionBase(Usage usage = Usage.Always)
+        {
+            Usage = usage;
+        }
+
+        public bool CanBeUsed(bool forSet = false)
+        {
+            return (!forSet && (Usage != Usage.SetOnly)) || (forSet && (Usage != Usage.GetOnly));
+        }
+    }
+
+    public abstract class MemberDefinition : DefinitionBase
+    {
+        private static readonly Logger log = Logger.GetLogger(typeof(MemberDefinition));
 
         internal string MemberName { get { return prop?.Name ?? field?.Name; } }
         protected PropertyInfo prop;
@@ -40,17 +58,29 @@ namespace CsSimConnect.DataDefs
         internal delegate void ValueSetter(DataBlock data, object obj);
         internal ValueSetter SetValue;
 
-        public string Name { get; set; }
-        public Usage Usage { get; set; }
+        protected abstract void Setup(PropertyInfo info);
 
-        public bool CanBeUsed(bool forSet = false)
+        protected abstract void Setup(FieldInfo info);
+
+        public void Setup(MemberInfo member)
         {
-            return (!forSet && (Usage != Usage.SetOnly)) || (forSet && (Usage != Usage.GetOnly));
+            switch (member)
+            {
+                case PropertyInfo info:
+                    Setup(info);
+                    break;
+                case FieldInfo info:
+                    Setup(info);
+                    break;
+                default:
+                    log.Error?.Log($"Don't know how to deal with a {member.GetType()}.");
+                    break;
+            }
         }
 
-        protected DefinitionBase()
+        protected MemberDefinition(string name, Usage usage = Usage.Always) : base(usage)
         {
-            Usage = Usage.Always;
+            Name = name;
         }
     }
 }

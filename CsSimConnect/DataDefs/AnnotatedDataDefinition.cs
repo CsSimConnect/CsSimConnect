@@ -14,57 +14,18 @@
  * limitations under the License.
  */
 
-using CsSimConnect.DataDefs;
 using CsSimConnect.Exc;
+using CsSimConnect.Reflection;
 using Rakis.Logging;
 using System;
 using System.Reflection;
 
-namespace CsSimConnect.Reflection
+namespace CsSimConnect.DataDefs
 {
-
-    public enum DataType
-    {
-        Invalid,
-
-        Int32,
-        Int64,
-        Float32,
-        Float64,
-
-        String8,
-        String32,
-        String64,
-        String128,
-        String256,
-        String260,
-        StringV,
-
-        InitPosition,
-        MarkerState,
-        Waypoint,
-        LatLonAlt,
-        XYZ,
-        PBH,
-        Observer,
-        VideoStreamInfo,
-
-        WString8,
-        WString32,
-        WString64,
-        WString128,
-        WString256,
-        WString260,
-        WStringV,
-
-        Max,
-    }
-
-    [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property, Inherited = true)]
-    public class DataDefinition : DefinitionBase
+    public class AnnotatedDataDefinition : MemberDefinition
     {
 
-        private static readonly Logger log = Logger.GetLogger(typeof(DataDefinition));
+        private static readonly Logger log = Logger.GetLogger(typeof(AnnotatedDataDefinition));
 
         public delegate T FieldGetter<T>();
         public delegate void FieldSetter<T>(T value);
@@ -87,33 +48,33 @@ namespace CsSimConnect.Reflection
             return null;
         }
 
-        public DataDefinition(string name)
+        public AnnotatedDataDefinition(DataDefinition attr) : base(attr.Name, attr.Usage)
         {
-            Name = name;
-            Units = "NULL"; // Default for strings and structs
-            Type = DataType.Float64;
-            Epsilon = 0.0f;
+            Units = attr.Units;
+            Type = attr.Type;
+            Epsilon = attr.Epsilon;
+            Size = attr.Size;
         }
 
         private void ToObject<T>(object obj, FieldGetter<T> get)
         {
-            if ((prop != null))
+            if (prop != null)
             {
                 if (prop.PropertyType.IsAssignableFrom(typeof(T)))
                 {
                     prop.SetValue(obj, get.Invoke());
                 }
-                else if ((field != null) && field.FieldType.IsAssignableFrom(typeof(T)))
+                else if (field != null && field.FieldType.IsAssignableFrom(typeof(T)))
                 {
                     field.SetValue(obj, get.Invoke());
                 }
                 else
                 {
-                    log.Error?.Log("Cannot assign a {0} to a {1}.", Type.ToString(), prop.PropertyType.FullName);
+                    log.Error?.Log($"Cannot assign a {Type} to a {prop.PropertyType.FullName}.");
                     throw new NoConversionAvailableException(this, Type, prop.PropertyType);
                 }
             }
-            else if ((field != null))
+            else if (field != null)
             {
                 if (field.FieldType.IsAssignableFrom(typeof(T)))
                 {
@@ -121,7 +82,7 @@ namespace CsSimConnect.Reflection
                 }
                 else
                 {
-                    log.Error?.Log("Cannot assign a {0} to a {1}.", Type.ToString(), field.FieldType.FullName);
+                    log.Error?.Log($"Cannot assign a {Type} to a {prop.PropertyType.FullName}.");
                     throw new NoConversionAvailableException(this, Type, field.FieldType);
                 }
             }
@@ -179,7 +140,7 @@ namespace CsSimConnect.Reflection
                     throw new NoConversionAvailableException(this, Type, prop.PropertyType);
                 }
             }
-            else if ((field != null))
+            else if (field != null)
             {
                 if (field.FieldType == typeof(T))
                 {
@@ -242,12 +203,12 @@ namespace CsSimConnect.Reflection
             {
                 case DataType.Int32:
                     GetValue = (obj, data) => ToObject(obj, () => data.Data.Int32());
-                    SetValue = (data, obj) => FromObject<Int32>(obj, i => data.Int32(i));
+                    SetValue = (data, obj) => FromObject<int>(obj, i => data.Int32(i));
                     break;
 
                 case DataType.Int64:
                     GetValue = (obj, data) => ToObject(obj, () => data.Data.Int64());
-                    SetValue = (data, obj) => FromObject<Int64>(obj, l => data.Int64(l));
+                    SetValue = (data, obj) => FromObject<long>(obj, l => data.Int64(l));
                     break;
 
                 case DataType.Float32:
@@ -421,7 +382,7 @@ namespace CsSimConnect.Reflection
             }
         }
 
-        public void Setup(PropertyInfo prop)
+        protected override void Setup(PropertyInfo prop)
         {
             this.prop = prop;
             if (prop.PropertyType.IsAssignableFrom(typeof(bool)))
@@ -438,7 +399,7 @@ namespace CsSimConnect.Reflection
             }
         }
 
-        public void Setup(FieldInfo field)
+        protected override void Setup(FieldInfo field)
         {
             this.field = field;
             if (field.FieldType.IsAssignableFrom(typeof(bool)))
@@ -454,6 +415,5 @@ namespace CsSimConnect.Reflection
                 SetupDirect();
             }
         }
-
     }
 }

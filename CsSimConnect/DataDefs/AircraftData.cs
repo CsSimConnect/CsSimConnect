@@ -14,13 +14,14 @@
  * limitations under the License.
  */
 
+using CsSimConnect.DataDefs;
 using CsSimConnect.Reflection;
 
 namespace CsSimConnect
 {
     public class AircraftData
     {
-		[DataDefinition("ATC TYPE", Type = DataType.String32)]
+        [DataDefinition("ATC TYPE", Type = DataType.String32)]
         public string Type { get; set; }
 
 		[DataDefinition("ATC MODEL", Type = DataType.String32)]

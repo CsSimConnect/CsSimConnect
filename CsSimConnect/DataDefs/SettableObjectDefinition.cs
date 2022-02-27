@@ -21,7 +21,7 @@ using System.Reflection;
 
 namespace CsSimConnect.DataDefs
 {
-    public class SettableObjectDefinition : ObjectDefinition
+    public class SettableObjectDefinition : AnnotatedObjectDefinition
     {
 
         private static readonly Logger log = Logger.GetLogger(typeof(SettableObjectDefinition));
@@ -39,6 +39,7 @@ namespace CsSimConnect.DataDefs
             {
                 if (Attribute.GetCustomAttribute(field, typeof(DataDefinition)) is DataDefinition def)
                 {
+                    AnnotatedDataDefinition definition = new AnnotatedDataDefinition(def);
                     if (def.Size == 0)
                     {
                         def.Size = DataSize[(uint)def.Type];
@@ -46,9 +47,9 @@ namespace CsSimConnect.DataDefs
                     if (def.Usage != Usage.GetOnly)
                     {
                         TotalSize += def.Size;
-                        fields.Add(new(field, def, (uint)fields.Count));
+                        fields.Add(new(field, definition, (uint)fields.Count));
                     }
-                    def.Setup(field);
+                    definition.Setup(field);
                 }
                 else if (Attribute.GetCustomAttribute(field, typeof(MetaDataDefinition)) is MetaDataDefinition metaDef)
                 {
@@ -59,6 +60,7 @@ namespace CsSimConnect.DataDefs
             {
                 if (Attribute.GetCustomAttribute(prop, typeof(DataDefinition)) is DataDefinition def)
                 {
+                    AnnotatedDataDefinition definition = new AnnotatedDataDefinition(def);
                     if (def.Size == 0)
                     {
                         def.Size = DataSize[(uint)def.Type];
@@ -66,9 +68,9 @@ namespace CsSimConnect.DataDefs
                     if (def.Usage != Usage.GetOnly)
                     {
                         TotalSize += def.Size;
-                        fields.Add(new(prop, def, (uint)fields.Count));
+                        fields.Add(new(prop, definition, (uint)fields.Count));
                     }
-                    def.Setup(prop);
+                    definition.Setup(prop);
                 }
                 else if (Attribute.GetCustomAttribute(prop, typeof(MetaDataDefinition)) is MetaDataDefinition metaDef)
                 {
@@ -83,7 +85,7 @@ namespace CsSimConnect.DataDefs
         {
             log.Trace?.Log("Reading an instance of {0}.", typeof(T).FullName);
 
-            foreach (DataDefInfo info in fields)
+            foreach (AnnotatedMember info in fields)
             {
                 log.Trace?.Log("Copying value of '{0}' from member '{1}'", info.Definition.Name, info.Definition.MemberName);
                 info.Definition?.SetValue(block, data);

@@ -22,12 +22,15 @@ using System.Reflection;
 
 namespace CsSimConnect.DataDefs
 {
-
-    [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property, Inherited = true)]
-    public abstract class MetaDataDefinition : DefinitionBase
+    public abstract class AnnotatedMetadataDefinition : MemberDefinition
     {
 
-        private static readonly Logger log = Logger.GetLogger(typeof(MetaDataDefinition));
+        private static readonly Logger log = Logger.GetLogger(typeof(AnnotatedMetadataDefinition));
+
+        public AnnotatedMetadataDefinition(MetaDataDefinition attr) : base(attr.Name, attr.Usage)
+        {
+
+        }
 
         public Type GetTargetType()
         {
@@ -46,7 +49,7 @@ namespace CsSimConnect.DataDefs
 
         private void Set(object obj, ObjectData data)
         {
-            if ((prop != null))
+            if (prop != null)
             {
                 if (prop.PropertyType.IsAssignableFrom(typeof(uint)))
                 {
@@ -62,7 +65,7 @@ namespace CsSimConnect.DataDefs
                     throw new NoConversionAvailableException(this, DataType.Int32, prop.PropertyType);
                 }
             }
-            else if ((field != null))
+            else if (field != null)
             {
                 if (field.FieldType.IsAssignableFrom(typeof(uint)))
                 {
@@ -85,23 +88,22 @@ namespace CsSimConnect.DataDefs
             }
         }
 
-        public void Setup(PropertyInfo prop)
+        protected override void Setup(PropertyInfo prop)
         {
             this.prop = prop;
-            this.GetValue = (obj, data) => Set(obj, data);
+            GetValue = (obj, data) => Set(obj, data);
         }
 
-        public void Setup(FieldInfo field)
+        protected override void Setup(FieldInfo field)
         {
             this.field = field;
-            this.GetValue = (obj, data) => Set(obj, data);
+            GetValue = (obj, data) => Set(obj, data);
         }
     }
 
-    [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property, Inherited = true)]
-    public class DataRequestId : MetaDataDefinition
+    public class DataRequestIdDefinition : AnnotatedMetadataDefinition
     {
-        public DataRequestId()
+        public DataRequestIdDefinition(DataRequestId attr) : base(attr)
         {
             Name = "RequestId";
         }
@@ -109,10 +111,9 @@ namespace CsSimConnect.DataDefs
         protected override uint Get(ObjectData data) => data.RequestId;
     }
 
-    [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property, Inherited = true)]
-    public class DataObjectId : MetaDataDefinition
+    public class DataObjectIdDefinition : AnnotatedMetadataDefinition
     {
-        public DataObjectId()
+        public DataObjectIdDefinition(DataObjectId attr) : base(attr)
         {
             Name = "ObjectId";
         }
@@ -120,10 +121,9 @@ namespace CsSimConnect.DataDefs
         protected override uint Get(ObjectData data) => data.ObjectId;
     }
 
-    [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property, Inherited = true)]
-    public class DataDefineId : MetaDataDefinition
+    public class DataDefineIdDefinition : AnnotatedMetadataDefinition
     {
-        public DataDefineId()
+        public DataDefineIdDefinition(DataDefineId attr) : base(attr)
         {
             Name = "DefineId";
         }
@@ -131,10 +131,9 @@ namespace CsSimConnect.DataDefs
         protected override uint Get(ObjectData data) => data.DefineId;
     }
 
-    [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property, Inherited = true)]
-    public class DataDefinitionFlags : MetaDataDefinition
+    public class DataDefinitionFlagsDefinition : AnnotatedMetadataDefinition
     {
-        public DataDefinitionFlags()
+        public DataDefinitionFlagsDefinition(DataDefinitionFlags attr) : base(attr)
         {
             Name = "DefinitionFlags";
         }
@@ -142,10 +141,9 @@ namespace CsSimConnect.DataDefs
         protected override uint Get(ObjectData data) => data.Flags;
     }
 
-    [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property, Inherited = true)]
-    public class DataEntryNumber : MetaDataDefinition
+    public class DataEntryNumberDefinition : AnnotatedMetadataDefinition
     {
-        public DataEntryNumber()
+        public DataEntryNumberDefinition(DataEntryNumber attr) : base(attr)
         {
             Name = "EntryNumber";
         }
@@ -153,10 +151,9 @@ namespace CsSimConnect.DataDefs
         protected override uint Get(ObjectData data) => data.EntryNumber;
     }
 
-    [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property, Inherited = true)]
-    public class DataCount : MetaDataDefinition
+    public class DataCountDefinition : AnnotatedMetadataDefinition
     {
-        public DataCount()
+        public DataCountDefinition(DataCount attr) : base(attr)
         {
             Name = "Count";
         }
