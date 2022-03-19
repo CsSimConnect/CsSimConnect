@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+using CsSimConnect.DataDefs.Annotated;
 using CsSimConnect.Reflection;
 using Rakis.Logging;
 using System;

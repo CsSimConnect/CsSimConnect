@@ -134,5 +134,13 @@ namespace CsSimConnect.DataDefs
                 DefineFields();
             }
         }
+
+        /**
+         * <summary>Mark this data block for definition, usually because fields have been added.</summary>
+         */
+        public void ReDefineObject()
+        {
+            isDefined = 0;
+        }
     }
 }

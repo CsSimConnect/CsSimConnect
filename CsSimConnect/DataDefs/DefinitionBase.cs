@@ -33,6 +33,7 @@ namespace CsSimConnect.DataDefs
 
         public string Name { get; set; }
         public Usage Usage { get; set; }
+        public bool Defined { get; set; } = false;
 
         protected DefinitionBase(Usage usage = Usage.Always)
         {

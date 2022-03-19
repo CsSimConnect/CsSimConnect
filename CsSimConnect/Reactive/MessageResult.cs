@@ -28,6 +28,57 @@ namespace CsSimConnect.Reactive
         }
     }
 
+    public class MessageVoidResult : MessageVoidObserver, IMessageVoidResult
+    {
+
+        private static readonly Logger log = Logger.GetLogger(typeof(MessageVoidResult));
+
+        private readonly TaskCompletionSource future = new();
+
+        public MessageVoidResult() : base(false)
+        {
+        }
+
+        override public void OnCompleted()
+        {
+        }
+
+        override public void OnNext()
+        {
+            if (future.TrySetResult())
+            {
+                base.OnNext();
+                base.OnCompleted();
+            }
+            else
+            {
+                OnError(new DoubleResultException());
+            }
+        }
+
+        override public void OnError(Exception error)
+        {
+            if (!future.TrySetException(error))
+            {
+                log.Error?.Log("Ignoring Exception '{0}', because we are already in an exceptional state.", error.Message);
+            }
+            base.OnError(error);
+        }
+
+        public void Get()
+        {
+            future.Task.Wait();
+        }
+
+        public static MessageVoidResult ErrorResult(UInt32 sendId, Exception error)
+        {
+            MessageVoidResult result = new();
+            result.OnError(error);
+            return result;
+        }
+
+    }
+
     public class MessageResult<T> : MessageObserver<T>, IMessageResult<T>
         where T : class
     {

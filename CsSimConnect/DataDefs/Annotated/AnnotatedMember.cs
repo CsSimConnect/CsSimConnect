@@ -14,16 +14,21 @@
  * limitations under the License.
  */
 
-namespace CsSimConnect.Reactive
-{
-    public interface IMessageVoidResult : IMessageVoidObserver
-    {
-        void Get();
-    }
+using System.Reflection;
 
-    public interface IMessageResult<T> : IMessageObserver<T>
-        where T : class
+namespace CsSimConnect.DataDefs.Annotated
+{
+    public class AnnotatedMember
     {
-        T Get();
+        public MemberInfo Member { get; init; }
+        public MemberDefinition Definition { get; init; }
+        public uint Tag { get; init; }
+
+        public AnnotatedMember(MemberInfo member, MemberDefinition definition, uint tag = 0)
+        {
+            Member = member;
+            Definition = definition;
+            Tag = tag;
+        }
     }
 }

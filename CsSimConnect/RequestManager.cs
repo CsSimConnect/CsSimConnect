@@ -15,7 +15,9 @@
  */
 
 using CsSimConnect.AI;
-using CsSimConnect.DataDefs;
+using CsSimConnect.DataDefs.Annotated;
+using CsSimConnect.DataDefs.Dynamic;
+using CsSimConnect.DataDefs.Standard;
 using CsSimConnect.Reactive;
 using Rakis.Logging;
 using System;
@@ -132,15 +134,15 @@ namespace CsSimConnect
         private const uint taggedFormat = 0x00000002;
         private const uint blockingDispatch = 0x00000004;
 
-        public MessageResult<T> RequestObjectData<T>(AnnotatedObjectDefinition objectDefinition, uint objectId =SimObjectUser, bool useBlockingDispatch = false)
+        public MessageResult<T> RequestObjectData<T>(uint definitionId, uint objectId =SimObjectUser, bool useBlockingDispatch = false)
             where T : SimConnectMessage
         {
             uint requestId = NextId();
-            log.Debug?.Log("RequestObjectData<{0}>(): RequestId {1}, target object type {2}", typeof(T).FullName, requestId, objectDefinition.Type.FullName);
+            log.Debug?.Log($"RequestObjectData<{typeof(T).FullName}>(): RequestId {requestId}, DefinitionId {definitionId}");
             uint flags = 0;
             if (useBlockingDispatch) flags |= blockingDispatch;
 
-            return RegisterResultObserver<T>(requestId, CsRequestDataOnSimObject(simConnect.handle, requestId, objectDefinition.DefinitionId, objectId, (uint)ObjectDataPeriod.Once, flags, 0, 0, 0), "RequestObjectData");
+            return RegisterResultObserver<T>(requestId, CsRequestDataOnSimObject(simConnect.handle, requestId, definitionId, objectId, (uint)ObjectDataPeriod.Once, flags, 0, 0, 0), "RequestObjectData");
         }
 
         public MessageStream<T> RequestObjectData<T>(AnnotatedObjectDefinition objectDefinition, ObjectDataPeriod period, uint objectId = SimObjectUser,
@@ -158,7 +160,7 @@ namespace CsSimConnect
             return RegisterStreamObserver<T>(requestId, CsRequestDataOnSimObject(simConnect.handle, requestId, objectDefinition.DefinitionId, objectId, (uint)period, flags, origin, interval, limit), "RequestObjectData");
         }
 
-        public MessageStream<T> RequestObjectData<T>(DynamicObjectDefinition objectDefinition, ObjectDataPeriod period, uint objectId = SimObjectUser,
+        public MessageStream<T> RequestObjectData<T>(SimObjectData objectDefinition, ObjectDataPeriod period, uint objectId = SimObjectUser,
                                                      uint origin = 0, uint interval = 0, uint limit = 0,
                                                      bool onlyWhenChanged = false, bool useBlockingDispatch = false)
             where T : SimConnectMessage

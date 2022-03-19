@@ -15,6 +15,8 @@
  */
 
 using CsSimConnect.DataDefs;
+using CsSimConnect.DataDefs.Annotated;
+using CsSimConnect.DataDefs.Dynamic;
 using CsSimConnect.Exc;
 using CsSimConnect.Reactive;
 using CsSimConnect.Reflection;
@@ -49,6 +51,11 @@ namespace CsSimConnect
         private readonly Dictionary<Type, SettableObjectDefinition> registeredSettableTypes = new();
         private readonly Dictionary<UInt32, AnnotatedObjectDefinition> definedTypes = new();
 
+        /**
+         * <summary>Check if a certain type is already known as an annotated <see cref="GettableObjectDefinition"/> and return it if so. If not,
+         * add this type as a defined, gettable type.</summary>
+         * <param name="type">The type to search for or register.</param>
+         */
         private GettableObjectDefinition GetObjectDefinitionForGet(Type type)
         {
             lock (this)
@@ -64,6 +71,11 @@ namespace CsSimConnect
             }
         }
 
+        /**
+         * <summary>Check if a certain type is already known as an annotated <see cref="SettableObjectDefinition"/> and return it if so. If not,
+         * add this type as a defined, settable type.</summary>
+         * <param name="type">The type to search for or register.</param>
+         */
         private SettableObjectDefinition GetObjectDefinitionForSet(Type type)
         {
             lock (this)
@@ -79,6 +91,9 @@ namespace CsSimConnect
             }
         }
 
+        /**
+         * <summary>Reset all registrations by clearing the registration maps.</summary>
+         */
         private void ResetObjectDefinitions()
         {
             log.Info?.Log("Clearing ObjectDefinition registration");
@@ -90,6 +105,42 @@ namespace CsSimConnect
             }
         }
 
+        /**
+         * <summary>Request data from the user's vehicle or an AI one.</summary>
+         * <param name="objectDef">The object describing the data to be requested.</param>
+         * <param name="onNext">The callback to be called after all data from a single response has been processed.</param>
+         * <param name="onError">The callback to be called when an error is received.</param>
+         * <param name="onComplete">The callback to be called when the stream is closed.</param>
+         * <param name="period">How often the data must be returned.</param>
+         * <param name="objectId">The id of the object for which the data is requested, defaulted to <see cref="RequestManager.SimObjectUser"/>.</param>
+         * <param name="onlyWhenChanged">If <code>true</code>, only return the data when it has changed.</param>
+         */
+        public void RequestDynamicData(SimObjectData objectDef, Action onNext = null, Action<Exception> onError = null, Action onComplete = null, ObjectDataPeriod period = ObjectDataPeriod.Once, uint objectId = RequestManager.SimObjectUser, bool onlyWhenChanged = false)
+        {
+            log.Debug?.Log($"RequestData(DynamicObjectDefinition)");
+
+            objectDef.DefineObject();
+            MessageStream<ObjectData> simData = RequestManager.Instance.RequestObjectData<ObjectData>(objectDef, period, objectId: objectId, onlyWhenChanged: onlyWhenChanged);
+
+            simData.Subscribe((ObjectData msg) => {
+                log.Trace?.Log($"RequestData(DynamicObjectDefinition) callback called");
+                try
+                {
+                    objectDef.SetData(msg);
+                    onNext?.Invoke();
+                }
+                catch (Exception e)
+                {
+                    onError?.Invoke(e);
+                }
+            }, onError, onComplete);
+        }
+
+        /**
+         * <summary>Request data once from the user's vehicle or an AI one.</summary>
+         * <typeparam name="T">The type of an annotated class that is requested.</typeparam>
+         * <param name="objectId">The id of the object for which the data is requested, defaulted to <see cref="RequestManager.SimObjectUser"/>.</param>
+         */
         public IMessageResult<T> RequestData<T>(uint objectId =RequestManager.SimObjectUser)
             where T : class
         {
@@ -98,7 +149,7 @@ namespace CsSimConnect
 
             GettableObjectDefinition def = GetObjectDefinitionForGet(t);
             def.DefineObject();
-            MessageResult<ObjectData> simData =  RequestManager.Instance.RequestObjectData<ObjectData>(def, objectId: objectId);
+            MessageResult<ObjectData> simData =  RequestManager.Instance.RequestObjectData<ObjectData>(def.DefinitionId, objectId: objectId);
 
             MessageResult<T> result = new();
             simData.Subscribe((ObjectData msg) => {
@@ -115,6 +166,14 @@ namespace CsSimConnect
             return result;
         }
 
+        /**
+         * <summary>Request data from the user's vehicle or an AI one.</summary>
+         * <typeparam name="T">The type of an annotated class that is requested.</typeparam>
+         * <param name="period">How often the data must be returned.</param>
+         * <param name="objectId">The id of the object for which the data is requested, defaulted to <see cref="RequestManager.SimObjectUser"/>.</param>
+         * <param name="onlyWhenChanged">If <code>true</code>, only return the data when it has changed.</param>
+         * <returns>An <see cref="IMessageStream{T}"/></returns>
+         */
         public IMessageStream<T> RequestData<T>(ObjectDataPeriod period, uint objectId = RequestManager.SimObjectUser, bool onlyWhenChanged = false)
             where T : class
         {
@@ -140,6 +199,14 @@ namespace CsSimConnect
             return result;
         }
 
+        /**
+         * <summary>Request data from the user's vehicle or an AI one.</summary>
+         * <typeparam name="T">The type of an annotated class that is requested.</typeparam>
+         * <param name="data">The object into which the data must be stored and whose callbacks will be called.</param>
+         * <param name="period">How often the data must be returned.</param>
+         * <param name="objectId">The id of the object for which the data is requested, defaulted to <see cref="RequestManager.SimObjectUser"/>.</param>
+         * <param name="onlyWhenChanged">If <code>true</code>, only return the data when it has changed.</param>
+         */
         public void RequestData<T>(T data, ObjectDataPeriod period = ObjectDataPeriod.Once, uint objectId = RequestManager.SimObjectUser, bool onlyWhenChanged = false)
             where T : class, IUpdatableData
         {
@@ -164,6 +231,18 @@ namespace CsSimConnect
             }, onError: result.OnError, onCompleted: result.OnCompleted);
         }
 
+
+        /**
+         * <summary>Request data from the user's vehicle or an AI one.</summary>
+         * <typeparam name="T">The type of an annotated class that is requested.</typeparam>
+         * <param name="data">The object into which the data must be stored.</param>
+         * <param name="onNext">The callback to be called whenever new data has been received.</param>
+         * <param name="onError">The callback to be called when an error is received.</param>
+         * <param name="onComplete">The callback to be called when the stream is closed.</param>
+         * <param name="period">How often the data must be returned.</param>
+         * <param name="objectId">The id of the object for which the data is requested, defaulted to <see cref="RequestManager.SimObjectUser"/>.</param>
+         * <param name="onlyWhenChanged">If <code>true</code>, only return the data when it has changed.</param>
+         */
         public void RequestData<T>(T data, Action onNext = null, Action<Exception> onError = null, Action onComplete = null, ObjectDataPeriod period = ObjectDataPeriod.Once, uint objectId = RequestManager.SimObjectUser, bool onlyWhenChanged = false)
             where T : class
         {
@@ -180,26 +259,6 @@ namespace CsSimConnect
                 {
                     def.CopyData(msg, data);
                     onNext?.Invoke();
-                }
-                catch (Exception e)
-                {
-                    onError?.Invoke(e);
-                }
-            }, onError, onComplete);
-        }
-
-        public void RequestDynamicData(DynamicObjectDefinition objectDef, Action<Exception> onError = null, Action onComplete = null, ObjectDataPeriod period = ObjectDataPeriod.Once, uint objectId = RequestManager.SimObjectUser, bool onlyWhenChanged = false)
-        {
-            log.Debug?.Log($"RequestData(DynamicObjectDefinition)");
-
-            objectDef.DefineObject();
-            MessageStream<ObjectData> simData = RequestManager.Instance.RequestObjectData<ObjectData>(objectDef, period, objectId: objectId, onlyWhenChanged: onlyWhenChanged);
-
-            simData.Subscribe((ObjectData msg) => {
-                log.Trace?.Log($"RequestData(DynamicObjectDefinition) callback called");
-                try
-                {
-                    objectDef.SetData(msg);
                 }
                 catch (Exception e)
                 {

@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-namespace CsSimConnect.DataDefs
+namespace CsSimConnect.DataDefs.Standard
 {
-
     public struct InitPosition
     {
         public const int AirSpeedCruise = -1;

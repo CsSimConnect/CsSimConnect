@@ -23,6 +23,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Rakis.Logging;
 using CsSimConnect.Reflection;
+using CsSimConnect.DataDefs.Standard;
 
 namespace CsSimConnect.UIComponents.Domain
 {

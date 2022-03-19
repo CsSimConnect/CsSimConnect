@@ -14,13 +14,14 @@
  * limitations under the License.
  */
 
+using CsSimConnect.DataDefs.Annotated;
 using CsSimConnect.Exc;
 using CsSimConnect.Reflection;
 using Rakis.Logging;
 using System;
 using System.Reflection;
 
-namespace CsSimConnect.DataDefs
+namespace CsSimConnect.DataDefs.Annotated
 {
     public abstract class AnnotatedMetadataDefinition : MemberDefinition
     {
@@ -100,7 +101,10 @@ namespace CsSimConnect.DataDefs
             GetValue = (obj, data) => Set(obj, data);
         }
     }
+}
 
+namespace CsSimConnect.DataDefs
+{
     public class DataRequestIdDefinition : AnnotatedMetadataDefinition
     {
         public DataRequestIdDefinition(DataRequestId attr) : base(attr)

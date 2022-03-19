@@ -20,6 +20,80 @@ using System.Collections.Generic;
 
 namespace CsSimConnect.Reactive
 {
+    public class MessageVoidObserver : IMessageVoidObserver
+    {
+
+        private readonly bool streamable;
+        public bool IsStreamable() => streamable;
+
+        public bool Completed { set; private get; }
+        public bool IsCompleted => Completed;
+
+
+        protected Action callback = null;
+        private event Action OnCompleteActions;
+        private event Action<Exception> OnErrorActions;
+        private event Action CleanupActions;
+
+        public Exception Error { get; private set; }
+
+        internal MessageVoidObserver(bool streamable)
+        {
+            Completed = false;
+            this.streamable = streamable;
+        }
+
+        public void OnComplete(Action action)
+        {
+            OnCompleteActions += action;
+        }
+
+        public void OnError(Action<Exception> action)
+        {
+            OnErrorActions += action;
+        }
+
+        public void OnNext(object msg)
+        {
+            OnNext();
+        }
+
+        public virtual void OnNext()
+        {
+            callback?.Invoke();
+        }
+
+        public virtual void OnCompleted()
+        {
+            Completed = true;
+            OnCompleteActions?.Invoke();
+        }
+
+        public virtual void OnError(Exception error)
+        {
+            Completed = true;
+            Error = error;
+            OnErrorActions?.Invoke(error);
+        }
+
+        public virtual IEnumerator Subscribe()
+        {
+            throw new NotImplementedException();
+        }
+
+        public virtual void Subscribe(Action callback, Action<Exception> onError = null, Action onCompleted = null)
+        {
+            this.callback = callback;
+            this.OnErrorActions += onError;
+            this.OnCompleteActions += onCompleted;
+        }
+
+        public virtual void Dispose()
+        {
+            CleanupActions?.Invoke();
+        }
+    }
+
     public class MessageObserver<T> : IMessageObserver, IMessageObserver<T>
         where T : class
     {

@@ -16,6 +16,7 @@
 
 using CsSimConnect;
 using CsSimConnect.DataDefs;
+using CsSimConnect.DataDefs.Dynamic;
 using Rakis.Args;
 using Rakis.Logging;
 using System;
@@ -92,9 +93,14 @@ namespace DataTester
                 return;
             }
 
-            DynamicObjectDefinition data = new();
+            SimObjectData data = new();
             data.AddField("SIM ON GROUND", type: DataType.Int32, valueSetter: (bool onGround) => { Console.WriteLine($"SIM ON GROUND = {onGround}"); });
-            DataManager.Instance.RequestDynamicData(data);
+            SimDataRecord record = data.Request().Get();
+            Console.WriteLine($"record[\"SIM ON GROUND\"] = {record["SIM ON GROUND"]}");
+
+            data.AddField("TITLE", type: DataType.String256);
+            record = data.Request().Get();
+            Console.WriteLine($"record[\"SIM ON GROUND\"] = {record["SIM ON GROUND"]}, record[\"TITLE\"] = \"{record["TITLE"]}\"");
         }
     }
 }

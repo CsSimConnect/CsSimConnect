@@ -29,6 +29,11 @@ namespace CsSimConnect.Reactive
         public void OnError(Exception error);
     }
 
+    public interface IMessageVoidObserver : IMessageObserver, IDisposable
+    {
+        public void Subscribe(Action callback, Action<Exception> onError = null, Action onComplete = null);
+    }
+
     public interface IMessageObserver<T> : IMessageObserver, IObserver<T>, IEnumerable<T>, IDisposable
         where T : class
     {

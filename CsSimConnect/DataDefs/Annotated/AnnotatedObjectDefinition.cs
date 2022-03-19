@@ -20,22 +20,8 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 
-namespace CsSimConnect.DataDefs
+namespace CsSimConnect.DataDefs.Annotated
 {
-
-    public class AnnotatedMember
-    {
-        public MemberInfo Member { get; init; }
-        public MemberDefinition Definition { get; init; }
-        public uint Tag { get; init; }
-
-        public AnnotatedMember(MemberInfo member, MemberDefinition definition, uint tag = 0)
-        {
-            Member = member;
-            Definition = definition;
-            Tag = tag;
-        }
-    }
 
     /**
      * <summary>An <c>ObjectDefinition</c> describes a SimConnect Definition Block.</summary>
