@@ -6,8 +6,6 @@
     <UseWPF>true</UseWPF>
     <StartupObject>AutoPilotController.App</StartupObject>
     <Configurations>Debug;Release</Configurations>
-    <SignAssembly>true</SignAssembly>
-    <AssemblyOriginatorKeyFile>AutoPilotController.pfx</AssemblyOriginatorKeyFile>
     <DelaySign>false</DelaySign>
     <PackageIcon>Artboard 1.png</PackageIcon>
     <PackageIconUrl />
