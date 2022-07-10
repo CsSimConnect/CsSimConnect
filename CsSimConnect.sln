@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.31129.286
+# Visual Studio Version 17
+VisualStudioVersion = 17.2.32616.157
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CsSimConnectUI", "CsSimConnectUI\CsSimConnectUI.csproj", "{C34673BB-9158-42BB-9A3C-6980ADD7A369}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -44,7 +44,14 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlightRecorder", "FlightRec
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "XmlGauge", "XmlGauge\XmlGauge.csproj", "{5652296E-EC2B-4498-BCB2-1BF6F553AACC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTester", "DataTester\DataTester.csproj", "{B918ADC2-1D35-4EFF-8D24-4FA2B45CC6BF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DataTester", "DataTester\DataTester.csproj", "{B918ADC2-1D35-4EFF-8D24-4FA2B45CC6BF}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".github", ".github", "{BD1F0B5C-49ED-4102-BFF9-709E2A2BD351}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{2F545347-8D95-4EEE-A411-994164C7A84A}"
+	ProjectSection(SolutionItems) = preProject
+		build.yml = build.yml
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -103,6 +110,9 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{2F545347-8D95-4EEE-A411-994164C7A84A} = {BD1F0B5C-49ED-4102-BFF9-709E2A2BD351}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {E727197A-E166-45F2-A70D-13739E1E6CCE}
