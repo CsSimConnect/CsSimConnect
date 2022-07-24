@@ -17,6 +17,7 @@
 using CsSimConnect;
 using CsSimConnect.AI;
 using CsSimConnect.DataDefs;
+using CsSimConnect.DataDefs.Dynamic;
 using CsSimConnect.Reflection;
 using Newtonsoft.Json;
 using Rakis.Args;
@@ -49,6 +50,20 @@ namespace FlightRecorder
         public bool OnGround;
         [DataDefinition("AIRSPEED TRUE", Units = "KNOTS", Type = DataType.Int32)]
         public int AirSpeed;
+
+        public AircraftData(string tailNumber, string title, double latitude, double longitude, double altitude, double pitch, double bank, double heading, bool onGround, int airSpeed)
+        {
+            TailNumber = tailNumber;
+            Title = title;
+            Latitude = latitude;
+            Longitude = longitude;
+            Altitude = altitude;
+            Pitch = pitch;
+            Bank = bank;
+            Heading = heading;
+            OnGround = onGround;
+            AirSpeed = airSpeed;
+        }
     }
     public class FlightData
     {
@@ -70,6 +85,24 @@ namespace FlightRecorder
         public bool OnGround;
         [DataDefinition("AIRSPEED TRUE", Units = "KNOTS", Type = DataType.Int32)]
         public int AirSpeed;
+
+        public FlightData()
+        {
+
+        }
+
+        public FlightData(DateTime ts, double latitude, double longitude, double altitude, double pitch, double bank, double heading, bool onGround, int airSpeed)
+        {
+            this.ts = ts;
+            Latitude = latitude;
+            Longitude = longitude;
+            Altitude = altitude;
+            Pitch = pitch;
+            Bank = bank;
+            Heading = heading;
+            OnGround = onGround;
+            AirSpeed = airSpeed;
+        }
     }
 
     public class FlightRecorder
@@ -80,6 +113,7 @@ namespace FlightRecorder
         private const string OPT_OUTPUT = "output";
         private const string OPT_OBS_DELAY = "observation-delay";
         private const string OPT_REPLAY = "replay";
+        private const string OPT_DYNAMIC = "dynamic";
 
         private static void Usage()
         {
@@ -94,6 +128,7 @@ namespace FlightRecorder
             Console.WriteLine("  --output=<path>  File to write the recording to. Default is '.\flight.csv'.");
             Console.WriteLine("  -o <path>        Shorthand options for '--output'.");
             Console.WriteLine("  --replay         Replay the flight recorded rather than recording one.");
+            Console.WriteLine("  --dynamic        Use a dynamic request rather than an annotated record.");
             Console.WriteLine();
             Console.WriteLine("Specifying at least one of '--p3dv5' and '--msfs' is required.");
         }
@@ -126,6 +161,7 @@ namespace FlightRecorder
                 .WithOption(OPT_O, OPT_OUTPUT, true)
                 .WithOption(OPT_OBS_DELAY, true)
                 .WithOption(OPT_REPLAY)
+                .WithOption(OPT_DYNAMIC)
                 .Parse();
 
             if (!parsedArgs.Has(OPT_REPLAY) && parsedArgs.Parameters.Count != 2)
@@ -194,7 +230,7 @@ namespace FlightRecorder
             if (parsedArgs.Has(OPT_REPLAY))
                 Replay();
             else
-                Record();
+                RecordAnnotated();
         }
 
         private static void ParseLine(string line, FlightData data)
@@ -263,7 +299,7 @@ namespace FlightRecorder
             Thread.Sleep(10000);
         }
 
-        private static void Record()
+        private static void RecordAnnotated()
         {
             AircraftData aircraft = DataManager.Instance.RequestData<AircraftData>().Get();
 
@@ -296,6 +332,74 @@ namespace FlightRecorder
                     lastSeqNr = seqNr;
                     data.ts = timestamp;
                     f.WriteLine(JsonConvert.SerializeObject(data));
+                }
+                Thread.Sleep(obsDelay);
+                if (DateTime.Now > update)
+                {
+                    count += 10;
+                    Console.WriteLine($"Recorded {count} second(s).");
+                    update = DateTime.Now + new TimeSpan(0, 0, 10);
+                }
+            }
+            DataManager.Instance.ClearDefinition(data);
+        }
+
+        private static void RecordDynamic()
+        {
+            SimObjectData data = new();
+
+            data.AddField("ATC ID", type: DataType.String32);
+            data.AddField("TITLE", type: DataType.String256);
+            data.AddField("PLANE LATITUDE", units: "DEGREES", type: DataType.Float64, epsilon: 1.0f);
+            data.AddField("PLANE LONGITUDE", units: "DEGREES", type: DataType.Float64, epsilon: 1.0f);
+            data.AddField("PLANE ALTITUDE", units: "FEET", type: DataType.Float64, epsilon: 1.0f);
+            data.AddField("PLANE PITCH DEGREES", units: "DEGREES", type: DataType.Float64, epsilon: 1.0f);
+            data.AddField("PLANE BANK DEGREES", units: "DEGREES", type: DataType.Float64, epsilon: 1.0f);
+            data.AddField("PLANE HEADING DEGREES TRUE", units: "DEGREES", type: DataType.Float64, epsilon: 1.0f);
+            data.AddField("SIM ON GROUND", units: "BOOL", type: DataType.Int32);
+            data.AddField("AIRSPEED TRUE", units: "KNOTS", type: DataType.Int32);
+
+            var aircraft = data.Request().Get();
+
+            using StreamWriter f = new(output, true);
+
+            f.WriteLine(JsonConvert.SerializeObject(new AircraftData(aircraft.GetString("ATC ID"), aircraft.GetString("TITLE"),
+                aircraft.GetDouble("PLANE LATITUDE"), aircraft.GetDouble("PLANE LONGITUDE"), aircraft.GetDouble("PLANE ALTITUDE"),
+                aircraft.GetDouble("PLANE PITCH DEGREES"), aircraft.GetDouble("PLANE BANK DEGREES"), aircraft.GetDouble("PLANE HEADING DEGREES"),
+                aircraft.GetBoolean("SIM ON GROUND"), aircraft.GetInt32("AIRSPEED TRUE"))));
+
+            bool haveData = false;
+            ulong seqNr = 0;
+            DateTime timestamp = DateTime.Now;
+
+            Console.WriteLine($"Starting {startDelay} second(s) of wait.");
+            Thread.Sleep(new TimeSpan(0, 0, startDelay));
+
+            Console.WriteLine($"Starting recording: {duration} second(s)");
+
+            DateTime limit = DateTime.Now + new TimeSpan(0, 0, duration);
+
+            DateTime update = DateTime.Now + new TimeSpan(0, 0, 10);
+            int count = 0;
+
+            ulong lastSeqNr = 0;
+
+            data.RequestData(ObjectDataPeriod.PerSimFrame, onlyWhenChanged: true)
+                .Subscribe(record => {
+                    haveData = true;
+                    seqNr++;
+                    timestamp = DateTime.Now;
+                });
+
+            while (DateTime.Now < limit)
+            {
+                if (haveData && (seqNr > lastSeqNr))
+                {
+                    lastSeqNr = seqNr;
+                    f.WriteLine(JsonConvert.SerializeObject(new FlightData(timestamp,
+                        aircraft.GetDouble("PLANE LATITUDE"), aircraft.GetDouble("PLANE LONGITUDE"), aircraft.GetDouble("PLANE ALTITUDE"),
+                        aircraft.GetDouble("PLANE PITCH DEGREES"), aircraft.GetDouble("PLANE BANK DEGREES"), aircraft.GetDouble("PLANE HEADING DEGREES"),
+                        aircraft.GetBoolean("SIM ON GROUND"), aircraft.GetInt32("AIRSPEED TRUE"))));
                 }
                 Thread.Sleep(obsDelay);
                 if (DateTime.Now > update)

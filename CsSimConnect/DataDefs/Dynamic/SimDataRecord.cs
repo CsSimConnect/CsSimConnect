@@ -14,15 +14,14 @@
  * limitations under the License.
  */
 
-using CsSimConnect.DataDefs.Dynamic;
 using System;
 using System.Data;
 
-namespace CsSimConnect.DataDefs
+namespace CsSimConnect.DataDefs.Dynamic
 {
     public class SimDataRecord : IDataRecord
     {
-        private SimObjectData simObjectData;
+        protected SimObjectData simObjectData;
 
         public SimDataRecord(SimObjectData simObjectData)
         {
@@ -36,15 +35,39 @@ namespace CsSimConnect.DataDefs
         public int FieldCount => simObjectData.fieldDefinitions.Count;
 
         public bool GetBoolean(int i) => (bool)this[i];
+        public bool GetBoolean(string name) => (bool)this[simObjectData.nameLookup[name]];
+
+        public char GetChar(int i) => (char)this[i];
+        public char GetChar(string name) => (char)this[simObjectData.nameLookup[name]];
 
         public byte GetByte(int i) => (byte)this[i];
+        public byte GetByte(string name) => (byte)this[simObjectData.nameLookup[name]];
+
+        public short GetInt16(int i) => (short)this[i];
+        public short GetInt16(string name) => (short)this[simObjectData.nameLookup[name]];
+
+        public int GetInt32(int i) => (int)this[i];
+        public int GetInt32(string name) => (int)this[simObjectData.nameLookup[name]];
+
+        public long GetInt64(int i) => (long)this[i];
+        public long GetInt64(string name) => (long)this[simObjectData.nameLookup[name]];
+
+        public float GetFloat(int i) => (float)this[i];
+        public float GetFloat(string name) => (float)this[simObjectData.nameLookup[name]];
+
+        public double GetDouble(int i) => (double)this[i];
+        public double GetDouble(string name) => (double)this[simObjectData.nameLookup[name]];
+
+        public string GetString(int i) => this[i].ToString();
+        public string GetString(string name) => this[simObjectData.nameLookup[name]].ToString();
+
+        public object GetValue(int i) => this[i];
+        public object GetValue(string name) => this[simObjectData.nameLookup[name]];
 
         public long GetBytes(int i, long fieldOffset, byte[] buffer, int bufferoffset, int length)
         {
             throw new NotImplementedException();
         }
-
-        public char GetChar(int i) => (char)this[i];
 
         public long GetChars(int i, long fieldoffset, char[] buffer, int bufferoffset, int length)
         {
@@ -68,30 +91,16 @@ namespace CsSimConnect.DataDefs
             throw new NotImplementedException();
         }
 
-        public double GetDouble(int i) => (double)this[i];
-
         public Type GetFieldType(int i) => simObjectData.fieldDefinitions[i].TargetType;
-
-        public float GetFloat(int i) => (float)this[i];
 
         public Guid GetGuid(int i)
         {
             throw new NotImplementedException();
         }
 
-        public short GetInt16(int i) => (short)this[i];
-
-        public int GetInt32(int i) => (int)this[i];
-
-        public long GetInt64(int i) => (long)this[i];
-
         public string GetName(int i) => simObjectData.names[i];
 
         public int GetOrdinal(string name) => simObjectData.nameLookup[name];
-
-        public string GetString(int i) => (string)this[i];
-
-        public object GetValue(int i) => this[i];
 
         public int GetValues(object[] values)
         {

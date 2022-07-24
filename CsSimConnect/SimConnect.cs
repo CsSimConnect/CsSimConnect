@@ -22,6 +22,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace CsSimConnect
@@ -141,6 +142,7 @@ namespace CsSimConnect
             set { useAutoConnect = value; if (useAutoConnect && !IsConnected) RunAutoConnect(); }
         }
         public TimeSpan AutoConnectRetryPeriod { get; set; }
+        private EventWaitHandle disconnectEvent = new AutoResetEvent(false);
 
         private Task messagePoller;
         public TimeSpan MessagePollerRetryPeriod { get; set; }
@@ -174,6 +176,7 @@ namespace CsSimConnect
             OnDisconnect += ResetErrorCallbacks;
             OnDisconnect += _ => InvokeConnectionStateChanged();
             OnDisconnect += _ => RunAutoConnect();
+            OnDisconnect += _ => { disconnectEvent.Set(); };
         }
 
         private void RunAutoConnect()
@@ -196,6 +199,7 @@ namespace CsSimConnect
                             Task.Delay(AutoConnectRetryPeriod).Wait();
                         }
                     }
+                    disconnectEvent.WaitOne();
                 }
             });
             autoConnecter.Start();

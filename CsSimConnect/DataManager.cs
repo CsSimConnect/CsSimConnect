@@ -19,7 +19,6 @@ using CsSimConnect.DataDefs.Annotated;
 using CsSimConnect.DataDefs.Dynamic;
 using CsSimConnect.Exc;
 using CsSimConnect.Reactive;
-using CsSimConnect.Reflection;
 using Rakis.Logging;
 using System;
 using System.Collections.Generic;
@@ -33,6 +32,8 @@ namespace CsSimConnect
 
         [DllImport("CsSimConnectInterOp.dll")]
         private static extern long CsAddToDataDefinition(IntPtr handle, UInt32 defId, [MarshalAs(UnmanagedType.LPStr)] string datumName, [MarshalAs(UnmanagedType.LPStr)] string UnitsName, uint datumType, float epsilon, UInt32 datumId);
+        [DllImport("CsSimConnectInterOp.dll")]
+        private static extern long CsClearDataDefinition(IntPtr handle, UInt32 defId);
         [DllImport("CsSimConnectInterOp.dll")]
         private static extern long CsSetDataOnSimObject(IntPtr handle, UInt32 defId, UInt32 objId, UInt32 flags, UInt32 count, Int32 unitSize, byte[] data);
 
@@ -270,6 +271,12 @@ namespace CsSimConnect
         public const uint UserRadius = 0;
         public const uint MaxRadius = 200000;
 
+        /**
+         * <summary>Request a stream of data on a type of simulation objects.</summary>
+         * <typeparam name="T">The type of an annotated class that is requested.</typeparam>
+         * <param name="objectType">The type of object about which data is requested.</param>
+         * <param name="radiusInMeters">The maximal distance to the user's object for the returned data.</param>
+         */
         public MessageStream<T> RequestDataOnObjectType<T>(ObjectType objectType, uint radiusInMeters =MaxRadius)
             where T : class
         {
@@ -319,7 +326,7 @@ namespace CsSimConnect
 
                 RegisterCleanup(
                     CsAddToDataDefinition(simConnect.handle, defId, def.Name, def.Units, (uint)def.Type, def.Epsilon, info.Tag),
-                    "RequestObjectData",
+                    "AddToDataDefinition",
                     error => log.Error?.Log($"AddToDataDefinition() failed for DefinitionID {defId} var '{def.Name}': {error.Message}"));
             }
             else if (!forSet && (info.Definition is AnnotatedMetadataDefinition meta))
@@ -334,13 +341,35 @@ namespace CsSimConnect
 
         internal void AddToDefinition(uint defId, DynamicDataDefinition def, bool forSet = false)
         {
-            log.Trace?.Log($"AddToDataDefinition(..., {defId}, '{def.Name}', '{def.Units}', {def.Type}, {def.Epsilon}, {def.Tag})");
+            log.Trace?.Log($"AddToDataDefinition({defId}, '{def.Name}', '{def.Units}', {def.Type}, {def.Epsilon}, {def.Tag})");
 
             RegisterCleanup(
                 CsAddToDataDefinition(simConnect.handle, defId, def.Name, def.Units, (uint)def.Type, def.Epsilon, def.Tag),
-                "RequestObjectData",
+                "AddToDataDefinition",
                 error => log.Error?.Log($"AddToDataDefinition() failed for DefinitionID {defId} var '{def.Name}': {error.Message}"));
         }
 
+        internal void ClearDefinition(uint defId)
+        {
+            log.Trace?.Log($"ClearDefinition({defId})");
+
+            RegisterCleanup(
+                CsClearDataDefinition(simConnect.handle, defId),
+                "ClearDefinition",
+                error => log.Error?.Log($"ClearDefinition() failed for DefinitionID {defId}"));
+        }
+
+        public void ClearDefinition<T>(T data)
+            where T : class
+        {
+            Type t = typeof(T);
+            log.Debug?.Log("SetData<{0}>()", t.FullName);
+
+            SettableObjectDefinition def = GetObjectDefinitionForSet(t);
+            if (def.Defined)
+            {
+                ClearDefinition(def.DefinitionId);
+            }
+        }
     }
 }

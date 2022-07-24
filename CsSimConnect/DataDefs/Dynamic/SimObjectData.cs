@@ -20,6 +20,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Threading;
 
 namespace CsSimConnect.DataDefs.Dynamic
 {
@@ -31,11 +32,15 @@ namespace CsSimConnect.DataDefs.Dynamic
 
         private static readonly Logger log = Logger.GetLogger(typeof(SimObjectData));
 
+        public bool Completed { get; private set; } = false;
+
         internal List<DynamicDataDefinition> fieldDefinitions = new();
 
         internal readonly Dictionary<string, int> nameLookup = new();
         internal readonly List<string> names = new();
         internal readonly List<object> values = new();
+
+        internal EventWaitHandle sync = new(false, EventResetMode.ManualReset);
 
         public SimObjectData() : base()
         {
@@ -111,6 +116,21 @@ namespace CsSimConnect.DataDefs.Dynamic
             }
         }
 
+        public void removeField(string name)
+        {
+            lock (fieldDefinitions)
+            {
+                int i = 0;
+                while (i < fieldDefinitions.Count)
+                {
+                    if (fieldDefinitions [i].Name == name)
+                    {
+
+                    }
+                }
+            }
+        }
+
         public override void DefineFields()
         {
             base.DefineFields();
@@ -150,6 +170,17 @@ namespace CsSimConnect.DataDefs.Dynamic
             }
         }
 
+        private void OnNext()
+        {
+            sync.Set();
+        }
+
+        private void OnComplete()
+        {
+            Completed = true;
+            sync.Set();
+        }
+
         public DynamicDataDefinition this[int i] => fieldDefinitions[i];
 
         private readonly DataTable dataTable = new(nameof(SimObjectData));
@@ -175,22 +206,25 @@ namespace CsSimConnect.DataDefs.Dynamic
             log.Debug?.Log($"Request()");
 
             DefineObject();
+            Completed = false;
             MessageResult<ObjectData> simData = RequestManager.Instance.RequestObjectData<ObjectData>(DefinitionId, objectId: objectId);
 
             MessageResult<SimDataRecord> result = new();
             SimDataRecord record = new(this);
-            simData.Subscribe((ObjectData msg) => {
+            simData.Subscribe((ObjectData msg) =>
+            {
                 log.Trace?.Log($"Request callback called");
                 try
                 {
                     SetData(msg);
                     result.OnNext(record);
+                    OnNext();
                 }
                 catch (Exception e)
                 {
                     result.OnError(e);
                 }
-            });
+            }, onCompleted: () => OnComplete());
             return result;
         }
 
@@ -206,24 +240,59 @@ namespace CsSimConnect.DataDefs.Dynamic
          */
         public void Request(Action<SimDataRecord> onNext, Action<Exception> onError = null, Action onComplete = null, ObjectDataPeriod period = ObjectDataPeriod.Once, uint objectId = RequestManager.SimObjectUser, bool onlyWhenChanged = false)
         {
-            log.Debug?.Log($"Request(DynamicObjectDefinition)");
+            log.Debug?.Log($"void Request(DynamicObjectDefinition)");
 
             DefineObject();
+            Completed = false;
             MessageStream<ObjectData> simData = RequestManager.Instance.RequestObjectData<ObjectData>(this, period, objectId: objectId, onlyWhenChanged: onlyWhenChanged);
 
             SimDataRecord record = new(this);
             simData.Subscribe((ObjectData msg) => {
-                log.Trace?.Log($"RequestData(DynamicObjectDefinition) callback called");
+                log.Trace?.Log($"void RequestData(DynamicObjectDefinition) callback called");
                 try
                 {
                     SetData(msg);
                     onNext?.Invoke(record);
+                    OnNext();
                 }
                 catch (Exception e)
                 {
                     onError?.Invoke(e);
                 }
-            }, onError, onComplete);
+            }, onError, onCompleted: () => { OnComplete(); onComplete(); });
+        }
+
+        /**
+         * <summary>Request data from the user's vehicle or an AI one.</summary>
+         * <typeparam name="T">The type of an annotated class that is requested.</typeparam>
+         * <param name="period">How often the data must be returned.</param>
+         * <param name="objectId">The id of the object for which the data is requested, defaulted to <see cref="RequestManager.SimObjectUser"/>.</param>
+         * <param name="onlyWhenChanged">If <code>true</code>, only return the data when it has changed.</param>
+         * <returns>An <see cref="IMessageStream{T}"/></returns>
+         */
+        public IMessageStream<SimDataRecord> RequestData(ObjectDataPeriod period, uint objectId = RequestManager.SimObjectUser, bool onlyWhenChanged = false)
+        {
+            log.Debug?.Log($"IMessageStream<SimDataRecord> Request(DynamicObjectDefinition)");
+
+            DefineObject();
+            Completed = false;
+            MessageStream<ObjectData> simData = RequestManager.Instance.RequestObjectData<ObjectData>(this, period, objectId: objectId, onlyWhenChanged: onlyWhenChanged);
+
+            MessageStream<SimDataRecord> result = new(1);
+            SimDataRecord record = new(this);
+            simData.Subscribe((ObjectData msg) => {
+                log.Trace?.Log($"IMessageStream<SimDataRecord> RequestData(DynamicObjectDefinition) callback called");
+                try
+                {
+                    SetData(msg);
+                    result.OnNext(record);
+                }
+                catch (Exception e)
+                {
+                    result.OnError(e);
+                }
+            }, onError: result.OnError, onCompleted: () => { OnComplete(); result.OnCompleted(); });
+            return result;
         }
 
     }
