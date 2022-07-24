@@ -428,6 +428,20 @@ CS_SIMCONNECT_DLL_EXPORT_LONG CsAddToDataDefinition(HANDLE handle, uint32_t defI
 	return fetchSendId(handle, SimConnect_AddToDataDefinition(handle, defId, datumName, unitsName, SIMCONNECT_DATATYPE(datumType), epsilon, datumId), "AddToDataDefinition");
 }
 
+CS_SIMCONNECT_DLL_EXPORT_LONG CsClearDataDefinition(HANDLE handle, uint32_t defineId)
+{
+	initLog();
+
+	logger.trace("CsClearDataDefinition(..., {})", defineId);
+	if (handle == nullptr) {
+		logger.error("Handle passed to CsClearDataDefinition is null!");
+		return FALSE;
+	}
+
+	std::unique_lock<std::mutex> scLock(scMutex);
+	return fetchSendId(handle, SimConnect_ClearDataDefinition(handle, defineId), "ClearDataDefinition");
+}
+
 /*
  * AI
  */

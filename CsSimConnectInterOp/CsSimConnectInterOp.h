@@ -59,8 +59,9 @@ CS_SIMCONNECT_DLL_EXPORT_LONG CsRequestSystemState(HANDLE handle, int id, const 
 CS_SIMCONNECT_DLL_EXPORT_LONG CsRequestDataOnSimObject(HANDLE handle, uint32_t requestId, uint32_t defId, uint32_t objectId, uint32_t period, uint32_t dataRequestFlags,
 													   DWORD origin, DWORD interval, DWORD limit);
 CS_SIMCONNECT_DLL_EXPORT_LONG CsRequestDataOnSimObjectType(HANDLE handle, uint32_t requestId, uint32_t defId, uint32_t radius, uint32_t objectType);
-CS_SIMCONNECT_DLL_EXPORT_LONG CsAddToDataDefinition(HANDLE handle, uint32_t defId, const char* datumName, const char* UnitsName, uint32_t datumType, float epsilon, uint32_t datumId);
 CS_SIMCONNECT_DLL_EXPORT_LONG CsSetDataOnSimObject(HANDLE handle, uint32_t defId, uint32_t objectId, uint32_t flags, uint32_t count, uint32_t unitSize, void* data);
+CS_SIMCONNECT_DLL_EXPORT_LONG CsAddToDataDefinition(HANDLE handle, uint32_t defId, const char* datumName, const char* UnitsName, uint32_t datumType, float epsilon, uint32_t datumId);
+CS_SIMCONNECT_DLL_EXPORT_LONG CsClearDataDefinition(HANDLE handle, uint32_t defineId);
 
 CS_SIMCONNECT_DLL_EXPORT_LONG CsAICreateEnrouteATCAircraft(HANDLE handle, const char* title, const char* tailNumber, int flightNumber, const char* flightPlanPath, double flightPlanPosition, uint32_t touchAndGo, uint32_t requestId);
 #if IS_PREPAR3D
