@@ -25,7 +25,7 @@ namespace SimScanner.Bgl
 {
     public class BinSection : IDisposable
     {
-        private static readonly Logger log = Logger.GetLogger(typeof(BinFile));
+        private static readonly ILogger log = Logger.GetLogger(typeof(BinFile));
 
         private MemoryMappedViewAccessor accessor;
         private long pos = 0;

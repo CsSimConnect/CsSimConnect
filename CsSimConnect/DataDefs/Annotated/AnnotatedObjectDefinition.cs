@@ -29,7 +29,7 @@ namespace CsSimConnect.DataDefs.Annotated
     public abstract class AnnotatedObjectDefinition : ObjectDefinition
     {
 
-        private static readonly Logger log = Logger.GetLogger(typeof(AnnotatedObjectDefinition));
+        private static readonly ILogger log = Logger.GetLogger(typeof(AnnotatedObjectDefinition));
 
         public Type Type { get; init; }
 

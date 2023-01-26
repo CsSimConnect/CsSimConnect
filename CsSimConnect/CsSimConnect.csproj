@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net5.0-windows</TargetFramework>
+    <TargetFramework>net6.0-windows</TargetFramework>
     <UseWPF>true</UseWPF>
     <Configurations>Debug;Release</Configurations>
   </PropertyGroup>
@@ -17,7 +17,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Rakis.Logging" Version="0.9.0" />
+    <PackageReference Include="Rakis.Logging" Version="0.10.0" />
     <PackageReference Include="System.Reactive" Version="5.0.0" />
   </ItemGroup>
 

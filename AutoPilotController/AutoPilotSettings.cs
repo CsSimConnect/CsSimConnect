@@ -27,7 +27,7 @@ namespace AutoPilotController
     public class AutoPilotSettings : ViewModelBase
     {
 
-        private readonly static Logger log = Logger.GetLogger(typeof(AutoPilotSettings));
+        private readonly static ILogger log = Logger.GetLogger(typeof(AutoPilotSettings));
 
         private static readonly Lazy<AutoPilotSettings> lazyInstance = new(() => new AutoPilotSettings());
         public static AutoPilotSettings Instance { get { return lazyInstance.Value; } }

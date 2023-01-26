@@ -25,11 +25,11 @@ namespace CsSimConnectUI
     public partial class App : Application
     {
 
-        private static readonly Logger log = Logger.GetLogger(typeof(MainWindow));
+        private static readonly ILogger log = Logger.GetLogger(typeof(MainWindow));
 
         private void App_Startup(object sender, StartupEventArgs e)
         {
-            Logger.Configure();
+            Logger.DefaultConfiguration().Build();
 
             new SelectSimDialog().Show();
         }

@@ -26,7 +26,7 @@ namespace CsSimConnect.UIComponents
 
     public class NumberTextBox : TextBox
     {
-        private static readonly Logger log = Logger.GetLogger(typeof(NumberTextBox));
+        private static readonly ILogger log = Logger.GetLogger(typeof(NumberTextBox));
 
 
         public int NumDigits { get; set; }

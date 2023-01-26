@@ -29,7 +29,7 @@ namespace CsSimConnect
     public sealed class MessageDispatcher
     {
 
-        private static readonly Logger log = Logger.GetLogger(typeof(MessageDispatcher));
+        private static readonly ILogger log = Logger.GetLogger(typeof(MessageDispatcher));
 
         public string Name { get; init; }
 

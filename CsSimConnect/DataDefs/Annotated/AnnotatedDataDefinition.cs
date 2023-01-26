@@ -26,7 +26,7 @@ namespace CsSimConnect.DataDefs.Annotated
     public class AnnotatedDataDefinition : MemberDefinition
     {
 
-        private static readonly Logger log = Logger.GetLogger(typeof(AnnotatedDataDefinition));
+        private static readonly ILogger log = Logger.GetLogger(typeof(AnnotatedDataDefinition));
 
         public delegate T FieldGetter<T>();
         public delegate void FieldSetter<T>(T value);

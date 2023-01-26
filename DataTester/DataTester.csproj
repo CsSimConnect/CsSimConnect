@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net5.0-windows</TargetFramework>
+    <TargetFramework>net6.0-windows</TargetFramework>
     <Configurations>Debug;Release</Configurations>
   </PropertyGroup>
 
@@ -17,8 +17,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Rakis.Args" Version="0.1.4" />
-    <PackageReference Include="Rakis.Logging" Version="0.9.0" />
+    <PackageReference Include="Rakis.Args" Version="0.2.0" />
+    <PackageReference Include="Rakis.Logging" Version="0.10.0" />
   </ItemGroup>
 
   <ItemGroup>

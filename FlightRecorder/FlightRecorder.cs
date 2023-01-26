@@ -154,7 +154,7 @@ namespace FlightRecorder
 
         static void Main(string[] args)
         {
-            Logger.Configure();
+            Logger.DefaultConfiguration().Build();
             var parsedArgs = new ArgParser(args)
                 .WithOption(OPT_P3DV5)
                 .WithOption(OPT_MSFS)

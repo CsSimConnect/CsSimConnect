@@ -24,7 +24,7 @@ namespace CsSimConnect
     public class DataBlock
     {
 
-        private static readonly Logger log = Logger.GetLogger(typeof(DataBlock));
+        private static readonly ILogger log = Logger.GetLogger(typeof(DataBlock));
 
         public uint Pos { get; set; }
         public byte[] Data { get; }

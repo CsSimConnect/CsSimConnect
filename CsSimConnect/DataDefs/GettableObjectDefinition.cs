@@ -25,7 +25,7 @@ namespace CsSimConnect.DataDefs
     public class GettableObjectDefinition : AnnotatedObjectDefinition
     {
 
-        private static readonly Logger log = Logger.GetLogger(typeof(GettableObjectDefinition));
+        private static readonly ILogger log = Logger.GetLogger(typeof(GettableObjectDefinition));
 
         public GettableObjectDefinition(Type type) : base(type)
         {

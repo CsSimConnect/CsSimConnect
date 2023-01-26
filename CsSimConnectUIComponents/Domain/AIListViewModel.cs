@@ -74,7 +74,7 @@ namespace CsSimConnect.UIComponents.Domain
     public class AIListViewModel : ViewModelBase
     {
 
-        private static readonly Logger log = Logger.GetLogger(typeof(AIListViewModel));
+        private static readonly ILogger log = Logger.GetLogger(typeof(AIListViewModel));
 
         private readonly Dictionary<UInt32, SimulatedObject> _dictionary = new();
         public ObservableDictionary<UInt32, SimulatedObject> AIList { get; init; }

@@ -32,7 +32,7 @@ namespace SimScanner.Scenery
     public class MSFSSceneryConfiguration : SceneryConfiguration
     {
 
-        private static readonly Logger log = Logger.GetLogger(typeof(MSFSSceneryConfiguration));
+        private static readonly ILogger log = Logger.GetLogger(typeof(MSFSSceneryConfiguration));
 
         public MSFSSceneryConfiguration(Simulator simulator) : base(simulator)
         {

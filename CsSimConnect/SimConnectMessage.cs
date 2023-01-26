@@ -242,7 +242,7 @@ namespace CsSimConnect
     public class SimConnectMessage
     {
 
-        protected static readonly Logger log = Logger.GetLogger(typeof(SimConnectMessage));
+        protected static readonly ILogger log = Logger.GetLogger(typeof(SimConnectMessage));
 
         public RecvId Id { get; }
         public uint Version { get; }

@@ -20,7 +20,7 @@ namespace CsSimConnect.UIComponents
 {
     public class FrequencyTextBox : NumberTextBox
     {
-        private static readonly Logger log = Logger.GetLogger(typeof(FrequencyTextBox));
+        private static readonly ILogger log = Logger.GetLogger(typeof(FrequencyTextBox));
 
         public int FracDigits { get; set; }
         private string freqStyle = "NAV";

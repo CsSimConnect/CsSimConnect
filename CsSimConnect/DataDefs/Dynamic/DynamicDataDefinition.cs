@@ -24,7 +24,7 @@ namespace CsSimConnect.DataDefs.Dynamic
     public class DynamicDataDefinition : DefinitionBase
     {
 
-        private static readonly Logger log = Logger.GetLogger(typeof(AnnotatedDataDefinition));
+        private static readonly ILogger log = Logger.GetLogger(typeof(AnnotatedDataDefinition));
 
         public string Units { get; set; }
         public DataType Type { get; set; }

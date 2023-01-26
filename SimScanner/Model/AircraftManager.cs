@@ -26,7 +26,7 @@ namespace SimScanner.Model
 {
     public class AircraftManager : IDisposable
     {
-        private static readonly Logger log = Logger.GetLogger(typeof(AircraftManager));
+        private static readonly ILogger log = Logger.GetLogger(typeof(AircraftManager));
 
         public Context Context { get; init; }
         public Simulator Simulator { get; init; }

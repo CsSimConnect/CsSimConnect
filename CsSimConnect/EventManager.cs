@@ -121,7 +121,7 @@ namespace CsSimConnect
         [DllImport("CsSimConnectInterOp.dll")]
         private static extern long CsSetNotificationGroupPriority(IntPtr handle, UInt32 groupId, UInt32 priority);
 
-        private static readonly Logger log = Logger.GetLogger(typeof(EventManager));
+        private static readonly ILogger log = Logger.GetLogger(typeof(EventManager));
 
         private static readonly Lazy<EventManager> lazyInstance = new(() => new EventManager(SimConnect.Instance));
 

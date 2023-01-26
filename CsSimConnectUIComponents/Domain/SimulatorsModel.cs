@@ -65,7 +65,7 @@ namespace CsSimConnect.UIComponents.Domain
     public class SimulatorsModel : ViewModelBase
     {
 
-        private static readonly Logger log = Logger.GetLogger(typeof(AIListViewModel));
+        private static readonly ILogger log = Logger.GetLogger(typeof(AIListViewModel));
 
         private Dictionary<string, SelectableSimulator> _dictionary = new();
         public ObservableDictionary<string, SelectableSimulator> Simulators { get; init; }

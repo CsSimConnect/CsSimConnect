@@ -23,7 +23,7 @@ namespace SimScanner.Bgl
 {
     public class BglAirportSummary
     {
-        private static readonly Logger log = Logger.GetLogger(typeof(BglAirportSummary));
+        private static readonly ILogger log = Logger.GetLogger(typeof(BglAirportSummary));
 
         internal BglSubSection subSection;
 

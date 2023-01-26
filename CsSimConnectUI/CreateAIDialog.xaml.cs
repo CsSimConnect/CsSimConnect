@@ -33,7 +33,7 @@ namespace CsSimConnectUI
     /// </summary>
     public partial class CreateAIDialog : Window
     {
-        private static readonly Logger log = Logger.GetLogger(typeof(CreateAIDialog));
+        private static readonly ILogger log = Logger.GetLogger(typeof(CreateAIDialog));
 
         private CreateAIViewModel model = new();
 

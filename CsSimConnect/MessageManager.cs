@@ -25,7 +25,7 @@ namespace CsSimConnect
     public class MessageManager
     {
 
-        private static readonly Logger log = Logger.GetLogger(typeof(MessageManager));
+        private static readonly ILogger log = Logger.GetLogger(typeof(MessageManager));
 
         private readonly MessageDispatcher dispatcher;
         private uint nextId;

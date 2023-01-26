@@ -26,7 +26,7 @@ namespace CsSimConnect.Reactive
         where T : class
     {
 
-        private static Logger log = Logger.GetLogger(typeof(MessageStream<T>));
+        private static ILogger log = Logger.GetLogger(typeof(MessageStream<T>));
 
         public uint MaxSize { get; set; }
 

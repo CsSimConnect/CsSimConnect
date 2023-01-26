@@ -30,7 +30,7 @@ namespace SimScanner.AircraftCfg
         public const string CategoryAirplanes = "Airplanes";
         public const string CategoryRotorcraft = "Rotorcraft";
 
-        private static readonly Logger log = Logger.GetLogger(typeof(AircraftConfiguration));
+        private static readonly ILogger log = Logger.GetLogger(typeof(AircraftConfiguration));
 
         public Simulator Simulator { get; set; }
         public List<string> Categories { get; } = new List<string> {
