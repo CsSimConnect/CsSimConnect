@@ -41,7 +41,7 @@ namespace BglReader
 
         static void Main(string[] args)
         {
-            Logger.Configure();
+            Logger.DefaultConfiguration().Build();
             var parsedArgs = new ArgParser(args)
                 .WithOption(OPT_P3D)
                 .WithOption(OPT_MSFS)

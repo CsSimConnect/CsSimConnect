@@ -61,7 +61,7 @@ namespace SimScanner.Bgl
 
     public class BglMSFSAirport : BglAirport
     {
-        private static readonly Logger log = Logger.GetLogger(typeof(BglMSFSAirport));
+        private static readonly ILogger log = Logger.GetLogger(typeof(BglMSFSAirport));
 
         private BglMSFSAirportHeader header;
         public BglMSFSAirportHeader Header => header;

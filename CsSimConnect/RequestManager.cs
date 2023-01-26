@@ -64,7 +64,7 @@ namespace CsSimConnect
         [DllImport("CsSimConnectInterOp.dll")]
         private static extern long CsAICreateNonATCAircraft(IntPtr handle, [MarshalAs(UnmanagedType.LPStr)] string title, [MarshalAs(UnmanagedType.LPStr)] string tailNumber, ref LatLonAlt pos, ref PBH pbh, UInt32 onGround, UInt32 airSpeed, UInt32 requestId);
 
-        private static readonly Logger log = Logger.GetLogger(typeof(RequestManager));
+        private static readonly ILogger log = Logger.GetLogger(typeof(RequestManager));
 
         private static readonly Lazy<RequestManager> lazyInstance = new(() => new RequestManager(SimConnect.Instance));
 

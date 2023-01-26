@@ -30,7 +30,7 @@ namespace CsSimConnect.DataDefs.Dynamic
     public class SimObjectData : ObjectDefinition
     {
 
-        private static readonly Logger log = Logger.GetLogger(typeof(SimObjectData));
+        private static readonly ILogger log = Logger.GetLogger(typeof(SimObjectData));
 
         public bool Completed { get; private set; } = false;
 

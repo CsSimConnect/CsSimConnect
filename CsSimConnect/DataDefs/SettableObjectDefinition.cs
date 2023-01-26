@@ -25,7 +25,7 @@ namespace CsSimConnect.DataDefs
     public class SettableObjectDefinition : AnnotatedObjectDefinition
     {
 
-        private static readonly Logger log = Logger.GetLogger(typeof(SettableObjectDefinition));
+        private static readonly ILogger log = Logger.GetLogger(typeof(SettableObjectDefinition));
 
         public SettableObjectDefinition(Type type) : base(type)
         {

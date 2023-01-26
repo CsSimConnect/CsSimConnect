@@ -23,7 +23,7 @@ namespace CsSimConnect.Events
 {
     public class ClientEvent
     {
-        private static readonly Logger log = Logger.GetLogger(typeof(ClientEvent));
+        private static readonly ILogger log = Logger.GetLogger(typeof(ClientEvent));
 
         public class Comparer : IComparer<ClientEvent>
         {

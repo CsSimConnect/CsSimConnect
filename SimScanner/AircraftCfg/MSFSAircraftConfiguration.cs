@@ -24,7 +24,7 @@ namespace SimScanner.AircraftCfg
     public class MSFSAircraftConfiguration : AircraftConfiguration
     {
 
-        private static readonly Logger log = Logger.GetLogger(typeof(MSFSAircraftConfiguration));
+        private static readonly ILogger log = Logger.GetLogger(typeof(MSFSAircraftConfiguration));
 
         public MSFSAircraftConfiguration(Simulator simulator) : base(simulator)
         {

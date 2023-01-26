@@ -23,7 +23,7 @@ namespace CsSimConnect.UIComponents
     public class ClientEventButton : Button
     {
 
-        private readonly static Logger log = Logger.GetLogger(typeof(ClientEventButton));
+        private readonly static ILogger log = Logger.GetLogger(typeof(ClientEventButton));
 
         private string clientEventName;
         private ClientEvent clientEvent;

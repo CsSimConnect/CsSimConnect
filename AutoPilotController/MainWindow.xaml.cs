@@ -33,7 +33,7 @@ namespace AutoPilotController
     /// </summary>
     public partial class MainWindow : Window
     {
-        private static readonly Logger log = Logger.GetLogger(typeof(MainWindow));
+        private static readonly ILogger log = Logger.GetLogger(typeof(MainWindow));
 
         private readonly AIListViewModel aiList;
         private SimConnect simConnect = SimConnect.Instance;

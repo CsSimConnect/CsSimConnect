@@ -24,7 +24,7 @@ namespace SimScanner.AircraftCfg
     public class P3DAircraftConfiguration : AircraftConfiguration
     {
 
-        private static readonly Logger log = Logger.GetLogger(typeof(P3DAircraftConfiguration));
+        private static readonly ILogger log = Logger.GetLogger(typeof(P3DAircraftConfiguration));
 
         public P3DAircraftConfiguration(Simulator simulator) : base(simulator)
         {

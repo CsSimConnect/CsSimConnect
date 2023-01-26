@@ -26,7 +26,7 @@ namespace SimScanner.Scenery
 {
     public class P3DSceneryConfiguration : SceneryConfiguration
     {
-        private static readonly Logger log = Logger.GetLogger(typeof(SceneryConfiguration));
+        private static readonly ILogger log = Logger.GetLogger(typeof(SceneryConfiguration));
 
         public P3DSceneryConfiguration(Simulator simulator) : base(simulator)
         {

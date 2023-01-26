@@ -32,7 +32,7 @@ namespace CsSimConnectUI
     public partial class MainWindow : Window
     {
 
-        private static readonly Logger log = Logger.GetLogger(typeof(MainWindow));
+        private static readonly ILogger log = Logger.GetLogger(typeof(MainWindow));
 
         private int isConnected = 0; // Because we don't van `Interlocked.Exchange()` for `bool`s.
 

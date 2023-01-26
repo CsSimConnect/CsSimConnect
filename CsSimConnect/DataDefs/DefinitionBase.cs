@@ -29,7 +29,7 @@ namespace CsSimConnect.DataDefs
 
     public abstract class DefinitionBase
     {
-        private static readonly Logger log = Logger.GetLogger(typeof(DefinitionBase));
+        private static readonly ILogger log = Logger.GetLogger(typeof(DefinitionBase));
 
         public string Name { get; set; }
         public Usage Usage { get; set; }
@@ -48,7 +48,7 @@ namespace CsSimConnect.DataDefs
 
     public abstract class MemberDefinition : DefinitionBase
     {
-        private static readonly Logger log = Logger.GetLogger(typeof(MemberDefinition));
+        private static readonly ILogger log = Logger.GetLogger(typeof(MemberDefinition));
 
         internal string MemberName { get { return prop?.Name ?? field?.Name; } }
         protected PropertyInfo prop;

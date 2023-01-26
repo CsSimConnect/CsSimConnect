@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net5.0-windows</TargetFramework>
+    <TargetFramework>net6.0-windows</TargetFramework>
     <UseWPF>true</UseWPF>
     <StartupObject>AutoPilotController.App</StartupObject>
     <Configurations>Debug;Release</Configurations>
@@ -27,6 +27,7 @@
   <ItemGroup>
     <PackageReference Include="MaterialDesignThemes" Version="4.1.0" />
     <PackageReference Include="NSwag.Core" Version="13.11.1" />
+    <PackageReference Include="Rakis.Logging" Version="0.10.0" />
     <PackageReference Include="Rakis.Settings" Version="0.9.0" />
     <PackageReference Include="System.Reactive" Version="5.0.0" />
   </ItemGroup>

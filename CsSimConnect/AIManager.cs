@@ -47,7 +47,7 @@ namespace CsSimConnect
     public class AIManager : MessageManager
     {
 
-        private static readonly Logger log = Logger.GetLogger(typeof(AIManager));
+        private static readonly ILogger log = Logger.GetLogger(typeof(AIManager));
 
         private static readonly Lazy<AIManager> lazyInstance = new(() => new AIManager(SimConnect.Instance));
 

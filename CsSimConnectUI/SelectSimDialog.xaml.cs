@@ -28,7 +28,7 @@ namespace CsSimConnectUI
     /// </summary>
     public partial class SelectSimDialog : Window
     {
-        private static readonly Logger log = Logger.GetLogger(typeof(AIListViewModel));
+        private static readonly ILogger log = Logger.GetLogger(typeof(AIListViewModel));
 
         public SelectSimDialog()
         {

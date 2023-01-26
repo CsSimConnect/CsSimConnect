@@ -28,7 +28,7 @@ namespace SimScanner.Model
 
     public class SceneryManager : IDisposable
     {
-        private static readonly Logger log = Logger.GetLogger(typeof(SceneryManager));
+        private static readonly ILogger log = Logger.GetLogger(typeof(SceneryManager));
 
         public Context Context { get; init; }
         public Simulator Simulator { get; init; }

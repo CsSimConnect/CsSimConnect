@@ -31,7 +31,7 @@ namespace CsSimConnect.Reactive
     public class MessageVoidResult : MessageVoidObserver, IMessageVoidResult
     {
 
-        private static readonly Logger log = Logger.GetLogger(typeof(MessageVoidResult));
+        private static readonly ILogger log = Logger.GetLogger(typeof(MessageVoidResult));
 
         private readonly TaskCompletionSource future = new();
 
@@ -83,7 +83,7 @@ namespace CsSimConnect.Reactive
         where T : class
     {
 
-        private static readonly Logger log = Logger.GetLogger(typeof(MessageResult<T>));
+        private static readonly ILogger log = Logger.GetLogger(typeof(MessageResult<T>));
 
         private readonly TaskCompletionSource<T> future = new();
 

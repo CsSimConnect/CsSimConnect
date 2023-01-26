@@ -39,7 +39,7 @@ namespace CsSimConnect
     public sealed class SimConnect
     {
 
-        private static readonly Logger log = Logger.GetLogger(typeof(SimConnect));
+        private static readonly ILogger log = Logger.GetLogger(typeof(SimConnect));
 
         private static readonly Lazy<SimConnect> lazyInstance = new (() => new SimConnect());
 

@@ -42,7 +42,7 @@ namespace SimScanner.Bgl
 
     public class BglSubSection
     {
-        private static readonly Logger log = Logger.GetLogger(typeof(BglSubSection));
+        private static readonly ILogger log = Logger.GetLogger(typeof(BglSubSection));
 
         internal BglSection section;
         public uint Index { get; init; }

@@ -37,7 +37,7 @@ namespace CsSimConnect
         [DllImport("CsSimConnectInterOp.dll")]
         private static extern long CsSetDataOnSimObject(IntPtr handle, UInt32 defId, UInt32 objId, UInt32 flags, UInt32 count, Int32 unitSize, byte[] data);
 
-        private static readonly Logger log = Logger.GetLogger(typeof(DataManager));
+        private static readonly ILogger log = Logger.GetLogger(typeof(DataManager));
 
         private static readonly Lazy<DataManager> lazyInstance = new(() => new DataManager(SimConnect.Instance));
 

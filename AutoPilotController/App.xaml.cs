@@ -29,7 +29,7 @@ namespace AutoPilotController
 
         private void App_Startup(object sender, StartupEventArgs e)
         {
-            Logger.Configure();
+            Logger.DefaultConfiguration().Build();
             AutoPilotSettings settings = AutoPilotSettings.Instance;
             settings.Load();
 

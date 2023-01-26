@@ -60,7 +60,7 @@ namespace CsSimConnect.DataDefs
     public class ObjectDefinition
     {
 
-        private static readonly Logger log = Logger.GetLogger(typeof(ObjectDefinition));
+        private static readonly ILogger log = Logger.GetLogger(typeof(ObjectDefinition));
 
         public const uint UNSET_DATASIZE = 0;
 

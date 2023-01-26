@@ -78,7 +78,7 @@ namespace SimScanner.Bgl
 
     public class BglNameList
     {
-        private static readonly Logger log = Logger.GetLogger(typeof(BglNameList));
+        private static readonly ILogger log = Logger.GetLogger(typeof(BglNameList));
 
         internal BglSubSection subSection;
         private BglNameListHeader header;

@@ -26,7 +26,7 @@ namespace CsSimConnect.DataDefs.Annotated
     public abstract class AnnotatedMetadataDefinition : MemberDefinition
     {
 
-        private static readonly Logger log = Logger.GetLogger(typeof(AnnotatedMetadataDefinition));
+        private static readonly ILogger log = Logger.GetLogger(typeof(AnnotatedMetadataDefinition));
 
         public AnnotatedMetadataDefinition(MetaDataDefinition attr) : base(attr.Name, attr.Usage)
         {
