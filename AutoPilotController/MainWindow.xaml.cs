@@ -24,6 +24,7 @@ using RoutedEventArgs = System.Windows.RoutedEventArgs;
 using CsSimConnect.UIComponents.Domain;
 using System.Windows.Media;
 using Rakis.Logging;
+using System.Threading.Tasks;
 
 namespace AutoPilotController
 {
@@ -86,7 +87,14 @@ namespace AutoPilotController
             {
                 log.Info?.Log("We're already connected, let's subscribe to the data.");
                 OnOpen();
-                aiList.RefreshList();
+                Task.Run(async () =>
+                {
+                    while (simConnect.IsConnected)
+                    {
+                        aiList.RefreshList();
+                        await Task.Delay(5000);
+                    }
+                });
             }
             Dispatcher.Invoke(SetButtons);
 

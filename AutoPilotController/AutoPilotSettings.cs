@@ -100,8 +100,15 @@ namespace AutoPilotController
         public void Load()
         {
             log.Info?.Log($"Loading settings from the Roaming Profile.");
-            settings = new(new(Group, Application), SettingsType.AppDataRoaming);
-            settings.Load();
+            try
+            {
+                settings = new(new(Group, Application), SettingsType.AppDataRoaming);
+                settings.Load();
+            }
+            catch(Exception ex)
+            {
+                log.Error?.Log(ex.ToString());
+            }
 
             AutoConnect = settings[nameof(AutoConnect)].AsBool ?? true;
             SimulatorKey = settings[nameof(SimulatorKey)].AsString ?? CsSimConnect.Sim.Util.P3Dv5Key;
