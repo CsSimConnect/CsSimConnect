@@ -1,5 +1,5 @@
 ﻿/*
- * Copyright (c) 2022. Bert Laverman
+ * Copyright (c) 2021-2024. Bert Laverman
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,18 +14,15 @@
  * limitations under the License.
  */
 
-namespace XmlGauge.Model
+namespace CsSimConnect.Sim
 {
-    public class Image : Component
+    public class Simulator
     {
-        public string Name { get; internal set; }
-        public Dimension Dimension;
-        public Dimension DimensionRes1024;
-        public Position Axis;
-
-        public bool UseTransparency { get; internal set; }
-        public bool Luminous { get; internal set; }
-        public bool Alpha { get; internal set; }
-        public bool NoBilinear { get; internal set; }
+        public FlightSimVersion Fs { get; set; }
+        public string Name { get; set; }
+        public string Key { get; set; }
+        public string InstallationPath { get; set; }
+        public bool Installed { get; set; }
+        public bool DllAvailable { get; set; }
     }
 }

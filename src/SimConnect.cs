@@ -31,9 +31,14 @@ namespace CsSimConnect
     public enum FlightSimType
     {
         Unknown,
-        Prepar3Dv4,
-        Prepar3Dv5,
-        MSFS2020
+        Prepar3D,
+        MSFlightSimulator
+    }
+
+    public struct FlightSimVersion
+    {
+        public FlightSimType Type;
+        public string Version;
     }
 
     public sealed class SimConnect
@@ -53,11 +58,59 @@ namespace CsSimConnect
         [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
         private static extern bool FreeLibrary(IntPtr hModule);
 
+        public const string InterOpDllName = "CsSimConnectInterOp.dll";
+
         private static FlightSimType interOpType;
         public static FlightSimType InterOpType => interOpType;
         public static FlightSimType ConnectedSim { get; private set; }
 
+        public static string ToString(FlightSimType type) => type switch
+        {
+            FlightSimType.Prepar3D => "P3D",
+            FlightSimType.MSFlightSimulator => "MSFS",
+            _ => null
+        };
+        public static string ToString(FlightSimVersion fs) => ToString(fs.Type) + (fs.Version ?? "");
+
         private static IntPtr interOpDll;
+
+        public static string InterOpPath()
+        {
+            if ((Environment.GetEnvironmentVariable("CSSC_INTEROP_PATH") is string path) && File.Exists(path))
+            {
+                return path;
+            }
+            if ((Environment.GetEnvironmentVariable("CSSC_INTEROP_DIR") is string dir) && Directory.Exists(dir))
+            {
+                path = Path.Combine(dir, InterOpDllName);
+                if (File.Exists(path))
+                {
+                    return path;
+                }
+            }
+            return InterOpDllName;
+        }
+
+        public static string InterOpPath(FlightSimVersion? fs)
+        {
+            if (fs is FlightSimVersion notNullFs)
+            {
+                if ((Environment.GetEnvironmentVariable("CSSC_INTEROP_PATH") is string path) && File.Exists(path))
+                {
+                    return path;
+                }
+                if ((Environment.GetEnvironmentVariable("CSSC_INTEROP_DIR") is string dir) && Directory.Exists(dir))
+                {
+                    path = dir;
+                }
+                else
+                {
+                    path = ".";
+                }
+                return Path.Combine(path, ToString(notNullFs), InterOpDllName);
+            }
+            return InterOpPath();
+        }
 
         private static void LoadInterOpLibrary(string path)
         {
@@ -95,30 +148,23 @@ namespace CsSimConnect
             }
         }
 
-        public static void SetFlightSimType(FlightSimType type)
+        public static void SetFlightSimType(FlightSimVersion fs)
         {
-            interOpType = type;
+            interOpType = fs.Type;
+            var interOpPath = InterOpPath(fs);
 
-            log.Info?.Log("Loading InterOp DLL for '{0}'.", type.ToString());
-            if (type == FlightSimType.Unknown)
+            if (interOpPath != null)
+            {
+                log.Info?.Log("Loading InterOp DLL for '{0}'.", fs.Type.ToString());
+                LoadInterOpLibrary(interOpPath);
+            }
+            else if (fs.Type == FlightSimType.Unknown)
             {
                 log.Fatal?.Log("Target InterOp type not set!");
             }
-            else if (type == FlightSimType.Prepar3Dv4)
-            {
-                LoadInterOpLibrary("P3Dv4\\CsSimConnectInterOp.dll");
-            }
-            else if (type == FlightSimType.Prepar3Dv5)
-            {
-                LoadInterOpLibrary("P3Dv5\\CsSimConnectInterOp.dll");
-            }
-            else if (type == FlightSimType.MSFS2020)
-            {
-                LoadInterOpLibrary("MSFS\\CsSimConnectInterOp.dll");
-            }
             else
             {
-                log.Fatal?.Log("Unknown FlightSimType '{0}'", type.ToString());
+                log.Fatal?.Log("Unknown FlightSimType '{0}'", fs.Type.ToString());
             }
         }
 
