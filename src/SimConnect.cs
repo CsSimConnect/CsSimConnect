@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021. Bert Laverman
+ * Copyright (c) 2021-2024. Bert Laverman
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,166 +15,38 @@
  */
 
 using CsSimConnect.Exc;
+using CsSimConnect.Sim;
 using Rakis.Logging;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Runtime.InteropServices;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace CsSimConnect
 {
 
-    public enum FlightSimType
-    {
-        Unknown,
-        Prepar3D,
-        MSFlightSimulator
-    }
-
-    public struct FlightSimVersion
-    {
-        public FlightSimType Type;
-        public string Version;
-    }
-
     public sealed class SimConnect
     {
 
         private static readonly ILogger log = Logger.GetLogger(typeof(SimConnect));
 
-        private static readonly Lazy<SimConnect> lazyInstance = new (() => new SimConnect());
+        private static readonly Lazy<SimConnect> lazyInstance = new (() => new SimConnect(DefaultClientName));
 
         public static SimConnect Instance {  get { return lazyInstance.Value; } }
 
         public delegate void ConnectionStateHandler(bool willAutoConnect, bool isConnected);
         private delegate void DispatchProc(ref ReceiveStruct structData, UInt32 wordData, IntPtr context);
+        public static FlightSimType ConnectedSim { get; private set; } = FlightSimType.Unknown;
 
-        [DllImport("kernel32", SetLastError = true, CharSet = CharSet.Ansi)]
-        private static extern IntPtr LoadLibrary([MarshalAs(UnmanagedType.LPStr)] string lpFileName);
-        [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
-        private static extern bool FreeLibrary(IntPtr hModule);
 
-        public const string InterOpDllName = "CsSimConnectInterOp.dll";
-
-        private static FlightSimType interOpType;
-        public static FlightSimType InterOpType => interOpType;
-        public static FlightSimType ConnectedSim { get; private set; }
-
-        public static string ToString(FlightSimType type) => type switch
-        {
-            FlightSimType.Prepar3D => "P3D",
-            FlightSimType.MSFlightSimulator => "MSFS",
-            _ => null
-        };
-        public static string ToString(FlightSimVersion fs) => ToString(fs.Type) + (fs.Version ?? "");
-
-        private static IntPtr interOpDll;
-
-        public static string InterOpPath()
-        {
-            if ((Environment.GetEnvironmentVariable("CSSC_INTEROP_PATH") is string path) && File.Exists(path))
-            {
-                return path;
-            }
-            if ((Environment.GetEnvironmentVariable("CSSC_INTEROP_DIR") is string dir) && Directory.Exists(dir))
-            {
-                path = Path.Combine(dir, InterOpDllName);
-                if (File.Exists(path))
-                {
-                    return path;
-                }
-            }
-            return InterOpDllName;
-        }
-
-        public static string InterOpPath(FlightSimVersion? fs)
-        {
-            if (fs is FlightSimVersion notNullFs)
-            {
-                if ((Environment.GetEnvironmentVariable("CSSC_INTEROP_PATH") is string path) && File.Exists(path))
-                {
-                    return path;
-                }
-                if ((Environment.GetEnvironmentVariable("CSSC_INTEROP_DIR") is string dir) && Directory.Exists(dir))
-                {
-                    path = dir;
-                }
-                else
-                {
-                    path = ".";
-                }
-                return Path.Combine(path, ToString(notNullFs), InterOpDllName);
-            }
-            return InterOpPath();
-        }
-
-        private static void LoadInterOpLibrary(string path)
-        {
-            UnloadInterOpLibrary();
-            try
-            {
-                interOpDll = LoadLibrary(path);
-                if (interOpDll == IntPtr.Zero)
-                {
-                    log.Fatal?.Log("Unable to load '{0}'", path);
-                }
-            }
-            catch (Exception e) {
-                log.Error?.Log("Exception caught in LoadInterOpLibrary('{0}'): {1}", path, e.Message);
-            }
-        }
-
-        private static void UnloadInterOpLibrary()
-        {
-            if (interOpDll != IntPtr.Zero)
-            {
-                try
-                {
-                    log.Info?.Log("Unloading InterOp DLL");
-                    while (FreeLibrary(interOpDll))
-                    {
-                        log.Debug?.Log("Reduced link count of InterOp DLL by one");
-                    }
-                    interOpDll = IntPtr.Zero;
-                }
-                catch (Exception e)
-                {
-                    log.Error?.Log("Exception caught in UnloadInterOpLibrary('{0}'): {1}", e.Message);
-                }
-            }
-        }
-
-        public static void SetFlightSimType(FlightSimVersion fs)
-        {
-            interOpType = fs.Type;
-            var interOpPath = InterOpPath(fs);
-
-            if (interOpPath != null)
-            {
-                log.Info?.Log("Loading InterOp DLL for '{0}'.", fs.Type.ToString());
-                LoadInterOpLibrary(interOpPath);
-            }
-            else if (fs.Type == FlightSimType.Unknown)
-            {
-                log.Fatal?.Log("Target InterOp type not set!");
-            }
-            else
-            {
-                log.Fatal?.Log("Unknown FlightSimType '{0}'", fs.Type.ToString());
-            }
-        }
-
-        [DllImport("CsSimConnectInterOp.dll")]
+        [DllImport(InterOpManager.InterOpDllName)]
         private static extern bool CsConnect([MarshalAs(UnmanagedType.LPStr)] string appName, ref IntPtr handle);
-        [DllImport("CsSimConnectInterOp.dll")]
+        [DllImport(InterOpManager.InterOpDllName)]
         private static extern bool CsDisconnect(IntPtr handle);
-        [DllImport("CsSimConnectInterOp.dll")]
+        [DllImport(InterOpManager.InterOpDllName)]
         private static extern bool CsCallDispatch(IntPtr handle, DispatchProc dispatchProc);
-        [DllImport("CsSimConnectInterOp.dll")]
+        [DllImport(InterOpManager.InterOpDllName)]
         private static extern bool CsGetNextDispatch(IntPtr handle, DispatchProc dispatchProc);
 
         internal IntPtr handle = IntPtr.Zero;
@@ -199,20 +71,30 @@ namespace CsSimConnect
         public event Action<bool> OnDisconnect;
         public event ConnectionStateHandler OnConnectionStateChange;
 
-        private static Dictionary<string, FlightSimType> simulatorTypes = null;
         public AppInfo Info { get; private set; }
         public event Action<AppInfo> OnOpen;
         public event Action OnClose;
 
-        private SimConnect()
+        private static Dictionary<string, SimConnect> connections = [];
+        public static SimConnect Connection(string clientName) => (clientName == DefaultClientName) ? Instance : connections[clientName];
+
+
+        public string ClientName { get; init; }
+
+        public const string DefaultClientName = "CsSimConnect";
+
+        private SimConnect(string clientName)
         {
+            ClientName = clientName;
+
             UseAutoConnect = false;
             AutoConnectRetryPeriod = TimeSpan.FromSeconds(5);
             MessagePollerRetryPeriod = TimeSpan.FromMilliseconds(100);
 
-            Info = new("CsSimConnect");
+            Info = new(clientName);
 
             OnOpen += SetConnectedSim;
+            OnClose += ClearConnectedSim;
             OnClose += LogSimulatorShutdown;
 
             OnConnect += LogConnectedState;
@@ -223,6 +105,19 @@ namespace CsSimConnect
             OnDisconnect += _ => InvokeConnectionStateChanged();
             OnDisconnect += _ => RunAutoConnect();
             OnDisconnect += _ => { disconnectEvent.Set(); };
+        }
+
+        public static SimConnect Connect(string clientName = DefaultClientName)
+        {
+            if (clientName == DefaultClientName) {
+                return Instance;
+            }
+
+            if (!connections.ContainsKey(clientName)) {
+                connections[clientName] = new SimConnect(clientName);
+            }
+
+            return connections[clientName];
         }
 
         private void RunAutoConnect()
@@ -307,20 +202,8 @@ namespace CsSimConnect
         private void SetConnectedSim(AppInfo info)
         {
             Info = info;
-            if (simulatorTypes == null)
-            {
-                var text = File.ReadAllText("SimulatorTypes.json");
-                var options = new JsonSerializerOptions
-                {
-                    WriteIndented = true,
-                    Converters = {
-                            new JsonStringEnumConverter(JsonNamingPolicy.CamelCase)
-                        }
-                };
-                simulatorTypes = JsonSerializer.Deserialize<Dictionary<string, FlightSimType>>(text, options);
-            }
-            ConnectedSim = simulatorTypes.GetValueOrDefault(info.Name, FlightSimType.Unknown);
-            if (!simulatorTypes.ContainsKey(info.Name))
+            ConnectedSim = info.Simulator.Type;
+            if (info.Simulator.Type == FlightSimType.Unknown)
             {
                 log.Error?.Log("Connected to unknown simulator type '{0}'", info.Name);
             }
@@ -328,6 +211,12 @@ namespace CsSimConnect
             {
                 log.Info?.Log($"Connected to {info.Name} (type {ConnectedSim})");
             }
+        }
+
+        private void ClearConnectedSim()
+        {
+            Info = new AppInfo("");
+            ConnectedSim = FlightSimType.Unknown;
         }
 
         public void Disconnect(bool connectionLost =false)

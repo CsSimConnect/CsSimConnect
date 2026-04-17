@@ -15,6 +15,7 @@
  */
 
 using System;
+using CsSimConnect.Sim;
 
 namespace CsSimConnect
 {
@@ -27,13 +28,13 @@ namespace CsSimConnect
         public UnSupportedException(string msg) : base(msg)
         {
             RequiredSim = FlightSimType.Unknown;
-            ConnectedSim = SimConnect.InterOpType;
+            ConnectedSim = InterOpManager.InterOpType;
         }
 
         public UnSupportedException(FlightSimType required, string msg) : base(msg)
         {
             RequiredSim = required;
-            ConnectedSim = SimConnect.InterOpType;
+            ConnectedSim = InterOpManager.InterOpType;
         }
 
     }

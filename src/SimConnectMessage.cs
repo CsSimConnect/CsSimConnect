@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+using CsSimConnect.Sim;
 using Rakis.Logging;
 using System;
 using System.Runtime.InteropServices;
@@ -356,6 +357,8 @@ namespace CsSimConnect
         public uint SimConnectBuildMajor { get; }
         public uint SimConnectBuildMinor { get; }
 
+        public FlightSimVersion Simulator { get; }
+
         internal AppInfo(ref ReceiveStruct msg) : base(ref msg)
         {
             unsafe
@@ -374,6 +377,8 @@ namespace CsSimConnect
             SimConnectVersionMinor = msg.ConnectionInfo.SimConnectVersionMinor;
             SimConnectBuildMajor = msg.ConnectionInfo.SimConnectBuildMajor;
             SimConnectBuildMinor = msg.ConnectionInfo.SimConnectBuildMinor;
+
+            Simulator = FlightSimVersion.FromAppInfo(Name);
         }
 
         internal AppInfo(string name) : base(RecvId.Open, 0)
@@ -387,6 +392,8 @@ namespace CsSimConnect
             SimConnectVersionMinor = 0;
             SimConnectBuildMajor = 0;
             SimConnectBuildMinor = 0;
+
+            Simulator = FlightSimVersion.FromAppInfo(Name);
         }
 
         public string SimVersion()

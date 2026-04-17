@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net8.0-windows7.0</TargetFramework>
+    <TargetFramework>net8.0-windows</TargetFramework>
     <UseWPF>true</UseWPF>
     <Configurations>Debug;Release</Configurations>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
@@ -9,10 +9,11 @@
     <Authors>Bert Laverman</Authors>
     <Copyright>Copyright 2021-2024 by B. Laverman - All rights reserved</Copyright>
     <PackageProjectUrl>https://github.com/CsSimConnect</PackageProjectUrl>
-    <PackageIcon>images\logo-square.png</PackageIcon>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageIcon>logo-square.png</PackageIcon>
     <RepositoryUrl>https://github.com/CsSimConnect/CsSimConnect</RepositoryUrl>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
-    <Version>0.2.0</Version>
+    <Version>0.2.1</Version>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -26,25 +27,32 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Rakis.Logging" Version="0.12.0" />
+    <PackageReference Include="Rakis.Logging" Version="0.14.0" />
     <PackageReference Include="System.Reactive" Version="6.0.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="$(CSSC_INTEROP_PATH)">
+    <None Include="$(CSSC_INTEROP_PATH)">
+      <Link>CsSimConnectInterOp.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       <Pack>True</Pack>
-      <PackagePath>lib\net8.0-windows7.0</PackagePath>
-    </Content>
+      <PackagePath>runtimes\win-x64\native</PackagePath>
+    </None>
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="images\logo-square.png">
+    <None Include=".\images\logo-square.png">
       <Pack>True</Pack>
-      <PackagePath>\</PackagePath>
+      <PackagePath></PackagePath>
     </None>
-    <None Update="LICENSE">
+    <None Include=".\LICENSE">
       <Pack>True</Pack>
-      <PackagePath>\</PackagePath>
+      <PackagePath></PackagePath>
+    </None>
+    <None Include=".\README.md">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
     </None>
   </ItemGroup>
 

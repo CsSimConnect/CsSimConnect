@@ -26,21 +26,16 @@ using System.Linq;
 namespace CsSimConnect
 {
 
-    public sealed class MessageDispatcher
+    public sealed class MessageDispatcher(string name)
     {
 
         private static readonly ILogger log = Logger.GetLogger(typeof(MessageDispatcher));
 
-        public string Name { get; init; }
+        public string Name { get; init; } = name;
 
-        private readonly Dictionary<UInt32, IMessageObserver> MessageObservers = new();
-        private readonly Dictionary<UInt32, ArrayList> MessageObserverLobby = new();
+        private readonly Dictionary<UInt32, IMessageObserver> MessageObservers = [];
+        private readonly Dictionary<UInt32, ArrayList> MessageObserverLobby = [];
         private readonly object observerLock = new();
-
-        public MessageDispatcher(string name)
-        {
-            Name = name;
-        }
 
         internal void Clear(bool connectionLost)
         {
