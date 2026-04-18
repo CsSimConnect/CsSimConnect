@@ -27,7 +27,7 @@ using System.Threading.Tasks;
 namespace CsSimConnect
 {
 
-    public sealed class SimConnect
+    public sealed class SimConnect : IDisposable
     {
 
         private static readonly ILogger log = Logger.GetLogger(typeof(SimConnect));
@@ -56,14 +56,14 @@ namespace CsSimConnect
         private CancellationTokenSource shutdownCts = new();
 
         private Task autoConnecter;
-        private bool useAutoConnect;
+        private volatile bool useAutoConnect;
         public bool UseAutoConnect
         {
             get => useAutoConnect;
             set { useAutoConnect = value; if (useAutoConnect && !IsConnected) RunAutoConnect(); }
         }
         public TimeSpan AutoConnectRetryPeriod { get; set; }
-        private EventWaitHandle disconnectEvent = new AutoResetEvent(false);
+        private AutoResetEvent disconnectEvent = new(false);
 
         private Task messagePoller;
         public TimeSpan MessagePollerRetryPeriod { get; set; }
@@ -137,7 +137,7 @@ namespace CsSimConnect
                 }
                 messagePoller = null;
                 var token = shutdownCts.Token;
-                autoConnecter = new(() =>
+                autoConnecter = Task.Run(() =>
                 {
                     while (UseAutoConnect && !token.IsCancellationRequested)
                     {
@@ -153,7 +153,6 @@ namespace CsSimConnect
                         WaitHandle.WaitAny(new[] { disconnectEvent, token.WaitHandle });
                     }
                 });
-                autoConnecter.Start();
             }
         }
 
@@ -164,7 +163,7 @@ namespace CsSimConnect
             {
                 autoConnecter = null;
                 var token = shutdownCts.Token;
-                messagePoller = new(() =>
+                messagePoller = Task.Run(() =>
                 {
                     while (IsConnected && !token.IsCancellationRequested)
                     {
@@ -175,7 +174,6 @@ namespace CsSimConnect
                         token.WaitHandle.WaitOne(MessagePollerRetryPeriod);
                     }
                 });
-                messagePoller.Start();
             }
         }
 
@@ -287,7 +285,10 @@ namespace CsSimConnect
             if (mp != null) running.Add(mp);
             if (running.Count > 0)
             {
-                Task.WaitAll(running.ToArray(), TimeSpan.FromSeconds(2));
+                if (!Task.WaitAll(running.ToArray(), TimeSpan.FromSeconds(2)))
+                {
+                    log.Warn?.Log("Background tasks did not stop within 2 seconds during shutdown");
+                }
             }
 
             // Reset the token source so the instance can be reused.
@@ -296,6 +297,9 @@ namespace CsSimConnect
 
             log.Info?.Log("SimConnect shutdown complete");
         }
+
+        /// <summary>Disposes resources; equivalent to calling <see cref="Shutdown"/>.</summary>
+        public void Dispose() => Shutdown();
 
         private void ResetErrorCallbacks(bool connectionLost)
         {
