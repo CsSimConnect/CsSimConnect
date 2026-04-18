@@ -53,6 +53,8 @@ namespace CsSimConnect
         internal IntPtr handle = IntPtr.Zero;
         public bool IsConnected => (handle != IntPtr.Zero);
 
+        private CancellationTokenSource shutdownCts = new();
+
         private Task autoConnecter;
         private bool useAutoConnect;
         public bool UseAutoConnect
@@ -128,20 +130,27 @@ namespace CsSimConnect
                     log.Warn?.Log("Not starting a second autoconnector.");
                     return;
                 }
+                if (shutdownCts.IsCancellationRequested)
+                {
+                    log.Debug?.Log("Shutdown in progress; not starting autoconnector.");
+                    return;
+                }
                 messagePoller = null;
+                var token = shutdownCts.Token;
                 autoConnecter = new(() =>
                 {
-                    while (UseAutoConnect)
+                    while (UseAutoConnect && !token.IsCancellationRequested)
                     {
-                        while (!IsConnected)
+                        while (!IsConnected && !token.IsCancellationRequested)
                         {
                             log.Debug?.Log("Trying to AutoConnect");
                             if (!Connect())
                             {
-                                Task.Delay(AutoConnectRetryPeriod).Wait();
+                                token.WaitHandle.WaitOne(AutoConnectRetryPeriod);
                             }
                         }
-                        disconnectEvent.WaitOne();
+                        if (token.IsCancellationRequested) break;
+                        WaitHandle.WaitAny(new[] { disconnectEvent, token.WaitHandle });
                     }
                 });
                 autoConnecter.Start();
@@ -154,15 +163,16 @@ namespace CsSimConnect
             lock (connectLock)
             {
                 autoConnecter = null;
+                var token = shutdownCts.Token;
                 messagePoller = new(() =>
                 {
-                    while (IsConnected)
+                    while (IsConnected && !token.IsCancellationRequested)
                     {
                         while (CsGetNextDispatch(handle, HandleMessage))
                         {
                             log.Trace?.Log("Trying for another message");
                         }
-                        Task.Delay(MessagePollerRetryPeriod).Wait();
+                        token.WaitHandle.WaitOne(MessagePollerRetryPeriod);
                     }
                 });
                 messagePoller.Start();
@@ -236,6 +246,55 @@ namespace CsSimConnect
             {
                 log.Error?.Log("Failed to disconnect from simulator");
             }
+        }
+
+        /// <summary>
+        /// Cleanly shuts down all background threads and disconnects from the simulator.
+        /// After calling <c>Shutdown()</c>, <c>UseAutoConnect</c> is <c>false</c> and
+        /// <c>IsConnected</c> is <c>false</c>. The instance can be reused by setting
+        /// <c>UseAutoConnect = true</c> again.
+        /// </summary>
+        public void Shutdown()
+        {
+            log.Info?.Log("Shutting down SimConnect");
+
+            // Prevent OnDisconnect from spawning a new autoConnecter.
+            UseAutoConnect = false;
+
+            // Wake and cancel both background tasks.
+            shutdownCts.Cancel();
+            disconnectEvent.Set();
+
+            if (IsConnected)
+            {
+                IntPtr oldHandle = handle;
+                handle = IntPtr.Zero;
+                if (!CsDisconnect(oldHandle))
+                {
+                    log.Error?.Log("Failed to disconnect from simulator during shutdown");
+                }
+            }
+
+            // Wait up to 2 s for background tasks to exit cleanly.
+            Task ac, mp;
+            lock (connectLock)
+            {
+                ac = autoConnecter;
+                mp = messagePoller;
+            }
+            var running = new List<Task>();
+            if (ac != null) running.Add(ac);
+            if (mp != null) running.Add(mp);
+            if (running.Count > 0)
+            {
+                Task.WaitAll(running.ToArray(), TimeSpan.FromSeconds(2));
+            }
+
+            // Reset the token source so the instance can be reused.
+            shutdownCts.Dispose();
+            shutdownCts = new CancellationTokenSource();
+
+            log.Info?.Log("SimConnect shutdown complete");
         }
 
         private void ResetErrorCallbacks(bool connectionLost)

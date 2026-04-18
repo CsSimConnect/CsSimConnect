@@ -120,5 +120,31 @@ namespace CsSimConnect.Tests
             // Cleanup
             sc.MessageCompleted(id);
         }
+
+        // ── Shutdown() ──────────────────────────────────────────────────────────
+        // Verifies that Shutdown() leaves the instance in a safe, idle state
+        // without requiring a live simulator connection.
+
+        [Fact]
+        public void Shutdown_WhenNotConnected_LeavesUseAutoConnectFalseAndIsConnectedFalse()
+        {
+            var sc = SimConnect.Instance;
+            sc.UseAutoConnect = false; // ensure clean starting state
+
+            sc.Shutdown();
+
+            Assert.False(sc.IsConnected);
+            Assert.False(sc.UseAutoConnect);
+        }
+
+        [Fact]
+        public void Shutdown_CanBeCalledTwice_WithoutException()
+        {
+            var sc = SimConnect.Instance;
+            sc.UseAutoConnect = false;
+
+            sc.Shutdown();
+            sc.Shutdown(); // second call must not throw
+        }
     }
 }
