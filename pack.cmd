@@ -1,0 +1,6 @@
+@echo off
+echo Cleaning bin and obj...
+if exist bin rd /s /q bin
+if exist obj rd /s /q obj
+echo Building and packing release...
+dotnet pack CsSimConnect.csproj -c Release -o dist
