@@ -13,7 +13,7 @@
     <PackageIcon>logo-square.png</PackageIcon>
     <RepositoryUrl>https://github.com/CsSimConnect/CsSimConnect</RepositoryUrl>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
-    <Version>0.2.2</Version>
+    <Version>0.2.3</Version>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
