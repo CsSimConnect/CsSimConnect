@@ -46,7 +46,6 @@ namespace CsSimConnect
                 MessageObservers.Values.ToList().ForEach(obs => obs.OnError(e));
                 MessageObservers.Clear();
 
-                MessageObserverLobby.Values.SelectMany<ArrayList, object>(x => (IEnumerable<object>)x.GetEnumerator()).ToList().ForEach(obj => (obj as IMessageObserver)?.OnError(e));
                 MessageObserverLobby.Clear();
             }
         }

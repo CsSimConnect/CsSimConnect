@@ -197,11 +197,13 @@ namespace CsSimConnect
         }
 
         private EventGroup defaultGroup;
+        private readonly object defaultGroupLock = new();
         private EventGroup GetDefaultGroup()
         {
-            if (defaultGroup == null)
+            if (defaultGroup != null) return defaultGroup;
+            lock (defaultGroupLock)
             {
-                defaultGroup = new("Default EventGroup", EventGroup.PriorityHighest);
+                defaultGroup ??= new("Default EventGroup", EventGroup.PriorityHighest);
             }
             return defaultGroup;
         }
@@ -219,8 +221,8 @@ namespace CsSimConnect
             }
             if (clientEvent.Group == null)
             {
-                clientEvent.Group = defaultGroup;
-                RegisterCleanup(CsAddClientEventToNotificationGroup(simConnect.handle, defaultGroup.Id, clientEvent.Id, 0), "AddClientEventToNotificationGroup", result.OnError);
+                clientEvent.Group = GetDefaultGroup();
+                RegisterCleanup(CsAddClientEventToNotificationGroup(simConnect.handle, clientEvent.Group.Id, clientEvent.Id, 0), "AddClientEventToNotificationGroup", result.OnError);
             }
             RegisterCleanup(CsSetNotificationGroupPriority(simConnect.handle, clientEvent.Group.Id, clientEvent.Group.Priority), "SetNotificationGroupPriority", result.OnError);
 

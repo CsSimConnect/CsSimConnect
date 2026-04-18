@@ -18,6 +18,7 @@ using CsSimConnect.Exc;
 using CsSimConnect.Sim;
 using Rakis.Logging;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -66,6 +67,8 @@ namespace CsSimConnect
         public TimeSpan MessagePollerRetryPeriod { get; set; }
 
         private readonly Dictionary<uint, Action<SimConnectException>> onError = new();
+        private readonly object onErrorLock = new();
+        private readonly object connectLock = new();
 
         public event Action OnConnect;
         public event Action<bool> OnDisconnect;
@@ -75,7 +78,7 @@ namespace CsSimConnect
         public event Action<AppInfo> OnOpen;
         public event Action OnClose;
 
-        private static Dictionary<string, SimConnect> connections = [];
+        private static readonly ConcurrentDictionary<string, SimConnect> connections = new();
         public static SimConnect Connection(string clientName) => (clientName == DefaultClientName) ? Instance : connections[clientName];
 
 
@@ -113,55 +116,57 @@ namespace CsSimConnect
                 return Instance;
             }
 
-            if (!connections.ContainsKey(clientName)) {
-                connections[clientName] = new SimConnect(clientName);
-            }
-
-            return connections[clientName];
+            return connections.GetOrAdd(clientName, name => new SimConnect(name));
         }
 
         private void RunAutoConnect()
         {
-            if (autoConnecter != null)
+            lock (connectLock)
             {
-                log.Warn?.Log("Not starting a second autoconnector.");
-                return;
-            }
-            messagePoller = null;
-            autoConnecter = new(() =>
-            {
-                while (UseAutoConnect)
+                if (autoConnecter != null)
                 {
-                    while (!IsConnected)
-                    {
-                        log.Debug?.Log("Trying to AutoConnect");
-                        if (!Connect())
-                        {
-                            Task.Delay(AutoConnectRetryPeriod).Wait();
-                        }
-                    }
-                    disconnectEvent.WaitOne();
+                    log.Warn?.Log("Not starting a second autoconnector.");
+                    return;
                 }
-            });
-            autoConnecter.Start();
+                messagePoller = null;
+                autoConnecter = new(() =>
+                {
+                    while (UseAutoConnect)
+                    {
+                        while (!IsConnected)
+                        {
+                            log.Debug?.Log("Trying to AutoConnect");
+                            if (!Connect())
+                            {
+                                Task.Delay(AutoConnectRetryPeriod).Wait();
+                            }
+                        }
+                        disconnectEvent.WaitOne();
+                    }
+                });
+                autoConnecter.Start();
+            }
         }
 
         private void RunDispatcher()
         {
-            autoConnecter = null;
             CsCallDispatch(handle, HandleMessage);
-            messagePoller = new(() =>
+            lock (connectLock)
             {
-                while (IsConnected)
+                autoConnecter = null;
+                messagePoller = new(() =>
                 {
-                    while (CsGetNextDispatch(handle, HandleMessage))
+                    while (IsConnected)
                     {
-                        log.Trace?.Log("Trying for another message");
+                        while (CsGetNextDispatch(handle, HandleMessage))
+                        {
+                            log.Trace?.Log("Trying for another message");
+                        }
+                        Task.Delay(MessagePollerRetryPeriod).Wait();
                     }
-                    Task.Delay(MessagePollerRetryPeriod).Wait();
-                }
-            });
-            messagePoller.Start();
+                });
+                messagePoller.Start();
+            }
         }
 
         private void LogConnectedState()
@@ -187,7 +192,7 @@ namespace CsSimConnect
 
         public bool Connect()
         {
-            if (CsConnect("CsSimConnect", ref handle))
+            if (CsConnect(ClientName, ref handle))
             {
                 RunDispatcher();
                 OnConnect?.Invoke();
@@ -236,7 +241,7 @@ namespace CsSimConnect
         private void ResetErrorCallbacks(bool connectionLost)
         {
             log.Info?.Log("Clearing Error callbacks");
-            lock (this)
+            lock (onErrorLock)
             {
                 onError.Clear();
             }
@@ -244,20 +249,26 @@ namespace CsSimConnect
 
         internal void MessageCompleted(uint sendId)
         {
-            if (onError.Remove(sendId))
+            lock (onErrorLock)
             {
-                log.Trace?.Log("Removed SendID {0}.");
-            }
-            else
-            {
-                log.Trace?.Log("SendID {0} already removed.");
+                if (onError.Remove(sendId))
+                {
+                    log.Trace?.Log("Removed SendID {0}.", sendId);
+                }
+                else
+                {
+                    log.Trace?.Log("SendID {0} already removed.", sendId);
+                }
             }
         }
 
         internal void AddCleanup(uint sendId, Action<SimConnectException> cleanup)
         {
             log.Trace?.Log("Adding cleanup for SendId {0}", sendId);
-            onError.Add(sendId, cleanup);
+            lock (onErrorLock)
+            {
+                onError.Add(sendId, cleanup);
+            }
         }
 
         private void HandleMessage(ref ReceiveStruct structData, UInt32 structLen, IntPtr context)
@@ -278,7 +289,12 @@ namespace CsSimConnect
                         SimConnectException exc = new(structData.Exception.ExceptionId, structData.Exception.SendId, structData.Exception.Index);
                         followup = () => {
                             log.Trace?.Log("Exception returned: {0} (SendID={1}, Index={2})", exc.Message, exc.SendID, exc.Index);
-                            if (onError.Remove(exc.SendID.Value, out Action<SimConnectException> cleanup))
+                            Action<SimConnectException> cleanup;
+                            lock (onErrorLock)
+                            {
+                                onError.Remove(exc.SendID.Value, out cleanup);
+                            }
+                            if (cleanup != null)
                             {
                                 log.Trace?.Log("Calling cleanup for SendID {0}.", exc.SendID.Value);
                                 cleanup(exc);

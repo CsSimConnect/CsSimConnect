@@ -8,8 +8,14 @@ This repository contains just the .Net DLL sources.
 
 ## What is _not_ in this repo
 
-This repository needs a matching `CsSimConnectInterOp.dll` non-dotnet dynamic library from the [CsSiMConnectInterOp](https://github.com/CsSimConnect/CsSimConnectInterOp)
-repository. You can either build that yourself, or get a binary if you trust me. Put the DLL in a suitable location and define an environment variable named
-`CSSC_INTEROP_PATH` with the full path to this DLL.
+This repository no longer ships the native `CsSimConnectInterOp.dll`.
 
-When this project is packed into a NuGet package with `CSSC_INTEROP_PATH` set, the native interop DLL is included as a Windows x64 native runtime asset.
+Applications should reference `CsSimConnect` together with the matching native package(s) from the
+[CsSiMConnectInterOp](https://github.com/CsSimConnect/CsSimConnectInterOp) repository, for example:
+
+- `CsSimConnect.Native.MSFS2020`
+- `CsSimConnect.Native.MSFS2024`
+
+These native packages copy simulator-specific builds to subfolders such as `MSFS2020\CsSimConnectInterOp.dll` in the application output.
+
+`CSSC_INTEROP_PATH` and `CSSC_INTEROP_DIR` remain available as manual overrides for development or custom deployment layouts.

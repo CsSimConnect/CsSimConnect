@@ -20,10 +20,6 @@ using Rakis.Logging;
 using System;
 using System.IO;
 using System.Runtime.InteropServices;
-using System.Text.Json;
-using System.Text.Json.Serialization;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace CsSimConnect
 {
@@ -47,6 +43,7 @@ namespace CsSimConnect
         public const string InterOpDllName = "CsSimConnectInterOp.dll";
 
         public static FlightSimType InterOpType { get; private set; } = FlightSimType.Unknown;
+        public static FlightSimVersion InterOpVersion { get; private set; } = new() { Type = FlightSimType.Unknown, Version = "" };
 
         /// <summary>
         /// Gets the full path to the InterOp DLL.
@@ -56,7 +53,7 @@ namespace CsSimConnect
         /// In order of preference, it is located:
         /// - If the environment variable CSSC_INTEROP_PATH is set and the file exists, use that path.
         /// - If the environment variable CSSC_INTEROP_DIR is set and the file exists in that directory, use that path.
-        /// - Otherwise, the file is expected to be in the same directory as the .NET DLL.
+        /// - Otherwise, the file is expected to be in the application base directory.
         /// </remarks>
         /// <returns>The full path to the InterOp DLL.</returns>
         public static string InterOpPath()
@@ -67,10 +64,10 @@ namespace CsSimConnect
             }
 
             if ((Environment.GetEnvironmentVariable("CSSC_INTEROP_DIR") is not { } dir) || !Directory.Exists(dir))
-                return InterOpDllName;
+                return Path.Combine(AppContext.BaseDirectory, InterOpDllName);
 
             path = Path.Combine(dir, InterOpDllName);
-            return File.Exists(path) ? path : InterOpDllName;
+            return File.Exists(path) ? path : Path.Combine(AppContext.BaseDirectory, InterOpDllName);
         }
 
 
@@ -95,7 +92,7 @@ namespace CsSimConnect
             }
             else
             {
-                path = ".";
+                path = AppContext.BaseDirectory;
             }
             return Path.Combine(path, notNullFs.ToString(), InterOpDllName);
         }
@@ -170,12 +167,13 @@ namespace CsSimConnect
         /// </remarks>
         public static void SetFlightSimType(FlightSimVersion fs)
         {
-            if ((InterOpType == fs.Type) && (_interOpDll != IntPtr.Zero)) {
+            if ((InterOpVersion.Type == fs.Type) && String.Equals(InterOpVersion.Version, fs.Version, StringComparison.Ordinal) && (_interOpDll != IntPtr.Zero)) {
                 // The target InterOp type is already set and the InterOp DLL is already loaded.
                 return;
             }
 
             InterOpType = fs.Type;
+            InterOpVersion = fs;
             var interOpPath = InterOpPath(fs);
 
             if (interOpPath != null)

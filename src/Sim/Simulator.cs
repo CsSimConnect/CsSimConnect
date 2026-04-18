@@ -45,6 +45,7 @@ namespace CsSimConnect.Sim
             {
                 "Test" => new FlightSimVersion{ Type = FlightSimType.Test, Version = "" },
                 "KittyHawk" => new FlightSimVersion{ Type = FlightSimType.MSFlightSimulator, Version = "2020" },
+                "SunRise" => new FlightSimVersion{ Type = FlightSimType.MSFlightSimulator, Version = "2024" },
                 "Lockheed Martin® Prepar3D® v4" => new FlightSimVersion{ Type = FlightSimType.Prepar3D, Version = "4" },
                 "Lockheed Martin® Prepar3D® v5" => new FlightSimVersion{ Type = FlightSimType.Prepar3D, Version = "5" },
                 "Lockheed Martin® Prepar3D® v6" => new FlightSimVersion{ Type = FlightSimType.Prepar3D, Version = "6" },

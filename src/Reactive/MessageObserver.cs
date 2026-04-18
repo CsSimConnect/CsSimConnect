@@ -26,9 +26,7 @@ namespace CsSimConnect.Reactive
         private readonly bool streamable;
         public bool IsStreamable() => streamable;
 
-        public bool Completed { set; private get; }
-        public bool IsCompleted => Completed;
-
+        public bool IsCompleted { get; private set; }
 
         protected Action callback = null;
         private event Action OnCompleteActions;
@@ -39,7 +37,6 @@ namespace CsSimConnect.Reactive
 
         internal MessageVoidObserver(bool streamable)
         {
-            Completed = false;
             this.streamable = streamable;
         }
 
@@ -65,13 +62,13 @@ namespace CsSimConnect.Reactive
 
         public virtual void OnCompleted()
         {
-            Completed = true;
+            IsCompleted = true;
             OnCompleteActions?.Invoke();
         }
 
         public virtual void OnError(Exception error)
         {
-            Completed = true;
+            IsCompleted = true;
             Error = error;
             OnErrorActions?.Invoke(error);
         }
@@ -101,9 +98,7 @@ namespace CsSimConnect.Reactive
         private readonly bool streamable;
         public bool IsStreamable() => streamable;
 
-        public bool Completed { set; private get; }
-        public bool IsCompleted => Completed;
-
+        public bool IsCompleted { get; private set; }
 
         protected Action<T> callback = null;
         private event Action OnCompleteActions;
@@ -114,7 +109,6 @@ namespace CsSimConnect.Reactive
 
         internal MessageObserver(bool streamable)
         {
-            Completed = false;
             this.streamable = streamable;
         }
 
@@ -140,13 +134,13 @@ namespace CsSimConnect.Reactive
 
         public virtual void OnCompleted()
         {
-            Completed = true;
+            IsCompleted = true;
             OnCompleteActions?.Invoke();
         }
 
         public virtual void OnError(Exception error)
         {
-            Completed = true;
+            IsCompleted = true;
             Error = error;
             OnErrorActions?.Invoke(error);
         }
